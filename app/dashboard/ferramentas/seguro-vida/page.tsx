@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface ResultRow {
   nome: string;
@@ -99,9 +99,46 @@ export default function SeguroVidaPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ApiResponse | null>(null);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsMsg, setSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const pdfRef = useRef<HTMLInputElement>(null);
   const xlsxRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch('/api/ferramentas/settings?tool=seguro-vida')
+      .then(async r => {
+        const json = await r.json();
+        if (!r.ok) { console.error('[Settings] Erro ao carregar:', json); return; }
+        if (json.settings?.coluna) setColuna(json.settings.coluna);
+        if (json.settings?.linhaInicial) setLinhaInicial(json.settings.linhaInicial);
+      })
+      .catch(e => console.error('[Settings] Falha de rede ao carregar:', e));
+  }, []);
+
+  async function handleSaveSettings() {
+    setSettingsSaving(true);
+    setSettingsMsg(null);
+    try {
+      const r = await fetch('/api/ferramentas/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tool: 'seguro-vida', settings: { coluna, linhaInicial } }),
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        console.error('[Settings] Erro ao salvar:', err);
+        setSettingsMsg({ type: 'error', text: err?.error ?? 'Erro ao salvar.' });
+      } else {
+        setSettingsMsg({ type: 'success', text: 'Salvo!' });
+      }
+    } catch (e) {
+      console.error('[Settings] Falha de rede ao salvar:', e);
+      setSettingsMsg({ type: 'error', text: 'Falha de rede.' });
+    } finally {
+      setSettingsSaving(false);
+    }
+  }
 
   const canProcess = pdfFile !== null && xlsxFile !== null && !loading;
 
@@ -147,6 +184,10 @@ export default function SeguroVidaPage() {
     'px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium ' +
     'hover:bg-blue-700 disabled:opacity-50 transition-colors';
 
+  const buttonSave =
+    'px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium ' +
+    'hover:bg-gray-50 disabled:opacity-50 transition-colors';
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -161,9 +202,7 @@ export default function SeguroVidaPage() {
 
         {/* Upload panel */}
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-            Arquivos
-          </h2>
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Arquivos</h2>
 
           {/* File inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -232,13 +271,28 @@ export default function SeguroVidaPage() {
 
             <div className="flex-1" />
 
-            <button
-              onClick={handleProcess}
-              disabled={!canProcess}
-              className={buttonClass}
-            >
-              {loading ? 'Processando…' : 'Processar'}
-            </button>
+            <div className="flex items-center gap-3">
+              {settingsMsg && (
+                <span className={`text-xs font-medium ${settingsMsg.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                  {settingsMsg.text}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={handleSaveSettings}
+                disabled={settingsSaving}
+                className={buttonSave}
+              >
+                {settingsSaving ? 'Salvando…' : 'Salvar Configurações'}
+              </button>
+              <button
+                onClick={handleProcess}
+                disabled={!canProcess}
+                className={buttonClass}
+              >
+                {loading ? 'Processando…' : 'Processar'}
+              </button>
+            </div>
           </div>
         </div>
 

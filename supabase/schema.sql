@@ -107,3 +107,23 @@ alter table public.user_tool_access enable row level security;
 create policy "Usuário vê seus próprios acessos"
   on public.user_tool_access for select
   using (auth.uid() = user_id);
+
+-- ============================================================
+-- USER_TOOL_SETTINGS — parâmetros de formulário por ferramenta
+-- Execute esta migração no SQL Editor do Supabase após o schema inicial
+-- ============================================================
+create table public.user_tool_settings (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  tool_slug  text not null,
+  settings   jsonb not null default '{}',
+  updated_at timestamptz not null default now(),
+  unique (user_id, tool_slug)
+);
+
+alter table public.user_tool_settings enable row level security;
+
+create policy "Usuário gerencia suas configurações de ferramentas"
+  on public.user_tool_settings for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);

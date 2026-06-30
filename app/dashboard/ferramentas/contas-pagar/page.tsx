@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 const LOJAS = ['L01', 'L02', 'L03', 'L04', 'L05'] as const
 const LOJAS_LABELS: Record<string, string> = {
@@ -60,6 +60,43 @@ export default function ContasPagarPage() {
   const [testSuccess, setTestSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [testError, setTestError] = useState<string | null>(null)
+  const [settingsSaving, setSettingsSaving] = useState(false)
+  const [settingsMsg, setSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/ferramentas/settings?tool=contas-pagar')
+      .then(async r => {
+        const json = await r.json()
+        if (!r.ok) { console.error('[Settings] Erro ao carregar:', json); return }
+        if (json.settings?.webhook) setWebhook(json.settings.webhook)
+        if (json.settings?.template) setTemplate(json.settings.template)
+      })
+      .catch(e => console.error('[Settings] Falha de rede ao carregar:', e))
+  }, [])
+
+  async function handleSaveSettings() {
+    setSettingsSaving(true)
+    setSettingsMsg(null)
+    try {
+      const r = await fetch('/api/ferramentas/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tool: 'contas-pagar', settings: { webhook, template } }),
+      })
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}))
+        console.error('[Settings] Erro ao salvar:', err)
+        setSettingsMsg({ type: 'error', text: err?.error ?? 'Erro ao salvar configurações.' })
+      } else {
+        setSettingsMsg({ type: 'success', text: 'Configurações salvas com sucesso.' })
+      }
+    } catch (e) {
+      console.error('[Settings] Falha de rede ao salvar:', e)
+      setSettingsMsg({ type: 'error', text: 'Falha de rede ao salvar.' })
+    } finally {
+      setSettingsSaving(false)
+    }
+  }
 
   const handlePagamento = useCallback((loja: typeof LOJAS[number], value: string) => {
     setPagamentos((prev) => ({ ...prev, [loja]: value }))
@@ -362,17 +399,25 @@ export default function ContasPagarPage() {
 
       {/* Sticky footer bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-10">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex-1">
-            {success && (
-              <span className="text-sm font-medium text-green-700">
-                Mensagem enviada ao Discord!
-              </span>
+        <div className="max-w-4xl mx-auto flex items-center gap-3">
+          <div className="flex-1 text-sm">
+            {success && <span className="font-medium text-green-700">Mensagem enviada ao Discord!</span>}
+            {error && <span className="text-red-600">{error}</span>}
+            {!success && !error && settingsMsg?.type === 'success' && (
+              <span className="font-medium text-green-700">{settingsMsg.text}</span>
             )}
-            {error && (
-              <span className="text-sm text-red-600">{error}</span>
+            {!success && !error && settingsMsg?.type === 'error' && (
+              <span className="text-red-600">{settingsMsg.text}</span>
             )}
           </div>
+          <button
+            type="button"
+            onClick={handleSaveSettings}
+            disabled={settingsSaving}
+            className={buttonSecondary}
+          >
+            {settingsSaving ? 'Salvando…' : 'Salvar Configurações'}
+          </button>
           <button
             type="button"
             onClick={handleSend}
