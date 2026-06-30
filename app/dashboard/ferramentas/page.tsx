@@ -3,86 +3,113 @@ import Link from 'next/link'
 const tools = [
   {
     href: '/dashboard/ferramentas/duplicatas',
-    icon: '📊',
     title: 'Conferir Duplicatas',
-    description: 'Compara retorno bancário (XLSX) com fluxo de caixa do ERP (TXT)',
+    description: 'Compara retorno bancário com fluxo de caixa do ERP',
     inputs: 'XLSX + TXT',
-    color: 'blue',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+    accent: '#0d1e45',
   },
   {
     href: '/dashboard/ferramentas/seguro-vida',
-    icon: '🛡️',
     title: 'Seguro de Vida',
     description: 'Cruza PDF do seguro com planilha de funcionários',
     inputs: 'PDF + XLSX',
-    color: 'purple',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+    ),
+    accent: '#7c3aed',
   },
   {
     href: '/dashboard/ferramentas/contas-pagar',
-    icon: '💼',
     title: 'Contas a Pagar',
-    description: 'Envia resumo diário de pagamentos para o Discord via webhook',
+    description: 'Envia resumo diário de pagamentos para o Discord',
     inputs: 'Formulário',
-    color: 'green',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+      </svg>
+    ),
+    accent: '#059669',
   },
   {
     href: '/dashboard/ferramentas/comparador-dda',
-    icon: '🏦',
     title: 'Comparador DDA',
-    description: 'Cruza boletos DDA (CSV) com duplicatas de Contas a Pagar (TXT)',
+    description: 'Cruza boletos DDA com duplicatas de Contas a Pagar',
     inputs: 'TXT + CSV',
-    color: 'indigo',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+      </svg>
+    ),
+    accent: '#4f46e5',
   },
   {
     href: '/dashboard/ferramentas/conciliacao-cartao',
-    icon: '💳',
     title: 'Conciliação Cartão',
-    description: 'Cruza vendas no cartão (CSV) com duplicatas em aberto (TXT)',
+    description: 'Cruza vendas no cartão com duplicatas em aberto',
     inputs: 'CSV + TXT',
-    color: 'red',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+      </svg>
+    ),
+    accent: '#c8102e',
   },
 ]
 
-const colorMap: Record<string, string> = {
-  blue: 'bg-blue-50 text-blue-600 border-blue-100',
-  purple: 'bg-purple-50 text-purple-600 border-purple-100',
-  green: 'bg-green-50 text-green-600 border-green-100',
-  orange: 'bg-orange-50 text-orange-600 border-orange-100',
-  indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-  red: 'bg-red-50 text-red-600 border-red-100',
-}
-
 export default function FerramentasPage() {
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Ferramentas</h2>
-        <p className="text-sm text-gray-500 mt-1">Selecione uma ferramenta para começar</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Cabeçalho da seção */}
+      <div className="bg-white border-b border-gray-200 px-8 py-6">
+        <h1 className="text-xl font-bold text-gray-900">Ferramentas</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Selecione uma ferramenta para processar seus arquivos</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {tools.map((tool) => (
-          <Link
-            key={tool.href}
-            href={tool.href}
-            className="group bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-sm transition-all"
-          >
-            <div className="flex items-start gap-4">
-              <div className={`text-2xl w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 ${colorMap[tool.color]}`}>
-                {tool.icon}
+      <div className="px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {tools.map((tool) => (
+            <Link
+              key={tool.href}
+              href={tool.href}
+              className="group bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-gray-300 transition-all"
+            >
+              <div className="flex items-start gap-4">
+                {/* Ícone com cor de acento */}
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-white"
+                  style={{ backgroundColor: tool.accent }}
+                >
+                  {tool.icon}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-gray-900 group-hover:text-[#0d1e45] transition-colors leading-snug">
+                      {tool.title}
+                    </h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 group-hover:text-[#0d1e45] transition-colors shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">{tool.description}</p>
+                  <span
+                    className="inline-block mt-3 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
+                    style={{ color: tool.accent, borderColor: tool.accent + '33', backgroundColor: tool.accent + '0d' }}
+                  >
+                    {tool.inputs}
+                  </span>
+                </div>
               </div>
-              <div className="min-w-0">
-                <h3 className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
-                  {tool.title}
-                </h3>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">{tool.description}</p>
-                <span className="inline-block mt-3 text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
-                  {tool.inputs}
-                </span>
-              </div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   )
