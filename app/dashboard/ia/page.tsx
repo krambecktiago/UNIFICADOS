@@ -51,7 +51,7 @@ export default function IAPage() {
           onChange={(e) => setPrompt(e.target.value)}
           rows={5}
           placeholder="Descreva o que você quer analisar ou perguntar..."
-          className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         <button
