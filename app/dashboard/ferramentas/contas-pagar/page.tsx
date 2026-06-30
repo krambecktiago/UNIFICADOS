@@ -398,7 +398,7 @@ export default function ContasPagarPage() {
       </div>
 
       {/* Sticky footer bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 z-10">
+      <div className="fixed bottom-0 left-64 right-0 bg-white border-t border-gray-200 px-6 py-4 z-10">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           <div className="flex-1 text-sm">
             {success && <span className="font-medium text-green-700">Mensagem enviada ao Discord!</span>}
