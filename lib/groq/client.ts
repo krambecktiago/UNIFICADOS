@@ -1,14 +1,14 @@
 import Groq from 'groq-sdk'
 
-export const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-})
+function getClient() {
+  return new Groq({ apiKey: process.env.GROQ_API_KEY })
+}
 
 export async function analyzeWithGroq(
   prompt: string,
   systemPrompt = 'Você é um assistente de análise de dados preciso e objetivo. Responda sempre em português brasileiro.'
 ): Promise<string> {
-  const completion = await groq.chat.completions.create({
+  const completion = await getClient().chat.completions.create({
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: prompt },
