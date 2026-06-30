@@ -26,14 +26,6 @@ const tools = [
     color: 'green',
   },
   {
-    href: '/dashboard/ferramentas/creditos-aberto',
-    icon: '🔍',
-    title: 'Créditos em Aberto',
-    description: 'Cruza créditos em aberto do fornecedor (TXT) com pagamentos do ERP (TXT)',
-    inputs: 'TXT + TXT',
-    color: 'orange',
-  },
-  {
     href: '/dashboard/ferramentas/comparador-dda',
     icon: '🏦',
     title: 'Comparador DDA',
