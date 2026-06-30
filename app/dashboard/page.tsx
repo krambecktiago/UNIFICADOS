@@ -11,25 +11,22 @@ export default async function DashboardPage() {
   const lastLogin = user?.last_sign_in_at ? formatDateTime(user.last_sign_in_at) : '—'
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
 
-      {/* ── Cabeçalho ── h-[68px] alinha com o logo da sidebar */}
-      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center justify-between">
+      <div className="h-[68px] bg-[#060f26] border-b border-white/10 px-8 flex items-center justify-between">
         <div>
-          <p className="text-base font-bold text-gray-900 leading-tight">Bom dia, {firstName}</p>
-          <p className="text-xs text-gray-400 leading-tight mt-0.5">Último acesso: {lastLogin}</p>
+          <p className="text-base font-bold text-white leading-tight">Bom dia, {firstName}</p>
+          <p className="text-xs text-white/40 leading-tight mt-0.5">Último acesso: {lastLogin}</p>
         </div>
-        <div className="w-9 h-9 rounded-full bg-[#0d1e45] flex items-center justify-center text-white text-sm font-bold shrink-0">
+        <div className="w-9 h-9 rounded-full bg-[#c8102e] flex items-center justify-center text-white text-sm font-bold shrink-0">
           {firstName.charAt(0).toUpperCase()}
         </div>
       </div>
 
-      {/* ── Conteúdo ── padding horizontal igual ao cabeçalho (px-8) */}
       <div className="px-8 py-8 max-w-4xl space-y-8">
 
-        {/* Acesso rápido */}
         <section>
-          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-4">Acesso Rápido</p>
+          <p className="text-[10px] font-bold tracking-widest uppercase text-white/30 mb-4">Acesso Rápido</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <QuickCard
               href="/dashboard/ferramentas"
@@ -56,10 +53,9 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        {/* Informações da plataforma */}
         <section>
-          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-4">Plataforma</p>
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+          <p className="text-[10px] font-bold tracking-widest uppercase text-white/30 mb-4">Plataforma</p>
+          <div className="bg-white rounded-xl overflow-hidden divide-y divide-gray-100 shadow-lg">
             <InfoRow label="Versão" value="1.0.0" />
             <InfoRow label="Empresa" value="Krambeck Autopeças e Tintas" />
             <InfoRow label="Rede" value="Rede Ancora" />
@@ -84,7 +80,7 @@ function QuickCard({
   return (
     <Link
       href={href}
-      className="group bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:border-[#0d1e45] hover:shadow-sm transition-all"
+      className="group bg-white rounded-xl p-5 flex items-center gap-4 hover:shadow-xl transition-all border border-white/10"
     >
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -93,7 +89,7 @@ function QuickCard({
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-gray-900 group-hover:text-[#0d1e45] transition-colors">{label}</p>
+        <p className="text-sm font-semibold text-gray-900 transition-colors">{label}</p>
         <p className="text-xs text-gray-400 mt-0.5 truncate">{description}</p>
       </div>
       <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 ml-auto shrink-0 group-hover:text-[#0d1e45] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

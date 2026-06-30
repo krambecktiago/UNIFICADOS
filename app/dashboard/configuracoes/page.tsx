@@ -5,17 +5,23 @@ export default async function ConfiguracoesPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <div className="p-8 max-w-2xl">
-      <h2 className="text-2xl font-bold text-gray-900 mb-1">Configurações</h2>
-      <p className="text-sm text-gray-500 mb-8">Gerencie sua conta</p>
+    <div className="min-h-screen">
+      <div className="h-[68px] bg-[#060f26] border-b border-white/10 px-8 flex items-center">
+        <div>
+          <h2 className="text-base font-bold text-white leading-tight">Configurações</h2>
+          <p className="text-xs text-white/40 leading-tight mt-0.5">Gerencie sua conta</p>
+        </div>
+      </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
-        <div className="px-6 py-5">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Conta</p>
-          <div className="space-y-3">
-            <InfoRow label="Email" value={user?.email ?? '—'} />
-            <InfoRow label="ID" value={user?.id ?? '—'} mono />
-            <InfoRow label="Provedor" value={user?.app_metadata?.provider ?? 'email'} />
+      <div className="p-8 max-w-2xl">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden divide-y divide-gray-100 border border-white/10">
+          <div className="px-6 py-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Conta</p>
+            <div className="space-y-3">
+              <InfoRow label="Email" value={user?.email ?? '—'} />
+              <InfoRow label="ID" value={user?.id ?? '—'} mono />
+              <InfoRow label="Provedor" value={user?.app_metadata?.provider ?? 'email'} />
+            </div>
           </div>
         </div>
       </div>
