@@ -96,17 +96,16 @@ export default function DuplicatasPage() {
   const canProcess = xlsxFile !== null && txtFile !== null && !loading
 
   return (
-    <div className="p-8 max-w-7xl">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="mb-8">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
-          Ferramentas
-        </p>
-        <h2 className="text-2xl font-bold text-gray-900">Conferir Duplicatas</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Compara retorno bancário (XLSX) com fluxo de caixa do ERP (TXT)
-        </p>
+      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
+        <div>
+          <h1 className="text-base font-bold text-gray-900 leading-tight">Conferir Duplicatas</h1>
+          <p className="text-xs text-gray-400 leading-tight mt-0.5">Compara retorno bancário (XLSX) com fluxo de caixa do ERP (TXT)</p>
+        </div>
       </div>
+
+      <div className="px-8 py-8 max-w-7xl">
 
       {/* File inputs */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
@@ -344,6 +343,7 @@ export default function DuplicatasPage() {
           </div>
         </>
       )}
+      </div>
     </div>
   )
 }

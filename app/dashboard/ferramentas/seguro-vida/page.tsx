@@ -149,20 +149,15 @@ export default function SeguroVidaPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-
-        {/* Header */}
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-blue-600 uppercase tracking-widest">
-            Ferramentas
-          </p>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Seguro de Vida
-          </h1>
-          <p className="text-sm text-gray-500">
-            Cruzamento entre o relatório do seguro (PDF) e a planilha de funcionários (XLSX).
-          </p>
+      {/* Header */}
+      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
+        <div>
+          <h1 className="text-base font-bold text-gray-900 leading-tight">Seguro de Vida</h1>
+          <p className="text-xs text-gray-400 leading-tight mt-0.5">Cruzamento entre o relatório do seguro (PDF) e a planilha de funcionários (XLSX).</p>
         </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-8 py-8 space-y-6">
 
         {/* Upload panel */}
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">

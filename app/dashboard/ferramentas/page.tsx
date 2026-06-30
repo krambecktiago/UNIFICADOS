@@ -67,9 +67,12 @@ export default function FerramentasPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Cabeçalho da seção */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6">
-        <h1 className="text-xl font-bold text-gray-900">Ferramentas</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Selecione uma ferramenta para processar seus arquivos</p>
+      {/* h-[68px] alinha com o logo da sidebar */}
+      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
+        <div>
+          <h1 className="text-base font-bold text-gray-900 leading-tight">Ferramentas</h1>
+          <p className="text-xs text-gray-400 leading-tight mt-0.5">Selecione uma ferramenta para processar seus arquivos</p>
+        </div>
       </div>
 
       <div className="px-8 py-8">

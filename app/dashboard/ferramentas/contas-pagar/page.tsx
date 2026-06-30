@@ -169,19 +169,14 @@ export default function ContasPagarPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Page header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-5">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs font-medium text-blue-600 uppercase tracking-widest mb-1">
-            Ferramentas / Contas a Pagar
-          </p>
-          <h1 className="text-xl font-semibold text-gray-900">Resumo Diário de Pagamentos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Preencha os dados e envie o resumo ao canal Discord via webhook.
-          </p>
+      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
+        <div>
+          <h1 className="text-base font-bold text-gray-900 leading-tight">Resumo Diário de Pagamentos</h1>
+          <p className="text-xs text-gray-400 leading-tight mt-0.5">Preencha os dados e envie o resumo ao canal Discord via webhook.</p>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6 pb-32">
+      <div className="max-w-4xl mx-auto px-8 py-8 space-y-6 pb-32">
 
         {/* Section 1: Data de Referência */}
         <section className="bg-white border border-gray-200 rounded-xl p-6">

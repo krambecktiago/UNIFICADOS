@@ -482,15 +482,16 @@ export default function ComparadorDDAPage() {
         }
       `}</style>
 
-      <div className="comparador-root">
-        <header className="page-header">
-          <p className="page-eyebrow">Ferramentas</p>
-          <h1 className="page-title">Comparador DDA</h1>
-          <p className="page-description">
-            Cruza boletos DDA com Contas a Pagar do ERP e classifica cada registro por status de conciliação.
-          </p>
-        </header>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
+          <div>
+            <h1 className="text-base font-bold text-gray-900 leading-tight">Comparador DDA</h1>
+            <p className="text-xs text-gray-400 leading-tight mt-0.5">Cruza boletos DDA com Contas a Pagar do ERP e classifica cada registro por status de conciliação.</p>
+          </div>
+        </div>
 
+        <div className="comparador-root" style={{background: 'transparent', minHeight: 'unset'}}>
         <div className="upload-section">
           <div className="upload-grid">
             <div className="upload-field">
@@ -651,6 +652,7 @@ export default function ComparadorDDAPage() {
             </div>
           </>
         )}
+        </div>
       </div>
     </>
   );
