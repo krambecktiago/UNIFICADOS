@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Conciliação Bancária – 356 Viacredi</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #eef2f7; color: #222; font-size: 13px; }
+
+/* ── Header ────────────────────────────────────────────────── */
+header {
+  background: linear-gradient(135deg, #1f4e79, #2e75b6);
+  color: white; padding: 18px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+}
+header h1 { font-size: 17px; font-weight: 700; letter-spacing: .3px; }
+header .sub { font-size: 11px; opacity: .75; margin-top: 3px; }
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.container { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
+
+/* ── Card ───────────────────────────────────────────────────── */
+.card { background: white; border-radius: 7px; box-shadow: 0 1px 5px rgba(0,0,0,.1); }
+
+/* ── Upload ─────────────────────────────────────────────────── */
+.upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 18px 20px; }
+.upload-box { border: 2px dashed #c2d4e8; border-radius: 6px; padding: 14px 16px; transition: border-color .2s, background .2s; }
+.upload-box:hover { border-color: #2e75b6; background: #f0f6ff; }
+.upload-box label { font-weight: 700; color: #1f4e79; font-size: 12px; display: block; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
+.upload-box input[type=file] { width: 100%; font-size: 12px; cursor: pointer; color: #555; }
+.upload-box input[type=file]::file-selector-button {
+  background: #1f4e79; color: white; border: none; padding: 5px 14px;
+  border-radius: 3px; cursor: pointer; font-size: 11px; margin-right: 10px;
+}
+.file-tag { margin-top: 7px; font-size: 11px; color: #2e75b6; font-weight: 600; min-height: 16px; }
+
+/* ── Botões ─────────────────────────────────────────────────── */
+.actions { padding: 0 20px 18px; display: flex; gap: 10px; align-items: center; }
+button { padding: 9px 22px; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 700; transition: opacity .15s, transform .1s; }
+button:hover:not(:disabled) { opacity: .87; transform: translateY(-1px); }
+button:active:not(:disabled) { transform: translateY(0); }
+button:disabled { opacity: .35; cursor: default; }
+.btn-go     { background: #1f4e79; color: white; }
+.btn-export { background: #217347; color: white; }
+.btn-print  { background: #595959; color: white; }
+
+/* ── Status bar ─────────────────────────────────────────────── */
+.status { padding: 10px 18px; border-radius: 5px; font-size: 13px; margin-bottom: 18px; background: #dce8f5; }
+.status.ok   { background: #d4edda; color: #145a28; }
+.status.warn { background: #fff3cd; color: #856404; }
+.status.err  { background: #f8d7da; color: #721c24; }
+
+/* ── KPI cards ──────────────────────────────────────────────── */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+.kpi { background: white; border-radius: 7px; padding: 14px 16px; box-shadow: 0 1px 5px rgba(0,0,0,.1); border-left: 5px solid #ccc; }
+.kpi.blue   { border-color: #2e75b6; }
+.kpi.green  { border-color: #217347; }
+.kpi.orange { border-color: #c55a11; }
+.kpi.gray   { border-color: #7f7f7f; }
+.kpi-label  { font-size: 11px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.kpi-value  { font-size: 20px; font-weight: 800; margin: 4px 0 2px; color: #111; }
+.kpi-sub    { font-size: 11px; color: #888; }
+
+/* ── Tabs ───────────────────────────────────────────────────── */
+.tabs { display: flex; gap: 3px; margin-bottom: 0; }
+.tab-btn {
+  padding: 9px 18px; border: none; background: #d6e4f0; color: #1f4e79;
+  font-size: 13px; font-weight: 600; border-radius: 6px 6px 0 0; cursor: pointer;
+  display: flex; align-items: center; gap: 7px; transition: background .15s;
+}
+.tab-btn:hover { background: #bee3ff; }
+.tab-btn.active { background: white; box-shadow: 0 -2px 0 #1f4e79 inset; }
+.badge { background: #1f4e79; color: white; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700; }
+.tab-btn.active .badge.miss  { background: #c55a11; }
+.tab-btn.active .badge.ok    { background: #217347; }
+.tab-btn.active .badge.pend  { background: #7f7f7f; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Tabela ─────────────────────────────────────────────────── */
+.tbl-wrap { border-radius: 0 7px 7px 7px; overflow: hidden; box-shadow: 0 1px 5px rgba(0,0,0,.1); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: #1f4e79; color: white; padding: 9px 12px; text-align: left; font-weight: 600; white-space: nowrap; font-size: 12px; }
+th.right { text-align: right; }
+td { padding: 8px 12px; background: white; border-bottom: 1px solid #e2eaf3; vertical-align: middle; }
+tbody tr:nth-child(even) td { background: #f3f8fd; }
+tbody tr:hover td { background: #cfe2f3 !important; }
+.right { text-align: right; font-variant-numeric: tabular-nums; }
+.mono  { font-family: 'Consolas', monospace; font-size: 12px; }
+.empty { color: #aaa; font-style: italic; text-align: center; padding: 28px; }
+
+tfoot td { background: #1f4e79 !important; color: white; font-weight: 700; border: none; padding: 9px 12px; }
+
+/* chips */
+.chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.chip-miss  { background: #fce4d6; color: #843c0c; }
+.chip-ok    { background: #e2efda; color: #1e5c30; }
+.chip-pend  { background: #ededed; color: #555; }
+.chip-group { background: #e8d5f5; color: #5a2d82; }
+
+/* linhas agrupadas */
+.grp-sub td  { background: #faf5ff !important; padding-left: 28px !important; color: #444; border-left: 3px solid #9b59b6; }
+.grp-sum td  { background: #ede0fa !important; font-weight: 700; border-left: 3px solid #9b59b6; font-size: 12px; }
+tbody tr.grp-sub:hover td,
+tbody tr.grp-sum:hover td { background: #dbbef5 !important; }
+
+/* ── Print ──────────────────────────────────────────────────── */
+@media print {
+  body { background: white; font-size: 11px; }
+  .no-print { display: none !important; }
+  .tbl-wrap { box-shadow: none; }
+  .kpi-row  { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Conciliação Bancária – Conta 356 (Viacredi)</h1>
+    <div class="sub" id="headerSub">Selecione os arquivos para iniciar</div>
+  </div>
+  <div class="no-print" style="font-size:11px;opacity:.7;text-align:right;line-height:1.6">
+    ERP: extrato exportado (.txt)<br>Banco: extrato CSV Viacredi
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Upload ---------------------------------------------------- -->
+  <div class="card no-print" style="margin-bottom:14px">
+    <div class="upload-grid">
+      <div class="upload-box">
+        <label>📄 Extrato ERP (.txt)</label>
+        <input type="file" id="erpFile" accept=".txt" onchange="tag(this,'tagErp')">
+        <div class="file-tag" id="tagErp"></div>
+      </div>
+      <div class="upload-box">
+        <label>🏦 Extrato Banco (.csv)</label>
+        <input type="file" id="bankFile" accept=".csv" onchange="tag(this,'tagBank')">
+        <div class="file-tag" id="tagBank"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn-go" onclick="comparar()">▶ Processar Conciliação</button>
+      <button class="btn-export" id="btnExport" onclick="exportar()" disabled>⬇ Exportar Faltando</button>
+      <button class="btn-print" onclick="window.print()">🖨 Imprimir Relatório</button>
+    </div>
+  </div>
+
+  <!-- Status ---------------------------------------------------- -->
+  <div class="status" id="status">Selecione os dois arquivos e clique em Processar.</div>
+
+  <!-- KPIs ------------------------------------------------------ -->
+  <div class="kpi-row" id="kpiRow" style="display:none">
+    <div class="kpi blue">
+      <div class="kpi-label">Total créditos banco</div>
+      <div class="kpi-value" id="kBankTotal">—</div>
+      <div class="kpi-sub" id="kBankCt">—</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">✅ Conciliado</div>
+      <div class="kpi-value" id="kOkTotal">—</div>
+      <div class="kpi-sub" id="kOkCt">—</div>
+    </div>
+    <div class="kpi orange">
+      <div class="kpi-label">⚠ Faltando no ERP</div>
+      <div class="kpi-value" id="kMissTotal">—</div>
+      <div class="kpi-sub" id="kMissCt">—</div>
+    </div>
+    <div class="kpi gray">
+      <div class="kpi-label">⏳ Faltando no Banco</div>
+      <div class="kpi-value" id="kPendTotal">—</div>
+      <div class="kpi-sub" id="kPendCt">—</div>
+    </div>
+  </div>
+
+  <!-- Tabs ------------------------------------------------------ -->
+  <div id="tabArea" style="display:none">
+    <div class="tabs no-print">
+      <button class="tab-btn active" onclick="showTab('miss',this)">
+        ⚠ Faltando no ERP <span class="badge miss" id="bMiss">0</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('ok',this)">
+        ✅ Conciliados <span class="badge ok" id="bOk">0</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('pend',this)">
+        ⏳ Faltando no Banco <span class="badge pend" id="bPend">0</span>
+      </button>
+    </div>
+
+    <!-- Tab: Faltando ------------------------------------------ -->
+    <div class="tab-panel active" id="tab-miss">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:88px">Data</th>
+              <th class="right" style="width:120px">Valor (R$)</th>
+              <th>Favorecido / Descrição</th>
+              <th style="width:115px">Referência Banco</th>
+              <th style="width:90px" class="no-print">Status</th>
+            </tr>
+          </thead>
+          <tbody id="bodyMiss"><tr><td colspan="5" class="empty">Nenhum dado.</td></tr></tbody>
+          <tfoot id="footMiss" style="display:none">
+            <tr>
+              <td>TOTAL</td>
+              <td class="right" id="footMissVal"></td>
+              <td id="footMissCt"></td>
+              <td></td>
+              <td class="no-print"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Conciliados --------------------------------------- -->
+    <div class="tab-panel" id="tab-ok">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:88px">Data</th>
+              <th class="right" style="width:120px">Valor (R$)</th>
+              <th>Favorecido / Descrição</th>
+              <th style="width:115px">Referência Banco</th>
+              <th style="width:110px">Lançamento ERP</th>
+            </tr>
+          </thead>
+          <tbody id="bodyOk"><tr><td colspan="5" class="empty">Nenhum dado.</td></tr></tbody>
+          <tfoot id="footOk" style="display:none">
+            <tr>
+              <td>TOTAL</td>
+              <td class="right" id="footOkVal"></td>
+              <td id="footOkCt"></td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Pendente ------------------------------------------ -->
+    <div class="tab-panel" id="tab-pend">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:88px">Data</th>
+              <th class="right" style="width:120px">Valor (R$)</th>
+              <th style="width:130px">Lançamento ERP</th>
+              <th>Observação</th>
+            </tr>
+          </thead>
+          <tbody id="bodyPend"><tr><td colspan="4" class="empty">Nenhum dado.</td></tr></tbody>
+          <tfoot id="footPend" style="display:none">
+            <tr>
+              <td>TOTAL</td>
+              <td class="right" id="footPendVal"></td>
+              <td id="footPendCt"></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div><!-- /tabArea -->
+
+</div><!-- /container -->
+
+<script>
+// ── Helpers ────────────────────────────────────────────────────────────────
+let rMiss = [], rOk = [], rPend = [];
+
+function tag(input, id) {
+  document.getElementById(id).textContent = input.files[0] ? '📎 ' + input.files[0].name : '';
+}
+
+function convFloat(s) {
+  if (!s || !s.trim()) return 0;
+  return parseFloat(s.trim().replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+function fmtBRL(v) {
+  return 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function readFile(file, enc) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = e => res(e.target.result);
+    r.onerror = () => rej(new Error('Erro ao ler: ' + file.name));
+    r.readAsText(file, enc || 'windows-1252');
+  });
+}
+
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Parsers ────────────────────────────────────────────────────────────────
+function parseErp(text) {
+  const seen = new Set(), result = [];
+  for (const line of text.split('\n')) {
+    const m = line.match(/^ (\d{2}\/\d{2}\/\d{4})\s+(\d{7,})/);
+    if (!m) continue;
+    const [, date, lanc] = m;
+    if (seen.has(lanc)) continue;
+    seen.add(lanc);
+    if (line.length <= 42) continue;
+    const zona = line.substring(42, Math.min(55, line.length));
+    const vm = zona.match(/([\d.]+,\d{2})/);
+    if (vm) {
+      const valor = convFloat(vm[1]);
+      if (valor > 0) result.push({ date, lanc, valor });
+    }
+  }
+  return result;
+}
+
+function parseBank(text) {
+  const result = [];
+  for (const line of text.split('\n').slice(1)) {
+    if (!line.trim()) continue;
+    const p = line.split(';');
+    if (p.length < 5) continue;
+    result.push({
+      date:  p[0].trim(),
+      desc:  p[1].trim(),
+      ref:   p[2].trim(),
+      valor: convFloat(p[3]),
+      tipo:  p[4].trim()
+    });
+  }
+  return result;
+}
+
+// ── Conciliação ────────────────────────────────────────────────────────────
+function reconcile(erp, bank) {
+  const bankC = bank.filter(t => t.tipo === 'C');
+
+  // Índice ERP por chave (data+valor)
+  const erpIdx = {};
+  for (const t of erp) {
+    const k = `${t.date}|${Math.round(t.valor * 100)}`;
+    if (!erpIdx[k]) erpIdx[k] = [];
+    erpIdx[k].push({ ...t, _used: false });
+  }
+
+  // ── Fase 1: matching 1:1 exato ──────────────────────────────
+  const matched = [];
+  const phase1miss = [];
+
+  for (const bt of bankC) {
+    const k = `${bt.date}|${Math.round(bt.valor * 100)}`;
+    const free = (erpIdx[k] || []).find(e => !e._used);
+    if (free) {
+      free._used = true;
+      matched.push({ type: '1:1', banks: [bt], erp: free });
+    } else {
+      phase1miss.push(bt);
+    }
+  }
+
+  // ── Fase 2: matching N:1 (soma de lançamentos banco = 1 ERP) ─
+  // Agrupa sobras do banco por data
+  const byDate = {};
+  for (const t of phase1miss) {
+    if (!byDate[t.date]) byDate[t.date] = [];
+    byDate[t.date].push(t);
+  }
+
+  // Todas as entradas ERP ainda não usadas
+  const erpFree = Object.values(erpIdx).flat().filter(e => !e._used);
+  const usedInGroup = new Set();
+
+  for (const erpE of erpFree) {
+    const cands = (byDate[erpE.date] || []).filter(t => !usedInGroup.has(t));
+    const target = Math.round(erpE.valor * 100);
+    let found = false;
+
+    // Tenta pares
+    outer:
+    for (let i = 0; i < cands.length && !found; i++) {
+      for (let j = i + 1; j < cands.length; j++) {
+        if (Math.round(cands[i].valor * 100) + Math.round(cands[j].valor * 100) === target) {
+          erpE._used = true;
+          usedInGroup.add(cands[i]); usedInGroup.add(cands[j]);
+          matched.push({ type: 'N:1', banks: [cands[i], cands[j]], erp: erpE });
+          found = true; break outer;
+        }
+      }
+    }
+
+    // Tenta trios
+    if (!found) {
+      outer3:
+      for (let i = 0; i < cands.length && !found; i++) {
+        for (let j = i+1; j < cands.length; j++) {
+          for (let k2 = j+1; k2 < cands.length; k2++) {
+            if (Math.round(cands[i].valor*100)+Math.round(cands[j].valor*100)+Math.round(cands[k2].valor*100) === target) {
+              erpE._used = true;
+              usedInGroup.add(cands[i]); usedInGroup.add(cands[j]); usedInGroup.add(cands[k2]);
+              matched.push({ type: 'N:1', banks: [cands[i], cands[j], cands[k2]], erp: erpE });
+              found = true; break outer3;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const missing = phase1miss.filter(t => !usedInGroup.has(t));
+  const pending = Object.values(erpIdx).flat().filter(e => !e._used);
+
+  missing.sort((a,b) => a.date.localeCompare(b.date));
+  matched.sort((a,b) => a.banks[0].date.localeCompare(b.banks[0].date));
+  pending.sort((a,b) => a.date.localeCompare(b.date));
+
+  return { missing, matched, pending };
+}
+
+// ── Renderização ───────────────────────────────────────────────────────────
+function sum(arr, fn) { return arr.reduce((s,t) => s + fn(t), 0); }
+
+function renderMiss(rows) {
+  const tb = document.getElementById('bodyMiss');
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="5" class="empty">✅ Nenhum lançamento faltando!</td></tr>';
+    document.getElementById('footMiss').style.display = 'none';
+    return;
+  }
+  tb.innerHTML = rows.map(t =>
+    `<tr>
+      <td>${t.date}</td>
+      <td class="right"><strong>${fmtBRL(t.valor)}</strong></td>
+      <td>${t.desc}</td>
+      <td class="mono">${t.ref}</td>
+      <td class="no-print"><span class="chip chip-miss">LANÇAR</span></td>
+    </tr>`
+  ).join('');
+  const total = sum(rows, t => t.valor);
+  document.getElementById('footMissVal').textContent = fmtBRL(total);
+  document.getElementById('footMissCt').textContent  = `${rows.length} lançamento(s)`;
+  document.getElementById('footMiss').style.display  = '';
+}
+
+function renderOk(rows) {
+  const tb = document.getElementById('bodyOk');
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="5" class="empty">Nenhum item conciliado.</td></tr>';
+    document.getElementById('footOk').style.display = 'none';
+    return;
+  }
+  let html = '';
+  for (const r of rows) {
+    if (r.type === '1:1') {
+      const b = r.banks[0];
+      html += `<tr>
+        <td>${b.date}</td>
+        <td class="right">${fmtBRL(b.valor)}</td>
+        <td>${b.desc}</td>
+        <td class="mono">${b.ref}</td>
+        <td class="mono">${r.erp.lanc}</td>
+      </tr>`;
+    } else {
+      // N:1 — várias linhas do banco somam um lançamento ERP
+      const total = r.banks.reduce((s,b) => s + b.valor, 0);
+      html += r.banks.map(b =>
+        `<tr class="grp-sub">
+          <td>${b.date}</td>
+          <td class="right">${fmtBRL(b.valor)}</td>
+          <td>${b.desc} <span class="chip chip-group">agrupado</span></td>
+          <td class="mono">${b.ref}</td>
+          <td class="mono">${r.erp.lanc}</td>
+        </tr>`
+      ).join('') +
+      `<tr class="grp-sum">
+        <td></td>
+        <td class="right">= ${fmtBRL(total)}</td>
+        <td colspan="3" style="font-size:11px;color:#5a2d82">
+          Soma de ${r.banks.length} lançamentos = ERP ${r.erp.lanc} (${fmtBRL(r.erp.valor)})
+        </td>
+      </tr>`;
+    }
+  }
+  tb.innerHTML = html;
+  const total = sum(rows, r => r.banks.reduce((s,b) => s+b.valor, 0));
+  const nBankLines = sum(rows, r => r.banks.length);
+  document.getElementById('footOkVal').textContent = fmtBRL(total);
+  document.getElementById('footOkCt').textContent  = `${rows.length} lançamento(s) ERP · ${nBankLines} linha(s) banco`;
+  document.getElementById('footOk').style.display  = '';
+}
+
+function renderPend(rows) {
+  const tb = document.getElementById('bodyPend');
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="4" class="empty">Nenhum item pendente.</td></tr>';
+    document.getElementById('footPend').style.display = 'none';
+    return;
+  }
+  tb.innerHTML = rows.map(t =>
+    `<tr>
+      <td>${t.date}</td>
+      <td class="right">${fmtBRL(t.valor)}</td>
+      <td class="mono">${t.lanc}</td>
+      <td><span class="chip chip-pend">Lançado no ERP, não aparece no banco ainda</span></td>
+    </tr>`
+  ).join('');
+  const total = sum(rows, t => t.valor);
+  document.getElementById('footPendVal').textContent = fmtBRL(total);
+  document.getElementById('footPendCt').textContent  = `${rows.length} lançamento(s)`;
+  document.getElementById('footPend').style.display  = '';
+}
+
+// ── Principal ──────────────────────────────────────────────────────────────
+async function comparar() {
+  const erpF  = document.getElementById('erpFile').files[0];
+  const bankF = document.getElementById('bankFile').files[0];
+  const st    = document.getElementById('status');
+
+  if (!erpF || !bankF) {
+    st.className = 'status err';
+    st.textContent = '⚠ Selecione os dois arquivos antes de processar.';
+    return;
+  }
+
+  st.className  = 'status';
+  st.textContent = '⏳ Processando...';
+
+  try {
+    const [erpText, bankText] = await Promise.all([
+      readFile(erpF,  'windows-1252'),
+      readFile(bankF, 'windows-1252')
+    ]);
+
+    const erp  = parseErp(erpText);
+    const bank = parseBank(bankText);
+    const { missing, matched, pending } = reconcile(erp, bank);
+
+    rMiss = missing; rOk = matched; rPend = pending;
+
+    // KPIs
+    const tBank = sum(bank.filter(t => t.tipo==='C'), t => t.valor);
+    const tMiss = sum(missing, t => t.valor);
+    const tOk   = sum(matched, r => r.banks.reduce((s,b) => s+b.valor, 0));
+    const tPend = sum(pending, t => t.valor);
+    const nBank = bank.filter(t => t.tipo==='C').length;
+
+    document.getElementById('kBankTotal').textContent = fmtBRL(tBank);
+    document.getElementById('kBankCt').textContent    = `${nBank} crédito(s)`;
+    document.getElementById('kOkTotal').textContent   = fmtBRL(tOk);
+    document.getElementById('kOkCt').textContent      = `${matched.length} lançamento(s) ERP`;
+    document.getElementById('kMissTotal').textContent = fmtBRL(tMiss);
+    document.getElementById('kMissCt').textContent    = `${missing.length} lançamento(s)`;
+    document.getElementById('kPendTotal').textContent = fmtBRL(tPend);
+    document.getElementById('kPendCt').textContent    = `${pending.length} lançamento(s)`;
+
+    document.getElementById('bMiss').textContent = missing.length;
+    document.getElementById('bOk').textContent   = matched.length;
+    document.getElementById('bPend').textContent = pending.length;
+
+    // Tabelas
+    renderMiss(missing);
+    renderOk(matched);
+    renderPend(pending);
+
+    // Show sections
+    document.getElementById('kpiRow').style.display  = '';
+    document.getElementById('tabArea').style.display = '';
+
+    // Status
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    document.getElementById('headerSub').textContent =
+      `Gerado em ${hoje}  ·  ERP: ${erpF.name}  ·  Banco: ${bankF.name}`;
+
+    if (missing.length === 0) {
+      st.className  = 'status ok';
+      st.textContent = `✅ Tudo conciliado! ${matched.length} lançamentos conferem. ERP: ${fmtBRL(sum(erp, t=>t.valor))} · Banco: ${fmtBRL(tBank)}`;
+    } else {
+      st.className  = 'status warn';
+      st.textContent = `⚠ ${missing.length} lançamento(s) faltando no ERP · ${fmtBRL(tMiss)} · ${matched.length} conciliados · ${pending.length} faltando no banco`;
+    }
+
+    document.getElementById('btnExport').disabled = (missing.length === 0);
+
+  } catch (e) {
+    st.className  = 'status err';
+    st.textContent = 'Erro: ' + e.message;
+  }
+}
+
+// ── Exportar ───────────────────────────────────────────────────────────────
+function exportar() {
+  if (!rMiss.length) return;
+  const rows = ['﻿Data;Descrição;Referência Banco;Valor (R$)'];
+  for (const t of rMiss) {
+    rows.push(`${t.date};${t.desc};${t.ref};${t.valor.toFixed(2).replace('.', ',')}`);
+  }
+  const blob = new Blob([rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Faltando_ERP_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.csv';
+  a.click();
+}
+</script>
+</body>
+</html>

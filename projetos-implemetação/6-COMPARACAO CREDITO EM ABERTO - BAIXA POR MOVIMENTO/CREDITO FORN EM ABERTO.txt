@@ -1,0 +1,524 @@
+ LOJA 01 - MATRIZ                                   29/06/2026 17:06:52  Pag:1  
+
+                       Créditos do fornecedor em aberto                       
+
+ Fornecedor:      1466 - CARROCERIAS LINSHALM LTDA                         
+ Emissão    Lançamento            Valor            Saldo
+ 04/11/2024                       63,20            63,20
+ Total do fornecedor                                               63,20
+
+ Fornecedor:      1638 - CORCERAMA COM DE AUTO PECAS LTDA                  
+ Emissão    Lançamento            Valor            Saldo
+ 15/08/2024                       11,96            11,96
+ Total do fornecedor                                               11,96
+
+ Fornecedor:      3476 - RECAP RENOVADORA CATARINENSE DE PNEUS LTDA        
+ Emissão    Lançamento            Valor            Saldo
+ 27/07/2023                      938,00           938,00
+ Total do fornecedor                                              938,00
+
+ Fornecedor:      3655 - SCHERER SA COMERCIO DE AUTOPECAS                  
+ Emissão    Lançamento            Valor            Saldo
+ 04/07/2024                      148,40           148,40
+ 04/09/2024                      624,00           624,00
+ Total do fornecedor                                              772,40
+
+ Fornecedor:      4637 - ALCIMAR KRAMBECK                                  
+ Emissão    Lançamento            Valor            Saldo
+ 12/03/2026    3276666       124.513,00       124.513,00
+ Total do fornecedor                                          124.513,00
+
+ Fornecedor:      5387 - AUTOTRAVI BORRACHAS E PLASTICOS LTDA              
+ Emissão    Lançamento            Valor            Saldo
+ 22/10/2025                       39,48            39,48
+ Total do fornecedor                                               39,48
+
+ Fornecedor:      5537 - D PAULA INDUSTRIA E COMERCIO LTDA                 
+ Emissão    Lançamento            Valor            Saldo
+ 24/04/2025                       28,93            28,93
+ 24/04/2025                       31,62            31,62
+ 24/04/2025                       31,69            31,69
+ 24/04/2025                       89,16            89,16
+ 24/04/2025                       97,01            97,01
+ 24/04/2025                      137,35           137,35
+ 24/04/2025                      205,69           205,69
+ Total do fornecedor                                              621,45
+
+ Fornecedor:      5570 - TC AUTO TECNICA LTDA                              
+ Emissão    Lançamento            Valor            Saldo
+ 14/08/2024                      221,01           221,01
+ Total do fornecedor                                              221,01
+
+ Fornecedor:      5573 - HT COMPONENTES AUTOMOTIVOS LTDA                   
+ Emissão    Lançamento            Valor            Saldo
+ 13/11/2024                       51,01            51,01
+ 07/05/2025                       21,01            21,01
+ Total do fornecedor                                               72,02
+
+============================================================
+ LOJA 01 - MATRIZ                                   29/06/2026 17:06:52  Pag:2  
+
+                       Créditos do fornecedor em aberto                       
+
+ Fornecedor:      5926 - FARBEN SA INDUSTRIA QUIMICA                       
+ Emissão    Lançamento            Valor            Saldo
+ 12/05/2026                      127,07           127,07
+ Total do fornecedor                                              127,07
+
+ Fornecedor:      6393 - ATRIA LUB COMERCIO DE LUBRIFICANTES LTDA          
+ Emissão    Lançamento            Valor            Saldo
+ 08/05/2026                    7.191,97         7.191,97
+ Total do fornecedor                                            7.191,97
+
+ Fornecedor:      6826 - ZM S/A                                            
+ Emissão    Lançamento            Valor            Saldo
+ 06/03/2025                       55,76            55,76
+ Total do fornecedor                                               55,76
+
+ Fornecedor:      6943 - BARIGUI VEICULOS LTDA                             
+ Emissão    Lançamento            Valor            Saldo
+ 20/01/2025                      225,62           225,62
+ 06/06/2026                       41,09            41,09
+ Total do fornecedor                                              266,71
+
+ Fornecedor:      7530 - UNIVERSAL AUTOMOTIVE SYSTEMS S/A                  
+ Emissão    Lançamento            Valor            Saldo
+ 16/08/2024                    2.105,28         2.105,28
+ 19/08/2024                      478,80           478,80
+ 07/04/2025                    1.208,90         1.208,90
+ 30/06/2025                    1.023,27             0,01
+ Total do fornecedor                                            3.792,99
+
+ Fornecedor:      7872 - WILSON KRAMBECK JUNIOR                            
+ Emissão    Lançamento            Valor            Saldo
+ 12/03/2026    3276668       124.513,00       124.513,00
+ Total do fornecedor                                          124.513,00
+
+ Fornecedor:      7985 - REDE ANCORA SC IMP. EXP E DISTRIB DE AUTOPECAS SA 
+ Emissão    Lançamento            Valor            Saldo
+ 26/01/2026                       72,12            72,12
+ 03/02/2026                       11,28            11,28
+ 09/02/2026                       37,23            37,23
+ 11/02/2026                       76,56            76,56
+ 13/02/2026                      180,81           180,81
+ 02/03/2026                      115,82           115,82
+ 02/03/2026                      138,66           138,66
+ 02/03/2026                      151,04           151,04
+ 02/03/2026                      339,92           339,92
+ 14/05/2026                      144,74           144,74
+ 15/05/2026                      531,03           531,03
+ 25/05/2026                      137,90           137,90
+ 25/05/2026                      280,58           280,58
+ 11/06/2026                       37,80            37,80
+ 23/06/2026                       96,18            96,18
+ 24/06/2026                      142,10           142,10
+ Total do fornecedor                                            2.493,77
+
+============================================================
+ LOJA 01 - MATRIZ                                   29/06/2026 17:06:52  Pag:3  
+
+                       Créditos do fornecedor em aberto                       
+
+ Fornecedor:      8249 - RUFATO DISTR DE PECAS E ACESSORIOS LTDA EPP       
+ Emissão    Lançamento            Valor            Saldo
+ 03/04/2024                      359,57           359,57
+ 10/12/2025                      219,91           219,91
+ Total do fornecedor                                              579,48
+
+ Fornecedor:     16064 - POLO COMERCIO INTERNACIONAL LTDA                  
+ Emissão    Lançamento            Valor            Saldo
+ 17/06/2025                      113,05           113,05
+ 17/06/2025                      241,00           241,00
+ 17/06/2025                      438,00           438,00
+ 10/12/2025                      116,26             0,01
+ 10/12/2025                      964,31             0,01
+ Total do fornecedor                                              792,07
+
+ Fornecedor:     16094 - VIRTUAL PLASTICOS LTDA                            
+ Emissão    Lançamento            Valor            Saldo
+ 20/02/2024                      262,82           262,82
+ Total do fornecedor                                              262,82
+
+ Fornecedor:     17314 - POWER STOP IND E COM DE COMPON AUTOMOTIVOS LTDA   
+ Emissão    Lançamento            Valor            Saldo
+ 10/02/2025                      447,23           447,23
+ Total do fornecedor                                              447,23
+
+ Fornecedor:     19069 - INDALARME SISTEMAS ELETRONICOS LTDA ME            
+ Emissão    Lançamento            Valor            Saldo
+ 10/06/2025    3020739           313,50           313,50
+ Total do fornecedor                                              313,50
+
+ Fornecedor:     20055 - GIRANDO COM DE PECAS LTDA                         
+ Emissão    Lançamento            Valor            Saldo
+ 25/11/2025                    2.179,02         2.179,02
+ Total do fornecedor                                            2.179,02
+
+ Fornecedor:     20481 - AMP INDUSTRIA E COMERCIO DE PECAS AUTOMOTIVAS LTDA
+ Emissão    Lançamento            Valor            Saldo
+ 06/03/2026                      678,25           678,25
+ Total do fornecedor                                              678,25
+
+ Fornecedor:     20553 - KOLINA BLU MOTORS LTDA                            
+ Emissão    Lançamento            Valor            Saldo
+ 17/07/2024                       33,00            33,00
+ Total do fornecedor                                               33,00
+
+ Fornecedor:     20662 - AXALTA COATING SYSTEMS BRASIL LTDA                
+ Emissão    Lançamento            Valor            Saldo
+ 07/05/2026                      147,34           147,34
+ 07/05/2026                      262,22           262,22
+ 07/05/2026                    1.877,67         1.877,67
+ 07/05/2026                    4.889,42         4.889,42
+ 12/06/2026                   14.698,96        14.698,96
+ Total do fornecedor                                           21.875,61
+
+============================================================
+ LOJA 01 - MATRIZ                                   29/06/2026 17:06:52  Pag:4  
+
+                       Créditos do fornecedor em aberto                       
+
+ Fornecedor:     23630 - ISAPA IMPORTACAO E COMERCIO LTDA                  
+ Emissão    Lançamento            Valor            Saldo
+ 13/05/2024                      287,37           220,73
+ 09/12/2025                    1.454,07         1.051,87
+ 10/04/2026                      483,24           483,24
+ 15/06/2026                      813,38           813,38
+ Total do fornecedor                                            2.569,22
+
+ Fornecedor:     24364 - ROBERLO DO BRASIL IND COM DIS PROD QUIMICOS LTDA  
+ Emissão    Lançamento            Valor            Saldo
+ 12/11/2025                   11.104,79           753,15
+ Total do fornecedor                                              753,15
+
+ Fornecedor:     27602 - GRAFICA TIMBO LTDA ME                             
+ Emissão    Lançamento            Valor            Saldo
+ 13/06/2025    3024657            29,00            29,00
+ Total do fornecedor                                               29,00
+
+ Fornecedor:     29471 - EVC INDUSTRIAL LTDA                               
+ Emissão    Lançamento            Valor            Saldo
+ 19/05/2026                    1.285,67         1.285,67
+ Total do fornecedor                                            1.285,67
+
+ Fornecedor:     30544 - CAU BORRACHAS DO BRASIL COMERCIAL LTDA            
+ Emissão    Lançamento            Valor            Saldo
+ 18/09/2024                    1.051,07         1.051,07
+ Total do fornecedor                                            1.051,07
+
+ Fornecedor:     32075 - JURID DO BRASIL SISTEMAS AUTOMOTIVOS LTDA         
+ Emissão    Lançamento            Valor            Saldo
+ 25/04/2025                      239,40           239,40
+ 05/06/2025                      199,93           199,93
+ 04/07/2025    3045742        71.488,36         1.168,87
+ 23/02/2026                      225,83           225,83
+ Total do fornecedor                                            1.834,03
+
+ Fornecedor:     32346 - UNIVEL INDUSTRIA METALURGICA LTDA                 
+ Emissão    Lançamento            Valor            Saldo
+ 08/04/2025                    1.660,09         1.660,09
+ 15/05/2026                      345,65           345,65
+ 11/06/2026                    1.309,30         1.309,30
+ Total do fornecedor                                            3.315,04
+
+ Fornecedor:     35885 - PC FIXACOES EIRELLI ME                            
+ Emissão    Lançamento            Valor            Saldo
+ 19/11/2024                       12,82            12,82
+ Total do fornecedor                                               12,82
+
+ Fornecedor:     37605 - SUL SCAPE COMERCIO E DISTRIB. DE AUTOPECAS LTDA   
+ Emissão    Lançamento            Valor            Saldo
+ 20/01/2025                      191,09           191,09
+ 14/10/2025                      566,53           566,53
+ Total do fornecedor                                              757,62
+
+============================================================
+ LOJA 01 - MATRIZ                                   29/06/2026 17:06:52  Pag:5  
+
+                       Créditos do fornecedor em aberto                       
+
+ Fornecedor:     38115 - YM DISTRIBUIDORA DE AUTO PECAS EIRELI             
+ Emissão    Lançamento            Valor            Saldo
+ 22/05/2026                    2.204,40         2.204,40
+ Total do fornecedor                                            2.204,40
+
+ Fornecedor:     40919 - SPARK AG SOFTWARE E AUTOMACAO EIRELE ME           
+ Emissão    Lançamento            Valor            Saldo
+ 17/04/2025    2969508           120,00           120,00
+ Total do fornecedor                                              120,00
+
+ Fornecedor:     41213 - IRMAOS PEMADA AUTOMOTIVE SYSTEMS LTDA             
+ Emissão    Lançamento            Valor            Saldo
+ 09/06/2025                      199,90           199,90
+ Total do fornecedor                                              199,90
+
+ Fornecedor:     41274 - NOTUS SISTEMAS TERMICOS DO BRASIL LTDA            
+ Emissão    Lançamento            Valor            Saldo
+ 19/08/2025                      162,35           162,35
+ 19/08/2025                      176,38           176,38
+ 19/08/2025                      186,40           186,40
+ 15/01/2026                      144,51           144,51
+ 15/01/2026                      586,35           586,35
+ 12/06/2026                      186,40           186,40
+ 12/06/2026                      290,57           290,57
+ 12/06/2026                      353,51           353,51
+ 12/06/2026                      377,46           377,46
+ Total do fornecedor                                            2.463,93
+
+ Fornecedor:     42238 - GLOBALPLASTIC AUTOPECAS LTDA                      
+ Emissão    Lançamento            Valor            Saldo
+ 03/06/2026                      109,17           109,17
+ 03/06/2026                      380,08           380,08
+ 03/06/2026                      577,51           577,51
+ 03/06/2026                    1.046,93         1.046,93
+ Total do fornecedor                                            2.113,69
+
+ Fornecedor:     43096 - LOS HERMANOS COMERCIAL LOGIST E ARMAZ LTDA        
+ Emissão    Lançamento            Valor            Saldo
+ 25/11/2024                      425,00           425,00
+ Total do fornecedor                                              425,00
+
+ Fornecedor:     43773 - KOSTAL ELETROMECANICA LTDA                        
+ Emissão    Lançamento            Valor            Saldo
+ 24/02/2026                      337,29           337,29
+ 24/02/2026                      537,14           537,14
+ Total do fornecedor                                              874,43
+
+ Fornecedor:     44447 - DISTRIBUIDORA FORTA LTDA                          
+ Emissão    Lançamento            Valor            Saldo
+ 13/04/2026    3307385         2.427,97             0,01
+ Total do fornecedor                                                0,01
+
+============================================================
+ LOJA 01 - MATRIZ                                   29/06/2026 17:06:52  Pag:6  
+
+                       Créditos do fornecedor em aberto                       
+
+ Fornecedor:     44735 - MHT IND E COM DE COMPONENTES AUTOMOTIVOS LTDA     
+ Emissão    Lançamento            Valor            Saldo
+ 13/03/2026                      564,89           564,89
+ Total do fornecedor                                              564,89
+
+ Fornecedor:     45324 - LP CELULARES LTDA ME                              
+ Emissão    Lançamento            Valor            Saldo
+ 26/07/2024    2708491            84,00            84,00
+ Total do fornecedor                                               84,00
+
+ Fornecedor:     46015 - BSB ROLAMENTOS LTDA                               
+ Emissão    Lançamento            Valor            Saldo
+ 14/03/2025                      535,25           534,76
+ 08/05/2026                    1.030,01         1.030,01
+ Total do fornecedor                                            1.564,77
+
+ Fornecedor:     48407 - ROBERTA MARA HERNANDES T B COM. DE AUTO PEÇAS ME  
+ Emissão    Lançamento            Valor            Saldo
+ 23/02/2026    3257206         2.700,50         2.700,50
+ Total do fornecedor                                            2.700,50
+
+ Fornecedor:     51553 - FUNILARIA JUNG LTDA                               
+ Emissão    Lançamento            Valor            Saldo
+ 09/05/2022    2074649         9.050,00           181,91
+ Total do fornecedor                                              181,91
+
+ Fornecedor:     53701 - GLOBO COMERCIO DE AUTOMOVEIS E PECAS LTDA         
+ Emissão    Lançamento            Valor            Saldo
+ 02/05/2024                      142,50           142,50
+ Total do fornecedor                                              142,50
+
+ Fornecedor:     55728 - MONTKAR COMER E DISTRIBUIDORA DE AUTO PECAS LTDA  
+ Emissão    Lançamento            Valor            Saldo
+ 10/10/2024                      156,65           156,65
+ 27/05/2026                    1.048,27         1.048,27
+ Total do fornecedor                                            1.204,92
+
+ Fornecedor:     57351 - METRONORTE COMERCIAL DE VEICULOS LTDA             
+ Emissão    Lançamento            Valor            Saldo
+ 02/06/2025                    1.326,20         1.326,20
+ 20/04/2026                      369,39           369,39
+ Total do fornecedor                                            1.695,59
+
+ Fornecedor:     58216 - ALIANCA TECNOLOGIA S/A                            
+ Emissão    Lançamento            Valor            Saldo
+ 12/06/2026    3375186           116,96           116,96
+ Total do fornecedor                                              116,96
+
+ Fornecedor:     63183 - BASTOS JUNTAS INDUSTRIA DE AUTOPECAS LTDA         
+ Emissão    Lançamento            Valor            Saldo
+ 20/01/2026                    1.287,80         1.287,80
+ 25/02/2026                      138,66           138,66
+ Total do fornecedor                                            1.426,46
+
+============================================================
+ LOJA 01 - MATRIZ                                   29/06/2026 17:06:52  Pag:7  
+
+                       Créditos do fornecedor em aberto                       
+
+ Fornecedor:     65138 - UNIRON INDUSTRIA E COMERCIO LTDA                  
+ Emissão    Lançamento            Valor            Saldo
+ 28/01/2025                      333,91           333,91
+ 05/03/2025                      104,22           104,22
+ Total do fornecedor                                              438,13
+
+ Fornecedor:     71925 - COMPANHIA BRASILEIRA DE DISTRIB. AUTOMOTIVA S.A   
+ Emissão    Lançamento            Valor            Saldo
+ 30/08/2024                      182,49           182,49
+ Total do fornecedor                                              182,49
+
+ Fornecedor:     77701 - FORTBRAS AUTOPECAS S.A.                           
+ Emissão    Lançamento            Valor            Saldo
+ 26/02/2024                      422,11           422,11
+ Total do fornecedor                                              422,11
+
+ Fornecedor:     92326 - 50.908.526 SIDNEI FERNANDES DE LARA               
+ Emissão    Lançamento            Valor            Saldo
+ 08/09/2025    3107175         1.000,00           701,00
+ Total do fornecedor                                              701,00
+
+ Fornecedor:     98468 - IMPORTWAY COMERCIO IMPORTACAO E EXPORTACAO LTDA   
+ Emissão    Lançamento            Valor            Saldo
+ 28/08/2024                    1.908,94         1.908,94
+ 10/09/2024                    1.908,94         1.908,94
+ 13/02/2026                    1.807,54         1.807,54
+ Total do fornecedor                                            5.625,42
+
+ Fornecedor:    102603 - METALSIDER LTDA                                   
+ Emissão    Lançamento            Valor            Saldo
+ 12/09/2024                      798,17           798,17
+ Total do fornecedor                                              798,17
+
+ Fornecedor:    113975 - NIDEC GLOBAL APPLIANCE BRASIL LTDA                
+ Emissão    Lançamento            Valor            Saldo
+ 18/07/2025                    1.912,64         1.912,64
+ 08/12/2025                    1.754,39         1.754,39
+ 03/06/2026                    2.419,58         2.419,58
+ 23/06/2026                    1.224,45         1.224,45
+ Total do fornecedor                                            7.311,06
+
+ Fornecedor:    115645 - REDE ANCORA ES IMPORTADORA EXPORTADORA E DISTR SA 
+ Emissão    Lançamento            Valor            Saldo
+ 06/02/2024                      867,89           867,89
+ 06/02/2024                    1.759,27         1.759,27
+ 08/02/2024                       13,72            13,72
+ 08/02/2024                       39,31            39,31
+ 08/02/2024                       56,20            56,20
+ 08/02/2024                      113,88           113,88
+ 08/02/2024                      383,60           383,60
+ 08/02/2024                    1.274,62         1.274,62
+ 10/04/2024                       42,88            42,88
+ 10/04/2024                      172,23           172,23
+ 10/04/2024                    2.262,40         2.262,40
+ 06/05/2024                       59,10            59,10
+ 06/05/2024                       65,87            65,87
+============================================================
+ LOJA 01 - MATRIZ                                   29/06/2026 17:06:52  Pag:8  
+
+                       Créditos do fornecedor em aberto                       
+
+ Fornecedor:    115645 - REDE ANCORA ES IMPORTADORA EXPORTADORA E DISTR SA 
+ Emissão    Lançamento            Valor            Saldo
+ 06/05/2024                      103,87           103,87
+ 06/05/2024                      211,51           211,51
+ 06/05/2024                      243,13           243,13
+ 06/05/2024                      392,18           392,18
+ 06/05/2024                      392,22           392,22
+ 06/05/2024                      619,29           619,29
+ 06/05/2024                      920,82           920,82
+ 06/05/2024                      987,21           987,21
+ 06/05/2024                    2.798,27         2.798,27
+ 07/05/2025    2985986         5.347,30         5.347,30
+ 21/05/2025    3000366        31.014,97           486,28
+ 12/11/2025                       54,64            54,64
+ 28/04/2026                      394,26           394,26
+ 23/06/2026    3387541         3.295,86         3.295,86
+ 23/06/2026    3387542           738,97           738,97
+ 24/06/2026    3388711        29.009,70         8.389,20
+ Total do fornecedor                                           32.485,98
+
+ Fornecedor:    117659 - ITASCAP INDUSTRIA DE AUTOPECAS LTDA               
+ Emissão    Lançamento            Valor            Saldo
+ 07/02/2024                      671,77           671,77
+ 10/09/2024                      651,54           651,54
+ Total do fornecedor                                            1.323,31
+
+ Fornecedor:    139402 - STOCK MX PRODUTOS AUTOMOTIVOS LTDA                
+ Emissão    Lançamento            Valor            Saldo
+ 13/03/2026                      522,96           522,96
+ 17/04/2026                    6.381,12         6.381,12
+ Total do fornecedor                                            6.904,08
+
+ Fornecedor:    139788 - RETIFICADORA DE MOTORES FOZ LTDA                  
+ Emissão    Lançamento            Valor            Saldo
+ 18/03/2026                       87,10            87,10
+ Total do fornecedor                                               87,10
+
+ Fornecedor:    147331 - AUTOPLUS SC DISTRIBUIDORA LTDA                    
+ Emissão    Lançamento            Valor            Saldo
+ 10/10/2025                      576,46            96,44
+ 26/01/2026    3227472           239,98           239,98
+ 26/02/2026    3261286           240,43           240,43
+ Total do fornecedor                                              576,85
+
+ Fornecedor:    161157 - METALURGICA D S LTDA                              
+ Emissão    Lançamento            Valor            Saldo
+ 25/04/2025                      319,41           319,41
+ 30/07/2025                      475,92           475,92
+ Total do fornecedor                                              795,33
+
+ Fornecedor:    162607 - DAHLKE CONFECCOES LTDA                            
+ Emissão    Lançamento            Valor            Saldo
+ 15/04/2026    3310519         5.333,67             0,01
+ Total do fornecedor                                                0,01
+
+============================================================
+ LOJA 01 - MATRIZ                                   29/06/2026 17:06:52  Pag:9  
+
+                       Créditos do fornecedor em aberto                       
+
+ Fornecedor:    164291 - 34.565.115 DOUGLAS COELHO                         
+ Emissão    Lançamento            Valor            Saldo
+ 12/12/2025    3192737           175,79           175,79
+ Total do fornecedor                                              175,79
+
+ Fornecedor:    178520 - EMBREPAR AUTOMOTIVA                               
+ Emissão    Lançamento            Valor            Saldo
+ 08/04/2026                      299,40           299,40
+ Total do fornecedor                                              299,40
+
+ Fornecedor:    193496 - FLASH TECNOLOGIA E INSTITUIÇÃO DE PAGAMENTO LTDA  
+ Emissão    Lançamento            Valor            Saldo
+ 29/06/2026    3392437        19.575,00        19.575,00
+ Total do fornecedor                                           19.575,00
+
+ Fornecedor:    196125 - RANALLE COMPONENTES AUTOMOTICO LTDA.              
+ Emissão    Lançamento            Valor            Saldo
+ 12/03/2026                      309,90           309,90
+ Total do fornecedor                                              309,90
+
+ Fornecedor:    220848 - KOSTAL ELETROMECANICA LTDA                        
+ Emissão    Lançamento            Valor            Saldo
+ 24/02/2026                      179,42           179,42
+ Total do fornecedor                                              179,42
+
+ Fornecedor:    222000 - R NETO DO BRASIL PECAS AUTOMOTIVAS LTDA           
+ Emissão    Lançamento            Valor            Saldo
+ 19/06/2026                      245,33           245,33
+ Total do fornecedor                                              245,33
+
+ Fornecedor:    231806 - ROYALSTAR DO BRASIL INDUSTRIA E COMERCIO DE COMPON
+ Emissão    Lançamento            Valor            Saldo
+ 19/01/2026                      409,25           409,25
+ Total do fornecedor                                              409,25
+
+ Fornecedor:    259584 - TECLUB INDUSTRIA E COMERCIO DE LUBRIFICANTES LTDA 
+ Emissão    Lançamento            Valor            Saldo
+ 13/05/2026                    1.560,05         1.560,05
+ 18/06/2026                      438,56           438,56
+ Total do fornecedor                                            1.998,61
+
+ Fornecedor:    260762 - FUJIOKA ELETRO IMAGEM S.A                         
+ Emissão    Lançamento            Valor            Saldo
+ 22/06/2026    3384925         3.004,77         3.004,77
+ Total do fornecedor                                            3.004,77
+
+ Total geral                                                          406.394,76
+============================================================

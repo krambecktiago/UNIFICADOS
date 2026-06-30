@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conciliação Cartão × Duplicatas</title>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=74yguI2QKeTpe4LAwPefAEZdzpcEuqZRPvIXH0H1YfIMadnCI1xbf1VWOOiYNrqhR2pztlC4cH6Y26UgPkp1AAeG05NT8b4S_gfeKfC26NlfQ_aDu97Gh5GyT1xoBuXeGgr9GvyLxSjxSWBj_WhFU0nHrWw1pY4Os-wfilt_HYL4dW1LIdVktnLNbz99DUVB4fSfZHmOlvcA8vkJYxRyeStQetoo60k_z6G6Qg9MQqm8a33bZHpQ5dR3BvxTSK0uJRqo67F34VBZXtlKqTxnDj96FX6L0w0igODB3G45ZKc" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jZG4uZGlzY29yZGFwcC5jb20vYXR0YWNobWVudHMvMTM5MzMwNTYxMDQ4OTAzNjkwNC8xNTE4OTY2MTIxMTc1MzE4NTU4L0NvbmNpbGlhY2FvX0NhcnRhb19EdXBsaWNhdGFzLmh0bWw_ZXg9NmEzZTc5ZjAmaXM9NmEzZDI4NzAmaG09Nzk0M2ZiZmFjNzc3NWJkMTJiNWY0ODI0M2NhNzE1ZjEyNWQ4YjdiNDgyNzZiMWZkMzExMDQ2N2RmZTA1MjExNiY"/><style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;background:#f4f5f7;color:#222;min-height:100vh}
+  .top{background:#1F4E79;color:#fff;padding:18px 32px}
+  .top h1{font-size:17px;font-weight:600;margin-bottom:2px}
+  .top p{font-size:13px;opacity:.7}
+  .wrap{max-width:1020px;margin:0 auto;padding:28px 20px}
+
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+  .upload-box{background:#fff;border:1.5px dashed #bbb;border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
+  .upload-box:hover,.upload-box.over{border-color:#1F4E79;background:#eef3fa}
+  .upload-box.done{border-style:solid;border-color:#1a7a3e;background:#f0faf4}
+  .upload-box input{display:none}
+  .upload-box .icon{font-size:28px;margin-bottom:6px}
+  .upload-box .label{font-size:14px;font-weight:600;color:#333;margin-bottom:3px}
+  .upload-box .sub{font-size:12px;color:#999}
+  .upload-box .fname{font-size:12px;color:#1a7a3e;margin-top:5px;font-weight:600}
+
+  .btn-run{display:block;width:100%;padding:12px;background:#1F4E79;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:28px;transition:background .2s}
+  .btn-run:hover{background:#163c5e}
+  .btn-run:disabled{background:#bbb;cursor:not-allowed}
+
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+  .scard{background:#fff;border-radius:8px;padding:14px 16px;border:0.5px solid #e0e0e0}
+  .scard .sl{font-size:11px;color:#888;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+  .scard .sv{font-size:20px;font-weight:700}
+  .scard .ss{font-size:11px;color:#bbb;margin-top:3px}
+  .c-blue .sv{color:#1F4E79}
+  .c-green .sv{color:#15803d}
+  .c-amber .sv{color:#b45309}
+  .c-red   .sv{color:#b91c1c}
+
+  .section-title{font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;margin:24px 0 10px;padding-left:2px;border-left:3px solid #ccc;padding-left:8px}
+  .section-title.s-green{border-color:#15803d;color:#15803d}
+  .section-title.s-amber{border-color:#b45309;color:#b45309}
+  .section-title.s-red  {border-color:#b91c1c;color:#b91c1c}
+
+  /* card de cada duplicata */
+  .dcard{background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;margin-bottom:10px;overflow:hidden}
+  .dcard-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid #f0f0f0;gap:12px;flex-wrap:wrap}
+  .dcard-head-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:5px;white-space:nowrap}
+  .badge-green{background:#dcfce7;color:#15803d}
+  .badge-amber{background:#fef9c3;color:#92400e}
+  .badge-red  {background:#fee2e2;color:#b91c1c}
+  .dcard-nf{font-size:15px;font-weight:700;color:#1F4E79}
+  .dcard-dup{font-size:13px;color:#888}
+  .dcard-val{font-size:17px;font-weight:700;white-space:nowrap}
+  .val-green{color:#15803d}
+  .val-amber{color:#b45309}
+  .val-red  {color:#b91c1c}
+
+  /* grid de detalhes dentro do card */
+  .dcard-body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .dcard-panel{padding:14px 16px}
+  .dcard-panel + .dcard-panel{border-left:0.5px solid #f0f0f0}
+  .panel-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#aaa;margin-bottom:10px}
+  .detail-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px}
+  .detail-label{color:#999;white-space:nowrap;padding-top:1px}
+  .detail-value{color:#222;font-weight:500}
+  .detail-value.highlight{color:#1F4E79}
+  .detail-value.warn{color:#b45309}
+  .detail-value.ok{color:#15803d}
+  .detail-value.missing{color:#bbb;font-style:italic}
+
+  .note{font-size:11px;color:#aaa;border-top:0.5px solid #e8e8e8;padding-top:12px;margin-top:24px;line-height:1.6}
+  #results{display:none}
+  #error-msg{display:none;background:#fee2e2;color:#b91c1c;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px}
+
+  @media(max-width:640px){
+    .summary{grid-template-columns:1fr 1fr}
+    .dcard-body{grid-template-columns:1fr}
+    .dcard-panel+.dcard-panel{border-left:none;border-top:0.5px solid #f0f0f0}
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>Conciliação Cartão × Duplicatas em Aberto</h1>
+  <p>Faça upload dos dois arquivos para gerar a análise automaticamente</p>
+</div>
+
+<div class="wrap">
+
+  <div class="upload-grid">
+    <div class="upload-box" id="box-csv" onclick="document.getElementById('inp-csv').click()"
+         ondragover="ev(event,'over','csv')" ondragleave="ev(event,'leave','csv')" ondrop="ev(event,'drop','csv')">
+      <input type="file" id="inp-csv" accept=".csv" onchange="loadFile('csv',this)">
+      <div class="icon">📊</div>
+      <div class="label">Vendas no Cartão (.csv)</div>
+      <div class="sub">Relatório Rede / adquirente</div>
+      <div class="fname" id="fname-csv"></div>
+    </div>
+    <div class="upload-box" id="box-txt" onclick="document.getElementById('inp-txt').click()"
+         ondragover="ev(event,'over','txt')" ondragleave="ev(event,'leave','txt')" ondrop="ev(event,'drop','txt')">
+      <input type="file" id="inp-txt" accept=".txt" onchange="loadFile('txt',this)">
+      <div class="icon">📄</div>
+      <div class="label">Duplicatas em Aberto (.txt)</div>
+      <div class="sub">Relatório do sistema ERP</div>
+      <div class="fname" id="fname-txt"></div>
+    </div>
+  </div>
+
+  <div id="error-msg"></div>
+  <button class="btn-run" id="btn" onclick="run()" disabled>Carregar os dois arquivos para analisar</button>
+
+  <div id="results">
+    <div class="summary" id="summary"></div>
+    <div id="output"></div>
+    <p class="note" id="footnote"></p>
+  </div>
+
+</div>
+
+<script>
+const files = {csv: null, txt: null};
+
+function ev(e, type, key) {
+  e.preventDefault();
+  const box = document.getElementById('box-' + key);
+  if (type === 'over') box.classList.add('over');
+  else if (type === 'leave') box.classList.remove('over');
+  else if (type === 'drop') {
+    box.classList.remove('over');
+    const f = e.dataTransfer.files[0];
+    if (f) processFile(key, f);
+  }
+}
+
+function loadFile(key, input) {
+  if (input.files[0]) processFile(key, input.files[0]);
+}
+
+function processFile(key, file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    files[key] = {name: file.name, content: e.target.result};
+    document.getElementById('box-' + key).classList.add('done');
+    document.getElementById('fname-' + key).textContent = file.name;
+    checkReady();
+  };
+  reader.readAsText(file, 'latin1');
+}
+
+function checkReady() {
+  const btn = document.getElementById('btn');
+  if (files.csv && files.txt) {
+    btn.disabled = false;
+    btn.textContent = 'Analisar conciliação';
+  }
+}
+
+function parseTxt(txt) {
+  const dups = [];
+  for (const line of txt.split('\n')) {
+    const m = line.match(/(\d+)\s+([\d\/]+\.\d+)\s+\S*\s*\S*\s+(\d{2}\/\d{2}\/\d{4})\s+(\d{2}\/\d{2}\/\d{4})\s+(\d+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+R\$.*Doc:\s*(NF\s+\d+)/);
+    if (m) {
+      dups.push({
+        emp:        m[1].trim(),
+        duplicata:  m[2].trim(),
+        emissao:    m[3].trim(),
+        vencimento: m[4].trim(),
+        atraso:     m[5].trim(),
+        valor:      parseFloat(m[6].replace(/\./g,'').replace(',','.')),
+        valorMora:  parseFloat(m[7].replace(/\./g,'').replace(',','.')),
+        valorTotal: parseFloat(m[8].replace(/\./g,'').replace(',','.')),
+        nf:         m[9].trim()
+      });
+    }
+  }
+  return dups;
+}
+
+function parseCsv(csv) {
+  const lines = csv.split('\n').filter(l => l.trim());
+  if (!lines.length) return [];
+  const headers = lines[0].split(';').map(h => h.trim().replace(/['"]/g,''));
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i].split(';');
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (vals[idx] || '').trim().replace(/^"|"$/g,''); });
+    if ((obj['status da venda'] || '').toLowerCase() === 'aprovada') {
+      const v = parseFloat((obj['valor da venda original'] || '0').replace(/\./g,'').replace(',','.'));
+      if (!isNaN(v)) { obj._valor = v; rows.push(obj); }
+    }
+  }
+  return rows;
+}
+
+function fmt(v) {
+  return 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function run() {
+  document.getElementById('error-msg').style.display = 'none';
+  const dups  = parseTxt(files.txt.content);
+  const sales = parseCsv(files.csv.content);
+
+  if (!dups.length)  { showError('Não foi possível ler duplicatas do .txt. Verifique o formato.'); return; }
+  if (!sales.length) { showError('Não foi possível ler vendas do .csv. Verifique o formato.'); return; }
+
+  const results = dups.map(dup => {
+    const exact = sales.filter(s => s['data da venda'] === dup.emissao && Math.abs(s._valor - dup.valor) < 0.01);
+    if (exact.length) return {...dup, status:'confirmed', matches: exact};
+    const loose = sales.filter(s => Math.abs(s._valor - dup.valor) < 0.01);
+    if (loose.length) return {...dup, status:'possible', matches: loose};
+    return {...dup, status:'notfound', matches: []};
+  });
+
+  const confirmed = results.filter(r => r.status === 'confirmed');
+  const possible  = results.filter(r => r.status === 'possible');
+  const notfound  = results.filter(r => r.status === 'notfound');
+
+  const totalAberto = results.reduce((a,r)   => a + r.valor, 0);
+  const totalConf   = confirmed.reduce((a,r) => a + r.valor, 0);
+  const totalPoss   = possible.reduce((a,r)  => a + r.valor, 0);
+  const totalNf     = notfound.reduce((a,r)  => a + r.valor, 0);
+
+  document.getElementById('summary').innerHTML = `
+    <div class="scard c-blue">
+      <div class="sl">Total em aberto</div>
+      <div class="sv">${fmt(totalAberto)}</div>
+      <div class="ss">${dups.length} duplicata${dups.length>1?'s':''}</div>
+    </div>
+    <div class="scard c-green">
+      <div class="sl">Venda encontrada na Rede</div>
+      <div class="sv">${fmt(totalConf)}</div>
+      <div class="ss">${confirmed.length} confirmada${confirmed.length!==1?'s':''}</div>
+    </div>
+    <div class="scard c-amber">
+      <div class="sl">A verificar</div>
+      <div class="sv">${fmt(totalPoss)}</div>
+      <div class="ss">${possible.length} possível${possible.length!==1?'is':''}</div>
+    </div>
+    <div class="scard c-red">
+      <div class="sl">Não consta vendas nesse filtro</div>
+      <div class="sv">${fmt(totalNf)}</div>
+      <div class="ss">${notfound.length} sem correspondência</div>
+    </div>
+  `;
+
+  let html = '';
+  if (confirmed.length) {
+    html += `<div class="section-title s-green">✔ Venda encontrada na Rede — data e valor coincidem (${confirmed.length})</div>`;
+    confirmed.forEach(r => { html += buildCard(r); });
+  }
+  if (possible.length) {
+    html += `<div class="section-title s-amber">⚠ A verificar — mesmo valor, data diferente (${possible.length})</div>`;
+    possible.forEach(r => { html += buildCard(r); });
+  }
+  if (notfound.length) {
+    html += `<div class="section-title s-red">✖ Não consta vendas nesse filtro (${notfound.length})</div>`;
+    notfound.forEach(r => { html += buildCard(r); });
+  }
+
+  document.getElementById('output').innerHTML = html;
+  document.getElementById('footnote').textContent =
+    '"Não consta vendas nesse filtro" pode indicar venda realizada em outra adquirente (Cielo, Stone, GetNet) ou baixa manual já efetuada fora do sistema Rede.';
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+}
+
+function buildCard(r) {
+  const sc    = r.status === 'confirmed' ? 'green' : r.status === 'possible' ? 'amber' : 'red';
+  const label = r.status === 'confirmed' ? 'Venda encontrada na Rede'
+              : r.status === 'possible'  ? 'A verificar'
+              :                            'Não consta vendas nesse filtro';
+
+  const m = r.matches[0];
+
+  // Painel esquerdo — dados do sistema
+  const sistemaPanel = `
+    <div class="dcard-panel">
+      <div class="panel-title">Dados do sistema (duplicata)</div>
+      <div class="detail-grid">
+        <span class="detail-label">Documento</span>
+        <span class="detail-value highlight">${r.nf}</span>
+
+        <span class="detail-label">Duplicata</span>
+        <span class="detail-value">${r.duplicata}</span>
+
+        <span class="detail-label">Empresa</span>
+        <span class="detail-value">${r.emp}</span>
+
+        <span class="detail-label">Data emissão</span>
+        <span class="detail-value">${r.emissao}</span>
+
+        <span class="detail-label">Vencimento</span>
+        <span class="detail-value">${r.vencimento}</span>
+
+        <span class="detail-label">Atraso</span>
+        <span class="detail-value${parseInt(r.atraso)>0?' warn':''}">${r.atraso} dia${r.atraso!=='1'?'s':''}</span>
+
+        <span class="detail-label">Valor em aberto</span>
+        <span class="detail-value">${fmt(r.valor)}</span>
+
+        <span class="detail-label">Valor mora</span>
+        <span class="detail-value">${fmt(r.valorMora)}</span>
+
+        <span class="detail-label">Total com mora</span>
+        <span class="detail-value">${fmt(r.valorTotal)}</span>
+      </div>
+    </div>`;
+
+  // Painel direito — dados da Rede
+  let redePanel;
+  if (m) {
+    const diff    = dateDiffDays(r.emissao, m['data da venda']);
+    const diffTxt = diff === 0 ? '—' : Math.abs(diff) + ' dia' + (Math.abs(diff)>1?'s':'') + (diff>0?' após':' antes');
+    const diffCls = diff === 0 ? 'ok' : 'warn';
+    const cartao  = m['número do cartão'] || '—';
+    const vlrLiq  = m['valor líquido'] ? 'R$ ' + m['valor líquido'] : '—';
+    const parcelas = m['número de parcelas'] && m['número de parcelas'] !== '1'
+                   ? m['número de parcelas'] + 'x' : 'à vista';
+    redePanel = `
+    <div class="dcard-panel">
+      <div class="panel-title">Dados da venda — Rede</div>
+      <div class="detail-grid">
+        <span class="detail-label">Data da venda</span>
+        <span class="detail-value${diff===0?' ok':' warn'}">${m['data da venda']}</span>
+
+        <span class="detail-label">Hora</span>
+        <span class="detail-value">${m['hora da venda'] || '—'}</span>
+
+        <span class="detail-label">Diferença de data</span>
+        <span class="detail-value ${diffCls}">${diffTxt}</span>
+
+        <span class="detail-label">Modalidade</span>
+        <span class="detail-value">${cap(m['modalidade']||'')} ${cap(m['tipo']||'')} · ${parcelas}</span>
+
+        <span class="detail-label">Bandeira</span>
+        <span class="detail-value">${m['bandeira'] || '—'}</span>
+
+        <span class="detail-label">Cartão</span>
+        <span class="detail-value">${cartao}</span>
+
+        <span class="detail-label">NSU / CV</span>
+        <span class="detail-value highlight">${m['NSU/CV'] || '—'}</span>
+
+        <span class="detail-label">Autorização</span>
+        <span class="detail-value">${m['número da autorização (Auto)'] || '—'}</span>
+
+        <span class="detail-label">Valor bruto</span>
+        <span class="detail-value">${fmt(m._valor)}</span>
+
+        <span class="detail-label">Valor líquido</span>
+        <span class="detail-value">${vlrLiq}</span>
+      </div>
+    </div>`;
+  } else {
+    redePanel = `
+    <div class="dcard-panel">
+      <div class="panel-title">Dados da venda — Rede</div>
+      <div class="detail-grid">
+        <span class="detail-label">Situação</span>
+        <span class="detail-value missing">Nenhuma transação com o valor de ${fmt(r.valor)} encontrada no período</span>
+      </div>
+    </div>`;
+  }
+
+  return `
+    <div class="dcard">
+      <div class="dcard-head">
+        <div class="dcard-head-left">
+          <span class="badge badge-${sc}">${label}</span>
+          <span class="dcard-nf">${r.nf}</span>
+          <span class="dcard-dup">· duplicata ${r.duplicata}</span>
+        </div>
+        <span class="dcard-val val-${sc}">${fmt(r.valor)}</span>
+      </div>
+      <div class="dcard-body">
+        ${sistemaPanel}
+        ${redePanel}
+      </div>
+    </div>`;
+}
+
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+function dateDiffDays(d1, d2) {
+  const p = s => { const [dd,mm,yy] = s.split('/'); return new Date(+yy, +mm-1, +dd); };
+  return Math.round((p(d2) - p(d1)) / 86400000);
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>
