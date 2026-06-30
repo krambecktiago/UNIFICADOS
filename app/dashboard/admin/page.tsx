@@ -102,13 +102,13 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen">
       {/* Cabeçalho */}
-      <div className="h-[68px] bg-[#060f26] border-b border-white/10 px-8 flex items-center justify-between">
+      <div className="h-[68px] bg-white border-b border-gray-200 dark:bg-[#060f26] dark:border-white/10 px-8 flex items-center justify-between">
         <div>
-          <h1 className="text-base font-bold text-white leading-tight">Administração</h1>
-          <p className="text-xs text-white/40 leading-tight mt-0.5">Gerencie usuários e acessos às ferramentas</p>
+          <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight">Administração</h1>
+          <p className="text-xs text-gray-400 dark:text-white/40 leading-tight mt-0.5">Gerencie usuários e acessos às ferramentas</p>
         </div>
         {!loading && !error && (
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-white/10 text-white/70">
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#0d1e45]/10 text-[#0d1e45] dark:bg-white/10 dark:text-white/70">
             {users.length} {users.length === 1 ? 'usuário' : 'usuários'}
           </span>
         )}
@@ -116,7 +116,7 @@ export default function AdminPage() {
 
       <div className="px-8 py-8">
         {loading && (
-          <div className="flex items-center gap-3 text-sm text-white/40">
+          <div className="flex items-center gap-3 text-sm text-gray-400 dark:text-white/40">
             <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -132,7 +132,7 @@ export default function AdminPage() {
         )}
 
         {!loading && !error && users.length === 0 && (
-          <p className="text-sm text-white/40">Nenhum usuário encontrado.</p>
+          <p className="text-sm text-gray-400 dark:text-white/40">Nenhum usuário encontrado.</p>
         )}
 
         <div className="space-y-4">
@@ -141,7 +141,7 @@ export default function AdminPage() {
             return (
               <div
                 key={user.id}
-                className="bg-white rounded-xl p-6 transition-all border border-white/10 shadow-lg"
+                className="bg-white rounded-xl p-6 transition-all border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-lg"
               >
                 {/* Linha superior: avatar + info + role + ação */}
                 <div className="flex items-start gap-4">

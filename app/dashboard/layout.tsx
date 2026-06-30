@@ -19,7 +19,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = profile?.role === 'admin'
 
   return (
-    <div className="flex min-h-screen bg-[#09173a]">
+    <div className="flex min-h-screen bg-gray-100 dark:bg-[#09173a]">
       <Sidebar isAdmin={isAdmin} />
       <main className="flex-1 overflow-auto">
         {children}

@@ -13,10 +13,10 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen">
 
-      <div className="h-[68px] bg-[#060f26] border-b border-white/10 px-8 flex items-center justify-between">
+      <div className="h-[68px] bg-white border-b border-gray-200 dark:bg-[#060f26] dark:border-white/10 px-8 flex items-center justify-between">
         <div>
-          <p className="text-base font-bold text-white leading-tight">Bom dia, {firstName}</p>
-          <p className="text-xs text-white/40 leading-tight mt-0.5">Último acesso: {lastLogin}</p>
+          <p className="text-base font-bold text-gray-900 dark:text-white leading-tight">Bom dia, {firstName}</p>
+          <p className="text-xs text-gray-400 dark:text-white/40 leading-tight mt-0.5">Último acesso: {lastLogin}</p>
         </div>
         <div className="w-9 h-9 rounded-full bg-[#c8102e] flex items-center justify-center text-white text-sm font-bold shrink-0">
           {firstName.charAt(0).toUpperCase()}
@@ -26,7 +26,7 @@ export default async function DashboardPage() {
       <div className="px-8 py-8 max-w-4xl space-y-8">
 
         <section>
-          <p className="text-[10px] font-bold tracking-widest uppercase text-white/30 mb-4">Acesso Rápido</p>
+          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-white/30 mb-4">Acesso Rápido</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <QuickCard
               href="/dashboard/ferramentas"
@@ -54,8 +54,8 @@ export default async function DashboardPage() {
         </section>
 
         <section>
-          <p className="text-[10px] font-bold tracking-widest uppercase text-white/30 mb-4">Plataforma</p>
-          <div className="bg-white rounded-xl overflow-hidden divide-y divide-gray-100 shadow-lg">
+          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-white/30 mb-4">Plataforma</p>
+          <div className="bg-white rounded-xl overflow-hidden divide-y divide-gray-100 shadow-sm border border-gray-200 dark:shadow-lg dark:border-white/10">
             <InfoRow label="Versão" value="1.0.0" />
             <InfoRow label="Empresa" value="Krambeck Autopeças e Tintas" />
             <InfoRow label="Rede" value="Rede Ancora" />
@@ -80,7 +80,7 @@ function QuickCard({
   return (
     <Link
       href={href}
-      className="group bg-white rounded-xl p-5 flex items-center gap-4 hover:shadow-xl transition-all border border-white/10"
+      className="group bg-white rounded-xl p-5 flex items-center gap-4 hover:shadow-xl transition-all border border-gray-200 dark:border-white/10"
     >
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"

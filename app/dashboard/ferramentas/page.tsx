@@ -117,23 +117,23 @@ export default async function FerramentasPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="h-[68px] bg-[#060f26] border-b border-white/10 px-8 flex items-center">
+      <div className="h-[68px] bg-white border-b border-gray-200 dark:bg-[#060f26] dark:border-white/10 px-8 flex items-center">
         <div>
-          <h1 className="text-base font-bold text-white leading-tight">Ferramentas</h1>
-          <p className="text-xs text-white/40 leading-tight mt-0.5">Selecione uma ferramenta para processar seus arquivos</p>
+          <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight">Ferramentas</h1>
+          <p className="text-xs text-gray-400 dark:text-white/40 leading-tight mt-0.5">Selecione uma ferramenta para processar seus arquivos</p>
         </div>
       </div>
 
       <div className="px-8 py-8">
         {tools.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-400 dark:text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
               </svg>
             </div>
-            <p className="text-sm font-medium text-white">Nenhuma ferramenta disponível</p>
-            <p className="text-xs text-white/40 mt-1">Entre em contato com o administrador para solicitar acesso.</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">Nenhuma ferramenta disponível</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 mt-1">Entre em contato com o administrador para solicitar acesso.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -141,7 +141,7 @@ export default async function FerramentasPage() {
               <Link
                 key={tool.href}
                 href={tool.href}
-                className="group bg-white rounded-xl p-6 hover:shadow-xl transition-all border border-white/10"
+                className="group bg-white rounded-xl p-6 hover:shadow-xl transition-all border border-gray-200 dark:border-white/10"
               >
                 <div className="flex items-start gap-4">
                   <div

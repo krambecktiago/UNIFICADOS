@@ -6,15 +6,15 @@ export default async function ConfiguracoesPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="h-[68px] bg-[#060f26] border-b border-white/10 px-8 flex items-center">
+      <div className="h-[68px] bg-white border-b border-gray-200 dark:bg-[#060f26] dark:border-white/10 px-8 flex items-center">
         <div>
-          <h2 className="text-base font-bold text-white leading-tight">Configurações</h2>
-          <p className="text-xs text-white/40 leading-tight mt-0.5">Gerencie sua conta</p>
+          <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight">Configurações</h2>
+          <p className="text-xs text-gray-400 dark:text-white/40 leading-tight mt-0.5">Gerencie sua conta</p>
         </div>
       </div>
 
       <div className="p-8 max-w-2xl">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden divide-y divide-gray-100 border border-white/10">
+        <div className="bg-white rounded-xl shadow-sm dark:shadow-lg overflow-hidden divide-y divide-gray-100 border border-gray-200 dark:border-white/10">
           <div className="px-6 py-5">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Conta</p>
             <div className="space-y-3">
