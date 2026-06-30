@@ -29,8 +29,8 @@ const tools = [
     href: '/dashboard/ferramentas/creditos-aberto',
     icon: '🔍',
     title: 'Créditos em Aberto',
-    description: 'Cruza créditos em aberto (XLSX) com baixas do ERP (TXT)',
-    inputs: 'TXT + XLSX',
+    description: 'Cruza créditos em aberto do fornecedor (TXT) com pagamentos do ERP (TXT)',
+    inputs: 'TXT + TXT',
     color: 'orange',
   },
   {

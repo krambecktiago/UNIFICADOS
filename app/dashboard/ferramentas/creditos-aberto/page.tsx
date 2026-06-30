@@ -4,10 +4,11 @@ import { useState } from 'react'
 
 interface CreditoResult {
   emissao: string
+  lancamento: string
   codigo: string
   fornecedor: string
-  valor: number
-  saldo: number
+  valor: string
+  saldo: string
   status: 'CONFIRMADO' | 'SUSPEITO' | 'EM_ABERTO'
 }
 
@@ -22,13 +23,6 @@ interface Summary {
 interface ApiResponse {
   results: CreditoResult[]
   summary: Summary
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
 }
 
 function getRowClass(status: CreditoResult['status']): string {
@@ -71,14 +65,14 @@ function getStatusLabel(status: CreditoResult['status']): string {
 }
 
 export default function CreditosAbertoPage() {
-  const [txtFile, setTxtFile] = useState<File | null>(null)
-  const [xlsxFile, setXlsxFile] = useState<File | null>(null)
+  const [fileAberto, setFileAberto] = useState<File | null>(null)
+  const [fileBaixadas, setFileBaixadas] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<ApiResponse | null>(null)
 
   async function handleProcess() {
-    if (!txtFile || !xlsxFile) {
+    if (!fileAberto || !fileBaixadas) {
       setError('Selecione ambos os arquivos antes de processar.')
       return
     }
@@ -89,8 +83,8 @@ export default function CreditosAbertoPage() {
 
     try {
       const formData = new FormData()
-      formData.append('txt', txtFile)
-      formData.append('xlsx', xlsxFile)
+      formData.append('txtAberto', fileAberto)
+      formData.append('txtBaixadas', fileBaixadas)
 
       const response = await fetch('/api/ferramentas/creditos-aberto', {
         method: 'POST',
@@ -111,7 +105,7 @@ export default function CreditosAbertoPage() {
     }
   }
 
-  const canProcess = txtFile !== null && xlsxFile !== null && !loading
+  const canProcess = fileAberto !== null && fileBaixadas !== null && !loading
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -123,7 +117,7 @@ export default function CreditosAbertoPage() {
             Créditos em Aberto
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Cruza créditos em aberto (XLSX) com baixas do ERP (TXT) para identificar pendências.
+            Cruza créditos em aberto do fornecedor (TXT) com pagamentos do ERP (TXT) para identificar pendências.
           </p>
         </div>
 
@@ -133,23 +127,23 @@ export default function CreditosAbertoPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                Baixas do ERP (.txt)
+                Créditos em aberto — "CREDITO FORN EM ABERTO.txt"
               </label>
               <input
                 type="file"
                 accept=".txt"
-                onChange={(e) => setTxtFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => setFileAberto(e.target.files?.[0] ?? null)}
                 className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700"
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                Créditos em aberto (.xlsx)
+                Pagamentos do ERP — "DPL PAGA POR MOVIMENTO.txt"
               </label>
               <input
                 type="file"
-                accept=".xlsx,.xls"
-                onChange={(e) => setXlsxFile(e.target.files?.[0] ?? null)}
+                accept=".txt"
+                onChange={(e) => setFileBaixadas(e.target.files?.[0] ?? null)}
                 className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700"
               />
             </div>
@@ -255,6 +249,9 @@ export default function CreditosAbertoPage() {
                         Emissão
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Lançamento
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
                         Código
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -277,6 +274,9 @@ export default function CreditosAbertoPage() {
                         <td className="px-4 py-3 text-sm tabular-nums whitespace-nowrap">
                           {row.emissao}
                         </td>
+                        <td className="px-4 py-3 text-sm font-mono whitespace-nowrap text-gray-500">
+                          {row.lancamento || '—'}
+                        </td>
                         <td className="px-4 py-3 text-sm font-mono whitespace-nowrap">
                           {row.codigo}
                         </td>
@@ -284,10 +284,10 @@ export default function CreditosAbertoPage() {
                           {row.fornecedor}
                         </td>
                         <td className="px-4 py-3 text-sm tabular-nums text-right whitespace-nowrap">
-                          {formatCurrency(row.valor)}
+                          {row.valor}
                         </td>
                         <td className="px-4 py-3 text-sm tabular-nums text-right whitespace-nowrap">
-                          {formatCurrency(row.saldo)}
+                          {row.saldo}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className={getStatusBadgeClass(row.status)}>
@@ -299,7 +299,7 @@ export default function CreditosAbertoPage() {
                     {data.results.length === 0 && (
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={7}
                           className="px-4 py-8 text-center text-sm text-gray-400"
                         >
                           Nenhum registro encontrado no cruzamento.
