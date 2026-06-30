@@ -12,6 +12,18 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const frases = [
+    'Grandes decisões começam com bons dados.',
+    'Eficiência é a base de resultados extraordinários.',
+    'O controle de hoje constrói o crescimento de amanhã.',
+    'Clareza nas informações, confiança nas decisões.',
+    'Quem domina os números, domina o negócio.',
+    'Excelência operacional começa aqui.',
+    'Dados precisos, gestão poderosa.',
+  ]
+
+  const frase = frases[Math.floor(Math.random() * frases.length)]
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -31,81 +43,87 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-[#09173a] px-4">
+      <div className="w-full max-w-sm">
 
-        {/* Logo Krambeck */}
-        <div className="bg-white flex items-center justify-center px-8 py-6 border-b-2 border-[#c8102e]">
+        {/* Logos */}
+        <div className="flex items-center justify-center gap-5 mb-10">
           <Image
             src="/logo-krambeck.png"
             alt="Krambeck Autopeças e Tintas"
-            width={180}
-            height={52}
+            width={148}
+            height={40}
             className="object-contain"
             priority
           />
-        </div>
-
-        {/* Badge Rede Ancora */}
-        <div className="h-10 flex items-center justify-center gap-2.5 bg-[#09173a]">
+          <div className="w-px h-10 bg-white/20" />
           <Image
             src="/logo-ancora.png"
             alt="Rede Ancora"
-            width={18}
-            height={18}
+            width={40}
+            height={40}
             className="object-contain"
           />
-          <span className="text-[11px] font-semibold tracking-widest uppercase text-slate-500">
-            Rede Ancora
-          </span>
         </div>
 
-        {/* Formulário */}
-        <div className="px-8 py-8">
-          <h1 className="text-lg font-bold text-gray-900 mb-0.5">Bem-vindo de volta</h1>
-          <p className="text-sm text-gray-400 mb-6">Entre na sua conta para continuar</p>
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#c8102e] via-[#0d1e45] to-[#c8102e]" />
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="seu@email.com"
-              />
-            </div>
+          <div className="px-8 py-9">
+            <h1 className="text-xl font-bold text-gray-900 mb-1">Acesso ao Painel</h1>
+            <p className="text-sm text-gray-400 mb-8 italic">{frase}</p>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="••••••••"
-              />
-            </div>
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45] focus:border-transparent transition-all"
+                  placeholder="seu@email.com"
+                />
+              </div>
 
-            {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                {error}
-              </p>
-            )}
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1.5">
+                  Senha
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45] focus:border-transparent transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#0d1e45] text-white py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-[#162b5e] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-          </form>
+              {error && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  {error}
+                </p>
+              )}
 
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#0d1e45] text-white py-3 px-4 rounded-xl text-sm font-semibold hover:bg-[#162b5e] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? 'Entrando...' : 'Entrar'}
+              </button>
+            </form>
+          </div>
         </div>
+
+        <p className="text-center text-xs text-white/25 mt-6">
+          © 2025 Krambeck Autopeças e Tintas
+        </p>
+
       </div>
     </div>
   )
