@@ -10,6 +10,17 @@ import { cn } from '@/lib/utils'
 // Garante que as duas áreas fiquem visualmente alinhadas na mesma linha horizontal
 const HEADER_H = 'h-[68px]'
 
+const adminNavItem = {
+  href: '/dashboard/admin',
+  exact: false,
+  label: 'Administração',
+  icon: (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-[18px] h-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+    </svg>
+  ),
+}
+
 const navItems = [
   {
     href: '/dashboard',
@@ -54,7 +65,7 @@ const navItems = [
   },
 ]
 
-export function Sidebar() {
+export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -127,6 +138,35 @@ export function Sidebar() {
             </Link>
           )
         })}
+
+        {/* Link de Administração — visível apenas para admins */}
+        {isAdmin && (() => {
+          const item = adminNavItem
+          const active = pathname === item.href || pathname.startsWith(item.href + '/')
+          return (
+            <>
+              <div className="pt-3 pb-1">
+                <span className="text-[10px] font-bold tracking-widest uppercase text-[#3a5080]">
+                  Sistema
+                </span>
+              </div>
+              <Link
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors border-l-2',
+                  active
+                    ? 'bg-white/10 border-[#c8102e] text-white'
+                    : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                )}
+              >
+                <span className={cn('flex items-center', active && 'text-red-400')}>
+                  {item.icon}
+                </span>
+                {item.label}
+              </Link>
+            </>
+          )
+        })()}
       </nav>
 
       {/* ── Rodapé / Sair ───────────────────────────────────────────────── */}

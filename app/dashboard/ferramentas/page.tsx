@@ -1,8 +1,10 @@
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 
-const tools = [
+const ALL_TOOLS = [
   {
     href: '/dashboard/ferramentas/duplicatas',
+    slug: 'duplicatas',
     title: 'Conferir Duplicatas',
     description: 'Compara retorno bancário com fluxo de caixa do ERP',
     inputs: 'XLSX + TXT',
@@ -15,6 +17,7 @@ const tools = [
   },
   {
     href: '/dashboard/ferramentas/seguro-vida',
+    slug: 'seguro-vida',
     title: 'Seguro de Vida',
     description: 'Cruza PDF do seguro com planilha de funcionários',
     inputs: 'PDF + XLSX',
@@ -27,6 +30,7 @@ const tools = [
   },
   {
     href: '/dashboard/ferramentas/contas-pagar',
+    slug: 'contas-pagar',
     title: 'Contas a Pagar',
     description: 'Envia resumo diário de pagamentos para o Discord',
     inputs: 'Formulário',
@@ -39,6 +43,7 @@ const tools = [
   },
   {
     href: '/dashboard/ferramentas/comparador-dda',
+    slug: 'comparador-dda',
     title: 'Comparador DDA',
     description: 'Cruza boletos DDA com duplicatas de Contas a Pagar',
     inputs: 'TXT + CSV',
@@ -51,6 +56,7 @@ const tools = [
   },
   {
     href: '/dashboard/ferramentas/conciliacao-cartao',
+    slug: 'conciliacao-cartao',
     title: 'Conciliação Cartão',
     description: 'Cruza vendas no cartão com duplicatas em aberto',
     inputs: 'CSV + TXT',
@@ -63,6 +69,7 @@ const tools = [
   },
   {
     href: '/dashboard/ferramentas/comparar-extrato',
+    slug: 'comparar-extrato',
     title: 'Conciliação Bancária',
     description: 'Cruza extrato ERP com extrato Viacredi e identifica divergências',
     inputs: 'TXT + CSV',
@@ -75,11 +82,41 @@ const tools = [
   },
 ]
 
-export default function FerramentasPage() {
+export default async function FerramentasPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user!.id)
+    .maybeSingle()
+
+  const isAdmin = profile?.role === 'admin'
+
+  let accessibleSlugs = new Set<string>()
+  if (isAdmin) {
+    ALL_TOOLS.forEach(t => accessibleSlugs.add(t.slug))
+  } else {
+    const { data: accessRows } = await supabase
+      .from('user_tool_access')
+      .select('tool_id')
+      .eq('user_id', user!.id)
+
+    const toolIds = (accessRows ?? []).map(a => a.tool_id)
+    if (toolIds.length > 0) {
+      const { data: toolRows } = await supabase
+        .from('tools')
+        .select('slug')
+        .in('id', toolIds)
+      ;(toolRows ?? []).forEach(t => accessibleSlugs.add(t.slug))
+    }
+  }
+
+  const tools = ALL_TOOLS.filter(t => accessibleSlugs.has(t.slug))
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Cabeçalho da seção */}
-      {/* h-[68px] alinha com o logo da sidebar */}
       <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
         <div>
           <h1 className="text-base font-bold text-gray-900 leading-tight">Ferramentas</h1>
@@ -88,43 +125,54 @@ export default function FerramentasPage() {
       </div>
 
       <div className="px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {tools.map((tool) => (
-            <Link
-              key={tool.href}
-              href={tool.href}
-              className="group bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-gray-300 transition-all"
-            >
-              <div className="flex items-start gap-4">
-                {/* Ícone com cor de acento */}
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-white"
-                  style={{ backgroundColor: tool.accent }}
-                >
-                  {tool.icon}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-sm font-semibold text-gray-900 group-hover:text-[#0d1e45] transition-colors leading-snug">
-                      {tool.title}
-                    </h3>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 group-hover:text-[#0d1e45] transition-colors shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">{tool.description}</p>
-                  <span
-                    className="inline-block mt-3 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
-                    style={{ color: tool.accent, borderColor: tool.accent + '33', backgroundColor: tool.accent + '0d' }}
+        {tools.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-gray-900">Nenhuma ferramenta disponível</p>
+            <p className="text-xs text-gray-400 mt-1">Entre em contato com o administrador para solicitar acesso.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {tools.map((tool) => (
+              <Link
+                key={tool.href}
+                href={tool.href}
+                className="group bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-gray-300 transition-all"
+              >
+                <div className="flex items-start gap-4">
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-white"
+                    style={{ backgroundColor: tool.accent }}
                   >
-                    {tool.inputs}
-                  </span>
+                    {tool.icon}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-sm font-semibold text-gray-900 group-hover:text-[#0d1e45] transition-colors leading-snug">
+                        {tool.title}
+                      </h3>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 group-hover:text-[#0d1e45] transition-colors shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">{tool.description}</p>
+                    <span
+                      className="inline-block mt-3 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
+                      style={{ color: tool.accent, borderColor: tool.accent + '33', backgroundColor: tool.accent + '0d' }}
+                    >
+                      {tool.inputs}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

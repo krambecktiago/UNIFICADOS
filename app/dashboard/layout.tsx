@@ -10,9 +10,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect('/login')
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const isAdmin = profile?.role === 'admin'
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar isAdmin={isAdmin} />
       <main className="flex-1 overflow-auto">
         {children}
       </main>

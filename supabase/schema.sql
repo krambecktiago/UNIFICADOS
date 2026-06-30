@@ -127,3 +127,49 @@ create policy "Usuário gerencia suas configurações de ferramentas"
   on public.user_tool_settings for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- ============================================================
+-- MIGRAÇÃO: Admin + Controle de Acesso por Ferramenta
+-- Execute no SQL Editor do Supabase após o schema inicial
+-- ============================================================
+
+-- Função is_admin() sem recursão (security definer bypassa RLS)
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select coalesce(
+    (select role = 'admin' from public.profiles where id = auth.uid()),
+    false
+  );
+$$;
+
+-- Substituir política recursiva por versão segura
+drop policy if exists "Admin lê todos os perfis" on public.profiles;
+
+create policy "Admin lê todos os perfis"
+  on public.profiles for select
+  using (public.is_admin());
+
+create policy "Admin atualiza qualquer perfil"
+  on public.profiles for update
+  using (public.is_admin());
+
+-- Admin gerencia todos os acessos às ferramentas
+create policy "Admin gerencia acessos de ferramentas"
+  on public.user_tool_access for all
+  using (public.is_admin())
+  with check (public.is_admin());
+
+-- Seed das 6 ferramentas da plataforma
+insert into public.tools (name, slug, description) values
+  ('Conferir Duplicatas', 'duplicatas', 'Compara retorno bancário com fluxo de caixa do ERP'),
+  ('Seguro de Vida', 'seguro-vida', 'Cruza PDF do seguro com planilha de funcionários'),
+  ('Contas a Pagar', 'contas-pagar', 'Envia resumo diário de pagamentos para o Discord'),
+  ('Comparador DDA', 'comparador-dda', 'Cruza boletos DDA com duplicatas de Contas a Pagar'),
+  ('Conciliação Cartão', 'conciliacao-cartao', 'Cruza vendas no cartão com duplicatas em aberto'),
+  ('Conciliação Bancária', 'comparar-extrato', 'Cruza extrato ERP com extrato Viacredi e identifica divergências')
+on conflict (slug) do nothing;
