@@ -93,7 +93,7 @@ export default function LoginPage() {
         {/* Card */}
         <div className="relative">
           <div className="absolute inset-x-4 bottom-0 h-16 bg-[#c8102e]/25 blur-2xl rounded-full translate-y-4" />
-        <div className="bg-white rounded-2xl overflow-hidden relative" style={{ boxShadow: '0 -4px 12px 0px rgba(0,0,0,0.35), 0 8px 16px -4px rgba(0,0,0,0.4), 0 32px 64px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.18)' }}>
+        <div className="bg-white rounded-2xl overflow-hidden relative border border-white/30" style={{ boxShadow: '0 -8px 24px 0px rgba(255,255,255,0.08), 0 8px 16px -4px rgba(0,0,0,0.5), 0 32px 64px -12px rgba(0,0,0,0.7)' }}>
           <div className="h-1 bg-gradient-to-r from-[#c8102e] via-[#0d1e45] to-[#c8102e]" />
 
           <div className="px-8 py-9">
