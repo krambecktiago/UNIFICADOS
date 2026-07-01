@@ -80,6 +80,19 @@ const ALL_TOOLS = [
     ),
     accent: '#0369a1',
   },
+  {
+    href: '/dashboard/ferramentas/pix',
+    slug: 'pix',
+    title: 'Conciliação PIX',
+    description: 'Concilia pagamentos PIX recebidos (Bradesco) com títulos abertos no ERP JJW',
+    inputs: 'Automático',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m0-10.72l2.12 2.12m8.48 8.48l-2.12-2.12" />
+      </svg>
+    ),
+    accent: '#32bcad',
+  },
 ]
 
 export default async function FerramentasPage() {

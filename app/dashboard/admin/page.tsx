@@ -18,6 +18,7 @@ const ALL_TOOLS = [
   { slug: 'comparador-dda', label: 'Comp. DDA' },
   { slug: 'conciliacao-cartao', label: 'Conc. Cartão' },
   { slug: 'comparar-extrato', label: 'Conc. Bancária' },
+  { slug: 'pix', label: 'Conciliação PIX' },
 ]
 
 const ALL_SCREENS = [
