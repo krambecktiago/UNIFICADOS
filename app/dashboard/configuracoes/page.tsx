@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { ChangePasswordForm } from '@/components/change-password-form'
 
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()
@@ -23,6 +24,8 @@ export default async function ConfiguracoesPage() {
               <InfoRow label="Provedor" value={user?.app_metadata?.provider ?? 'email'} />
             </div>
           </div>
+
+          {user?.email && <ChangePasswordForm email={user.email} />}
         </div>
       </div>
     </div>
