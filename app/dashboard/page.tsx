@@ -121,16 +121,6 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        <section>
-          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-4">Plataforma</p>
-          <div className="bg-white rounded-xl overflow-hidden divide-y divide-gray-100 shadow-sm border border-gray-200">
-            <InfoRow label="Versão" value="1.0.0" />
-            <InfoRow label="Empresa" value="Krambeck Autopeças e Tintas" />
-            <InfoRow label="Rede" value="Rede Ancora" />
-            <InfoRow label="Suporte" value="tiago@krambeck.com.br" />
-          </div>
-        </section>
-
       </div>
     </div>
   )
@@ -164,14 +154,5 @@ function QuickCard({
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
       </svg>
     </Link>
-  )
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between px-5 h-12">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-800">{value}</span>
-    </div>
   )
 }
