@@ -3,6 +3,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase/server'
+import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { normText } from '@/lib/utils/br-format'
 
 const LABEL_WORDS = new Set(['TOTAL','VALOR','QTD','SEGURADO','DATA','NOME','CPF','CARGO','EMPRESA','FILIAL','GRUPO','APOLICE','NUMERO','CONTRATO','PRODUTO','COBERTURA','CLASSE'])
@@ -89,6 +90,8 @@ export async function POST(request: NextRequest) {
     for (const normNome of xlsxSet) {
       if (!pdfMap.has(normNome)) { soXlsx++; results.push({ nome: normNome, status: 'SOMENTE_XLSX', acao: 'Verificar saída', origem: 'Planilha' }) }
     }
+
+    await logToolUsage(supabase, user.id, 'seguro-vida', 2)
 
     return NextResponse.json({
       results,

@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { parseBRL, formatBRL, normText } from '@/lib/utils/br-format'
 
 const FIDC_KEYWORDS = ['FIDC', 'BANCO', 'FUNDO', 'CRED', 'SECURIT', 'CAPITAL']
@@ -103,6 +104,8 @@ export async function POST(request: NextRequest) {
         cpValor: formatBRL(cp.valor),
       })
     }
+
+    await logToolUsage(supabase, user.id, 'comparador-dda', 2)
 
     return NextResponse.json({
       results,

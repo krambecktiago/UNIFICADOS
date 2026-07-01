@@ -3,6 +3,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase/server'
+import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { parseBRL, normDup, formatBRL } from '@/lib/utils/br-format'
 
 export async function POST(request: NextRequest) {
@@ -63,6 +64,8 @@ export async function POST(request: NextRequest) {
         status: found ? 'BAIXADA' : 'NAO_BAIXADA',
       }
     })
+
+    await logToolUsage(supabase, user.id, 'duplicatas', 2)
 
     return NextResponse.json({ results, summary: { baixadas, naoBaixadas, total: results.length } })
   } catch (err) {

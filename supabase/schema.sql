@@ -173,3 +173,32 @@ insert into public.tools (name, slug, description) values
   ('Conciliação Cartão', 'conciliacao-cartao', 'Cruza vendas no cartão com duplicatas em aberto'),
   ('Conciliação Bancária', 'comparar-extrato', 'Cruza extrato ERP com extrato Viacredi e identifica divergências')
 on conflict (slug) do nothing;
+
+-- ============================================================
+-- MIGRAÇÃO: Registro de Uso das Ferramentas (tool_usage_logs)
+-- Execute no SQL Editor do Supabase após o schema inicial
+-- Alimenta os cards de "Arquivos analisados" e "Ferramentas mais
+-- usadas" do Dashboard, com dados de toda a empresa
+-- ============================================================
+create table public.tool_usage_logs (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  tool_slug   text not null,
+  files_count integer not null default 0,
+  created_at  timestamptz not null default now()
+);
+
+alter table public.tool_usage_logs enable row level security;
+
+-- Qualquer usuário autenticado pode ler os registros — os números
+-- exibidos no Dashboard são agregados da empresa toda, não só do usuário
+create policy "Usuário autenticado lê registros de uso"
+  on public.tool_usage_logs for select
+  using (auth.role() = 'authenticated');
+
+-- Cada usuário só registra uso em nome de si mesmo
+create policy "Usuário registra seu próprio uso"
+  on public.tool_usage_logs for insert
+  with check (auth.uid() = user_id);
+
+create index tool_usage_logs_tool_slug_idx on public.tool_usage_logs(tool_slug);

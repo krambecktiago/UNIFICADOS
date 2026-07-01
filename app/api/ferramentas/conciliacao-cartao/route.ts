@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { parseBRL, formatBRL, normText } from '@/lib/utils/br-format'
 
 function tryDecode(buf: Buffer): string {
@@ -94,6 +95,8 @@ export async function POST(request: NextRequest) {
       const venda = exact ?? byValue[0]
       return { ...dup, valor: formatBRL(dup.valor), status, vendaData: venda.data, vendaValor: formatBRL(venda.valor) }
     })
+
+    await logToolUsage(supabase, user.id, 'conciliacao-cartao', 2)
 
     return NextResponse.json({
       results,
