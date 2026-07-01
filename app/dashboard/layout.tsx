@@ -15,9 +15,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, full_name')
     .eq('id', user.id)
     .maybeSingle()
+
+  if (!profile?.full_name?.trim()) {
+    redirect('/onboarding')
+  }
 
   const isAdmin = profile?.role === 'admin'
 

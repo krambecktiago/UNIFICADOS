@@ -18,7 +18,13 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const name = user?.user_metadata?.full_name ?? user?.email ?? 'Usuário'
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user!.id)
+    .maybeSingle()
+
+  const name = profile?.full_name ?? user?.email ?? 'Usuário'
   const firstName = name.split(' ')[0]
   const lastLogin = user?.last_sign_in_at ? formatDateTime(user.last_sign_in_at) : '—'
 
