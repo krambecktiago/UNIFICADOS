@@ -17,3 +17,15 @@ export async function logToolUsage(
 
   if (error) console.error('Erro ao registrar uso da ferramenta:', error)
 }
+
+// Registra a simples entrada na ferramenta (padrão de contagem usado por
+// "Distribuição por ferramenta" e "Usuários mais ativos" do Dashboard).
+// Chamar no layout.tsx de cada ferramenta, ao lado de requireToolAccess —
+// assim toda ferramenta nova já entra na contagem sem precisar de código
+// extra em cada rota de processamento.
+export async function logToolVisit(toolSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  await logToolUsage(supabase, user.id, toolSlug, 0)
+}
