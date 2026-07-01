@@ -55,7 +55,7 @@ export default async function DashboardPage() {
 
         <section>
           <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-white/30 mb-4">Plataforma</p>
-          <div className="bg-white dark:bg-[#0d1e45]/30 rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-white/10 shadow-sm border border-gray-200 dark:shadow-lg dark:border-white/10">
+          <div className="bg-white rounded-xl overflow-hidden divide-y divide-gray-100 shadow-sm border border-gray-200 dark:shadow-lg dark:border-white/10">
             <InfoRow label="Versão" value="1.0.0" />
             <InfoRow label="Empresa" value="Krambeck Autopeças e Tintas" />
             <InfoRow label="Rede" value="Rede Ancora" />
@@ -80,7 +80,7 @@ function QuickCard({
   return (
     <Link
       href={href}
-      className="group bg-white dark:bg-[#0d1e45]/30 rounded-xl p-5 flex items-center gap-4 hover:shadow-xl transition-all border border-gray-200 dark:border-white/10"
+      className="group bg-white rounded-xl p-5 flex items-center gap-4 hover:shadow-xl transition-all border border-gray-200 dark:border-white/10"
     >
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -89,10 +89,10 @@ function QuickCard({
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white transition-colors">{label}</p>
-        <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5 truncate">{description}</p>
+        <p className="text-sm font-semibold text-gray-900 transition-colors">{label}</p>
+        <p className="text-xs text-gray-400 mt-0.5 truncate">{description}</p>
       </div>
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 dark:text-white/30 ml-auto shrink-0 group-hover:text-[#0d1e45] dark:group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 ml-auto shrink-0 group-hover:text-[#0d1e45] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
       </svg>
     </Link>
@@ -102,8 +102,8 @@ function QuickCard({
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between px-5 h-12">
-      <span className="text-sm text-gray-500 dark:text-white/40">{label}</span>
-      <span className="text-sm font-medium text-gray-800 dark:text-white/80">{value}</span>
+      <span className="text-sm text-gray-500">{label}</span>
+      <span className="text-sm font-medium text-gray-800">{value}</span>
     </div>
   )
 }
