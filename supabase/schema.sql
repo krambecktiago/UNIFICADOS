@@ -204,7 +204,7 @@ create policy "Usuário registra seu próprio uso"
 create index tool_usage_logs_tool_slug_idx on public.tool_usage_logs(tool_slug);
 
 -- ============================================================
--- MIGRAÇÃO: Controle de Acesso às Telas (Dashboard/IA/Configurações)
+-- MIGRAÇÃO: Controle de Acesso às Telas (Dashboard/Configurações)
 -- Execute no SQL Editor do Supabase após o schema inicial
 -- Reaproveita a tabela "tools" + "user_tool_access" já usada para
 -- as 6 ferramentas: cada tela vira uma "ferramenta" liberável por
@@ -214,6 +214,10 @@ create index tool_usage_logs_tool_slug_idx on public.tool_usage_logs(tool_slug);
 -- ============================================================
 insert into public.tools (name, slug, description) values
   ('Dashboard', 'dashboard', 'Tela inicial com acesso rápido e estatísticas de uso'),
-  ('Análise IA', 'ia', 'Chat de análise de dados com inteligência artificial'),
   ('Configurações', 'configuracoes', 'Dados da própria conta')
 on conflict (slug) do nothing;
+
+-- A tela "Análise IA" (slug 'ia') foi removida do produto — se você já
+-- executou a migração anterior em produção, pode limpar o residuo com:
+-- delete from public.user_tool_access where tool_id in (select id from public.tools where slug = 'ia');
+-- delete from public.tools where slug = 'ia';
