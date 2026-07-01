@@ -141,7 +141,7 @@ export default async function FerramentasPage() {
               <Link
                 key={tool.href}
                 href={tool.href}
-                className="group bg-white rounded-xl p-6 hover:shadow-xl transition-all border border-gray-200 dark:border-white/10"
+                className="group bg-white dark:bg-[#0d1e45]/30 rounded-xl p-6 hover:shadow-xl transition-all border border-gray-200 dark:border-white/10"
               >
                 <div className="flex items-start gap-4">
                   <div
@@ -153,14 +153,14 @@ export default async function FerramentasPage() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-gray-900 group-hover:text-[#0d1e45] transition-colors leading-snug">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-[#0d1e45] dark:group-hover:text-white transition-colors leading-snug">
                         {tool.title}
                       </h3>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 group-hover:text-[#0d1e45] transition-colors shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 dark:text-white/30 group-hover:text-[#0d1e45] dark:group-hover:text-white transition-colors shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">{tool.description}</p>
+                    <p className="text-xs text-gray-500 dark:text-white/40 mt-1 leading-relaxed">{tool.description}</p>
                     <span
                       className="inline-block mt-3 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
                       style={{ color: tool.accent, borderColor: tool.accent + '33', backgroundColor: tool.accent + '0d' }}

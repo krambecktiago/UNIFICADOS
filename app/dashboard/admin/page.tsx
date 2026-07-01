@@ -126,7 +126,7 @@ export default function AdminPage() {
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+          <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-300 text-sm px-4 py-3 rounded-lg">
             {error}
           </div>
         )}
@@ -141,7 +141,7 @@ export default function AdminPage() {
             return (
               <div
                 key={user.id}
-                className="bg-white rounded-xl p-6 transition-all border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-lg"
+                className="bg-white dark:bg-[#0d1e45]/30 rounded-xl p-6 transition-all border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-lg"
               >
                 {/* Linha superior: avatar + info + role + ação */}
                 <div className="flex items-start gap-4">
@@ -155,8 +155,8 @@ export default function AdminPage() {
 
                   {/* Nome + email */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{displayName(user)}</p>
-                    <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{displayName(user)}</p>
+                    <p className="text-xs text-gray-400 dark:text-white/40 truncate">{user.email}</p>
                   </div>
 
                   {/* Badge role + botão */}
@@ -164,8 +164,8 @@ export default function AdminPage() {
                     <span
                       className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
                         user.role === 'admin'
-                          ? 'bg-[#0d1e45]/10 text-[#0d1e45]'
-                          : 'bg-gray-100 text-gray-500'
+                          ? 'bg-[#0d1e45]/10 text-[#0d1e45] dark:bg-white/10 dark:text-white/70'
+                          : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-white/40'
                       }`}
                     >
                       {user.role === 'admin' ? 'Admin' : 'Usuário'}
@@ -175,8 +175,8 @@ export default function AdminPage() {
                       disabled={isSaving}
                       className={`text-xs font-medium px-3 py-1 rounded-lg border transition-colors disabled:opacity-40 ${
                         user.role === 'admin'
-                          ? 'border-red-200 text-red-600 hover:bg-red-50'
-                          : 'border-[#0d1e45]/20 text-[#0d1e45] hover:bg-[#0d1e45]/5'
+                          ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10'
+                          : 'border-[#0d1e45]/20 text-[#0d1e45] hover:bg-[#0d1e45]/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10'
                       }`}
                     >
                       {user.role === 'admin' ? 'Rebaixar' : 'Promover'}
@@ -185,8 +185,8 @@ export default function AdminPage() {
                 </div>
 
                 {/* Chips de ferramentas */}
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-2">
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/10">
+                  <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-white/30 mb-2">
                     Ferramentas
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -200,10 +200,10 @@ export default function AdminPage() {
                           className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all disabled:opacity-40 ${
                             active
                               ? 'bg-[#0d1e45] text-white border-[#0d1e45]'
-                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                              : 'bg-white dark:bg-transparent text-gray-500 dark:text-white/40 border-gray-200 dark:border-white/15 hover:border-gray-300 dark:hover:border-white/30'
                           }`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-gray-300'}`} />
+                          <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-gray-300 dark:bg-white/30'}`} />
                           {tool.label}
                         </button>
                       )
@@ -212,7 +212,7 @@ export default function AdminPage() {
                 </div>
 
                 {isSaving && (
-                  <p className="mt-2 text-[11px] text-gray-400 flex items-center gap-1.5">
+                  <p className="mt-2 text-[11px] text-gray-400 dark:text-white/40 flex items-center gap-1.5">
                     <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />

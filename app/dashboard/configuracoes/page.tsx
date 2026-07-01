@@ -14,9 +14,9 @@ export default async function ConfiguracoesPage() {
       </div>
 
       <div className="p-8 max-w-2xl">
-        <div className="bg-white rounded-xl shadow-sm dark:shadow-lg overflow-hidden divide-y divide-gray-100 border border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-[#0d1e45]/30 rounded-xl shadow-sm dark:shadow-lg overflow-hidden divide-y divide-gray-100 dark:divide-white/10 border border-gray-200 dark:border-white/10">
           <div className="px-6 py-5">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Conta</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-white/30 mb-3">Conta</p>
             <div className="space-y-3">
               <InfoRow label="Email" value={user?.email ?? '—'} />
               <InfoRow label="ID" value={user?.id ?? '—'} mono />
@@ -32,8 +32,8 @@ export default async function ConfiguracoesPage() {
 function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className={`text-sm text-gray-900 ${mono ? 'font-mono text-xs' : 'font-medium'}`}>
+      <span className="text-sm text-gray-500 dark:text-white/40">{label}</span>
+      <span className={`text-sm text-gray-900 dark:text-white/80 ${mono ? 'font-mono text-xs' : 'font-medium'}`}>
         {value}
       </span>
     </div>
