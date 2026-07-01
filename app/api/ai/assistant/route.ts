@@ -13,7 +13,6 @@ Estrutura da plataforma:
   - Comparador DDA (TXT + CSV): cruza boletos DDA com as duplicatas de Contas a Pagar.
   - Conciliação Cartão (CSV + TXT): cruza vendas no cartão com duplicatas em aberto.
   - Conciliação Bancária (TXT + CSV): cruza o extrato do ERP com o extrato da Viacredi e aponta divergências.
-- Análise IA: chat livre com inteligência artificial (GROQ/Llama) para o usuário pedir análises de texto ou dados.
 - Configurações: dados da própria conta (email, ID, provedor de login).
 - Administração (visível só para administradores): gerenciar usuários, promover/rebaixar admin e liberar acesso a cada ferramenta.
 

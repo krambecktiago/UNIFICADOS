@@ -22,7 +22,6 @@ const ALL_TOOLS = [
 
 const ALL_SCREENS = [
   { slug: 'dashboard', label: 'Dashboard' },
-  { slug: 'ia', label: 'Análise IA' },
   { slug: 'configuracoes', label: 'Configurações' },
 ]
 
