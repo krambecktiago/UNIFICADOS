@@ -99,12 +99,12 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
       </div>
 
       {/* ── Badge Rede Ancora ────────────────────────────────────────────── */}
-      <div className="relative h-10 flex items-center justify-center bg-gray-50 border-b border-gray-100">
+      <div className="relative h-16 flex items-center justify-center bg-gray-50 border-b border-gray-100">
         <Image
           src="/logo-ancora.png"
           alt="Rede Ancora"
-          width={22}
-          height={22}
+          width={59}
+          height={45}
           className="object-contain shrink-0"
         />
       </div>
