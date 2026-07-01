@@ -4,14 +4,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireToolAccess } from '@/lib/supabase/tool-access'
 import { formatDateTime, formatDayLabel, toDateKey } from '@/lib/utils'
 
-const TOOL_LABELS: Record<string, string> = {
-  duplicatas: 'Conferir Duplicatas',
-  'seguro-vida': 'Seguro de Vida',
-  'contas-pagar': 'Contas a Pagar',
-  'comparador-dda': 'Comparador DDA',
-  'conciliacao-cartao': 'Conciliação Cartão',
-  'comparar-extrato': 'Conciliação Bancária',
-}
+// Telas (não ferramentas de processamento) que reaproveitam a tabela "tools"
+// só para controle de acesso — não entram na distribuição de uso por ferramenta.
+const SCREEN_SLUGS = ['dashboard', 'configuracoes']
 
 export default async function DashboardPage() {
   await requireToolAccess('dashboard')
@@ -46,12 +41,20 @@ export default async function DashboardPage() {
     usageByDay.set(dayKey, (usageByDay.get(dayKey) ?? 0) + log.files_count)
   }
 
-  const toolDistribution = Object.entries(TOOL_LABELS)
-    .map(([slug, label]) => ({
-      slug,
-      label,
-      count: usageByTool.get(slug) ?? 0,
-      percent: totalExecutions > 0 ? ((usageByTool.get(slug) ?? 0) / totalExecutions) * 100 : 0,
+  // Busca as ferramentas direto da tabela "tools" — assim, toda ferramenta
+  // nova cadastrada aparece aqui automaticamente, sem precisar editar código.
+  const { data: toolRows } = await supabase
+    .from('tools')
+    .select('slug, name')
+    .eq('active', true)
+
+  const toolDistribution = (toolRows ?? [])
+    .filter(t => !SCREEN_SLUGS.includes(t.slug))
+    .map(t => ({
+      slug: t.slug,
+      label: t.name,
+      count: usageByTool.get(t.slug) ?? 0,
+      percent: totalExecutions > 0 ? ((usageByTool.get(t.slug) ?? 0) / totalExecutions) * 100 : 0,
     }))
     .sort((a, b) => b.count - a.count)
   const maxToolCount = Math.max(1, ...toolDistribution.map(t => t.count))
