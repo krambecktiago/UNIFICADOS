@@ -28,10 +28,41 @@ function getTodayBR(): string {
   return `${dd}/${mm}/${yyyy}`
 }
 
-function parseCurrency(raw: string): number {
-  const cleaned = raw.replace(/R\$\s*/g, '').replace(/\./g, '').replace(',', '.')
-  const val = parseFloat(cleaned)
-  return isNaN(val) ? 0 : val
+// Os campos de valor armazenam somente os dígitos digitados (centavos).
+// A formatação "R$ 1.234,56" é derivada desses dígitos a cada render.
+function onlyDigits(raw: string): string {
+  return raw.replace(/\D/g, '')
+}
+
+function formatCurrencyDigits(digits: string): string {
+  const clean = onlyDigits(digits)
+  if (!clean) return ''
+  const value = parseInt(clean, 10) / 100
+  return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function currencyDigitsToNumber(digits: string): number {
+  const clean = onlyDigits(digits)
+  return clean ? parseInt(clean, 10) / 100 : 0
+}
+
+function CurrencyInput({
+  value, onChange, className,
+}: {
+  value: string
+  onChange: (digits: string) => void
+  className: string
+}) {
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={formatCurrencyDigits(value)}
+      onChange={(e) => onChange(onlyDigits(e.target.value))}
+      placeholder="R$ 0,00"
+      className={className}
+    />
+  )
 }
 
 type SaldoRow = Record<typeof BANCOS[number], string>
@@ -114,13 +145,13 @@ export default function ContasPagarPage() {
 
   function buildPayload() {
     const pagamentosNum = Object.fromEntries(
-      LOJAS.map((l) => [l, parseCurrency(pagamentos[l])])
+      LOJAS.map((l) => [l, currencyDigitsToNumber(pagamentos[l])])
     ) as Record<typeof LOJAS[number], number>
 
     const saldosNum = Object.fromEntries(
       LOJAS.map((l) => [
         l,
-        Object.fromEntries(BANCOS.map((b) => [b, parseCurrency(saldos[l][b])])),
+        Object.fromEntries(BANCOS.map((b) => [b, currencyDigitsToNumber(saldos[l][b])])),
       ])
     ) as Record<typeof LOJAS[number], Record<typeof BANCOS[number], number>>
 
@@ -262,13 +293,10 @@ export default function ContasPagarPage() {
                       <span className="font-medium text-gray-700">{LOJAS_LABELS[loja]}</span>
                     </td>
                     <td className="px-3 py-2.5 w-56">
-                      <input
-                        type="text"
+                      <CurrencyInput
                         value={pagamentos[loja]}
-                        onChange={(e) => handlePagamento(loja, e.target.value)}
-                        placeholder="0,00"
+                        onChange={(digits) => handlePagamento(loja, digits)}
                         className={currencyInput}
-                        inputMode="decimal"
                       />
                     </td>
                   </tr>
@@ -311,13 +339,10 @@ export default function ContasPagarPage() {
                     </td>
                     {BANCOS.map((banco) => (
                       <td key={banco} className="px-3 py-2.5">
-                        <input
-                          type="text"
+                        <CurrencyInput
                           value={saldos[loja][banco]}
-                          onChange={(e) => handleSaldo(loja, banco, e.target.value)}
-                          placeholder="0,00"
+                          onChange={(digits) => handleSaldo(loja, banco, digits)}
                           className={currencyInput}
-                          inputMode="decimal"
                         />
                       </td>
                     ))}
