@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireToolAccess } from '@/lib/supabase/tool-access'
-import { formatDateTime } from '@/lib/utils'
+import { formatDateTime, formatDayLabel, toDateKey } from '@/lib/utils'
 
 const TOOL_LABELS: Record<string, string> = {
   duplicatas: 'Conferir Duplicatas',
@@ -30,18 +31,58 @@ export default async function DashboardPage() {
 
   const { data: usageLogs } = await supabase
     .from('tool_usage_logs')
-    .select('tool_slug, files_count')
+    .select('tool_slug, files_count, user_id, created_at')
 
   const totalFiles = (usageLogs ?? []).reduce((sum, log) => sum + log.files_count, 0)
+  const totalExecutions = (usageLogs ?? []).length
 
   const usageByTool = new Map<string, number>()
+  const usageByUser = new Map<string, number>()
+  const usageByDay = new Map<string, number>()
   for (const log of usageLogs ?? []) {
     usageByTool.set(log.tool_slug, (usageByTool.get(log.tool_slug) ?? 0) + 1)
+    usageByUser.set(log.user_id, (usageByUser.get(log.user_id) ?? 0) + 1)
+    const dayKey = toDateKey(log.created_at)
+    usageByDay.set(dayKey, (usageByDay.get(dayKey) ?? 0) + log.files_count)
   }
-  const topTools = [...usageByTool.entries()]
+
+  const toolDistribution = Object.entries(TOOL_LABELS)
+    .map(([slug, label]) => ({
+      slug,
+      label,
+      count: usageByTool.get(slug) ?? 0,
+      percent: totalExecutions > 0 ? ((usageByTool.get(slug) ?? 0) / totalExecutions) * 100 : 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+  const maxToolCount = Math.max(1, ...toolDistribution.map(t => t.count))
+
+  const topUserEntries = [...usageByUser.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
-  const maxUsage = topTools[0]?.[1] ?? 0
+
+  let topUsers: { id: string; name: string; count: number }[] = []
+  if (topUserEntries.length > 0) {
+    const adminClient = createAdminClient()
+    const { data: rankedProfiles } = await adminClient
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', topUserEntries.map(([id]) => id))
+    const nameMap = new Map((rankedProfiles ?? []).map(p => [p.id, p.full_name]))
+    topUsers = topUserEntries.map(([id, count]) => ({
+      id,
+      count,
+      name: nameMap.get(id) || 'Usuário',
+    }))
+  }
+  const maxUserCount = topUsers[0]?.count ?? 0
+
+  const dailyUsage = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date()
+    d.setUTCDate(d.getUTCDate() - (29 - i))
+    const key = toDateKey(d)
+    return { key, label: formatDayLabel(d), count: usageByDay.get(key) ?? 0 }
+  })
+  const maxDailyCount = Math.max(1, ...dailyUsage.map(d => d.count))
 
   return (
     <div className="min-h-screen">
@@ -91,21 +132,21 @@ export default async function DashboardPage() {
             </div>
 
             <div className="sm:col-span-2 bg-white rounded-xl p-5 border border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 mb-4">Ferramentas mais usadas</p>
-              {topTools.length === 0 ? (
+              <p className="text-xs font-semibold text-gray-500 mb-4">Distribuição por ferramenta</p>
+              {totalExecutions === 0 ? (
                 <p className="text-sm text-gray-400">Nenhum uso registrado ainda.</p>
               ) : (
                 <div className="space-y-3">
-                  {topTools.map(([slug, count]) => (
-                    <div key={slug}>
+                  {toolDistribution.map(tool => (
+                    <div key={tool.slug}>
                       <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="font-medium text-gray-700">{TOOL_LABELS[slug] ?? slug}</span>
-                        <span className="text-gray-400 text-xs">{count}x</span>
+                        <span className="font-medium text-gray-700">{tool.label}</span>
+                        <span className="text-gray-400 text-xs">{tool.count}x · {tool.percent.toFixed(0)}%</span>
                       </div>
                       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-[#0d1e45] rounded-full"
-                          style={{ width: `${maxUsage > 0 ? (count / maxUsage) * 100 : 0}%` }}
+                          style={{ width: `${(tool.count / maxToolCount) * 100}%` }}
                         />
                       </div>
                     </div>
@@ -113,6 +154,61 @@ export default async function DashboardPage() {
                 </div>
               )}
             </div>
+          </div>
+        </section>
+
+        <section>
+          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-4">Uso nos últimos 30 dias</p>
+          <div className="bg-white rounded-xl p-5 border border-gray-200">
+            {totalExecutions === 0 ? (
+              <p className="text-sm text-gray-400">Nenhum uso registrado ainda.</p>
+            ) : (
+              <div className="flex items-end gap-1 h-32">
+                {dailyUsage.map(day => (
+                  <div key={day.key} className="flex-1 h-full flex flex-col justify-end group relative">
+                    <div
+                      className="w-full bg-[#0d1e45] rounded-sm group-hover:bg-[#c8102e] transition-colors min-h-[2px]"
+                      style={{ height: `${(day.count / maxDailyCount) * 100}%` }}
+                      title={`${day.label}: ${day.count} arquivo${day.count === 1 ? '' : 's'}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-between mt-2 text-[10px] text-gray-400">
+              <span>{dailyUsage[0]?.label}</span>
+              <span>{dailyUsage[dailyUsage.length - 1]?.label}</span>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-4">Usuários mais ativos</p>
+          <div className="bg-white rounded-xl p-5 border border-gray-200">
+            {topUsers.length === 0 ? (
+              <p className="text-sm text-gray-400">Nenhum uso registrado ainda.</p>
+            ) : (
+              <div className="space-y-3">
+                {topUsers.map((topUser, index) => (
+                  <div key={topUser.id} className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-gray-400 w-4 shrink-0">{index + 1}º</span>
+                    <div className="w-7 h-7 rounded-full bg-[#0d1e45] flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {topUser.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 flex-1 truncate">
+                      {topUser.name}{topUser.id === user!.id ? ' (você)' : ''}
+                    </span>
+                    <div className="h-1.5 w-24 bg-gray-100 rounded-full overflow-hidden hidden sm:block">
+                      <div
+                        className="h-full bg-[#0d1e45] rounded-full"
+                        style={{ width: `${(topUser.count / maxUserCount) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-gray-400 text-xs w-10 text-right shrink-0">{topUser.count}x</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 

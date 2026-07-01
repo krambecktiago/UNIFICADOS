@@ -23,3 +23,20 @@ export function formatDateTime(date: string | Date): string {
     timeZone: TIMEZONE_BR,
   }).format(new Date(date))
 }
+
+export function toDateKey(date: string | Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: TIMEZONE_BR,
+  }).format(new Date(date))
+}
+
+export function formatDayLabel(date: string | Date): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: TIMEZONE_BR,
+  }).format(new Date(date))
+}
