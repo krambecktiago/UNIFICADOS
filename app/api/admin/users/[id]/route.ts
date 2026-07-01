@@ -23,13 +23,27 @@ export async function PATCH(
   }
 
   const { id } = await params
-  const body = await request.json() as { role?: string; tools?: string[] }
+  const body = await request.json() as { role?: string; tools?: string[]; full_name?: string }
   const adminClient = createAdminClient()
 
   if (body.role !== undefined) {
     const { error } = await adminClient
       .from('profiles')
       .update({ role: body.role, updated_at: new Date().toISOString() })
+      .eq('id', id)
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (body.full_name !== undefined) {
+    const fullName = body.full_name.trim()
+    if (!fullName) {
+      return NextResponse.json({ error: 'Nome não pode ser vazio' }, { status: 400 })
+    }
+
+    const { error } = await adminClient
+      .from('profiles')
+      .update({ full_name: fullName, updated_at: new Date().toISOString() })
       .eq('id', id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

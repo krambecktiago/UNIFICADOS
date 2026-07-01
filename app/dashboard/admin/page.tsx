@@ -42,6 +42,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [draftName, setDraftName] = useState('')
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -54,7 +56,7 @@ export default function AdminPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  async function patchUser(userId: string, body: Partial<{ role: string; tools: string[] }>) {
+  async function patchUser(userId: string, body: Partial<{ role: string; tools: string[]; full_name: string }>) {
     setSaving(userId)
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
@@ -89,6 +91,33 @@ export default function AdminPage() {
     if (!ok) {
       // rollback
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, tools: user.tools } : u))
+    }
+  }
+
+  function startEdit(user: AdminUser) {
+    setEditingId(user.id)
+    setDraftName(user.full_name ?? '')
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setDraftName('')
+  }
+
+  async function saveName(user: AdminUser) {
+    const newName = draftName.trim()
+    if (!newName || newName === user.full_name) {
+      cancelEdit()
+      return
+    }
+
+    const previousName = user.full_name
+    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, full_name: newName } : u))
+    setEditingId(null)
+
+    const ok = await patchUser(user.id, { full_name: newName })
+    if (!ok) {
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, full_name: previousName } : u))
     }
   }
 
@@ -160,7 +189,44 @@ export default function AdminPage() {
 
                   {/* Nome + email */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{displayName(user)}</p>
+                    {editingId === user.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          autoFocus
+                          type="text"
+                          value={draftName}
+                          onChange={e => setDraftName(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') saveName(user)
+                            if (e.key === 'Escape') cancelEdit()
+                          }}
+                          className="text-sm font-semibold text-gray-900 border border-[#0d1e45]/30 rounded-md px-2 py-0.5 w-full max-w-[220px] focus:outline-none focus:ring-1 focus:ring-[#0d1e45]/40"
+                        />
+                        <button
+                          onClick={() => saveName(user)}
+                          className="text-[#0d1e45] hover:opacity-70 shrink-0"
+                          title="Salvar"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 12l5 5L20 7" /></svg>
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="text-gray-400 hover:opacity-70 shrink-0"
+                          title="Cancelar"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => startEdit(user)}
+                        className="group flex items-center gap-1.5 text-left"
+                        title="Editar nome"
+                      >
+                        <p className="text-sm font-semibold text-gray-900 truncate">{displayName(user)}</p>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-9.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 8.5-8.5z" /></svg>
+                      </button>
+                    )}
                     <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   </div>
 
