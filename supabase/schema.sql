@@ -202,3 +202,18 @@ create policy "Usuário registra seu próprio uso"
   with check (auth.uid() = user_id);
 
 create index tool_usage_logs_tool_slug_idx on public.tool_usage_logs(tool_slug);
+
+-- ============================================================
+-- MIGRAÇÃO: Controle de Acesso às Telas (Dashboard/IA/Configurações)
+-- Execute no SQL Editor do Supabase após o schema inicial
+-- Reaproveita a tabela "tools" + "user_tool_access" já usada para
+-- as 6 ferramentas: cada tela vira uma "ferramenta" liberável por
+-- usuário no painel de Administração. Admin sempre tem acesso total
+-- (bypass já existente em requireToolAccess). Usuários já cadastrados
+-- começam SEM acesso — libere manualmente no painel de Admin.
+-- ============================================================
+insert into public.tools (name, slug, description) values
+  ('Dashboard', 'dashboard', 'Tela inicial com acesso rápido e estatísticas de uso'),
+  ('Análise IA', 'ia', 'Chat de análise de dados com inteligência artificial'),
+  ('Configurações', 'configuracoes', 'Dados da própria conta')
+on conflict (slug) do nothing;

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { requireToolAccess } from '@/lib/supabase/tool-access'
 import { formatDateTime } from '@/lib/utils'
 
 const TOOL_LABELS: Record<string, string> = {
@@ -12,6 +13,8 @@ const TOOL_LABELS: Record<string, string> = {
 }
 
 export default async function DashboardPage() {
+  await requireToolAccess('dashboard')
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

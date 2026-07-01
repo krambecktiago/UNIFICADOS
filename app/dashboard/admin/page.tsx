@@ -20,6 +20,12 @@ const ALL_TOOLS = [
   { slug: 'comparar-extrato', label: 'Conc. Bancária' },
 ]
 
+const ALL_SCREENS = [
+  { slug: 'dashboard', label: 'Dashboard' },
+  { slug: 'ia', label: 'Análise IA' },
+  { slug: 'configuracoes', label: 'Configurações' },
+]
+
 function initials(user: AdminUser): string {
   if (user.full_name) {
     const parts = user.full_name.trim().split(' ')
@@ -181,6 +187,33 @@ export default function AdminPage() {
                     >
                       {user.role === 'admin' ? 'Rebaixar' : 'Promover'}
                     </button>
+                  </div>
+                </div>
+
+                {/* Chips de telas liberadas */}
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-2">
+                    Telas
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {ALL_SCREENS.map(screen => {
+                      const active = user.tools.includes(screen.slug)
+                      return (
+                        <button
+                          key={screen.slug}
+                          onClick={() => toggleTool(user, screen.slug)}
+                          disabled={isSaving}
+                          className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all disabled:opacity-40 ${
+                            active
+                              ? 'bg-[#0d1e45] text-white border-[#0d1e45]'
+                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-gray-300'}`} />
+                          {screen.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
