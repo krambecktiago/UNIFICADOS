@@ -140,9 +140,8 @@ export default function RegisterPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        minLength={8}
                         className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45] focus:border-transparent transition-all"
-                        placeholder="Mínimo 8 caracteres"
+                        placeholder="Senha"
                       />
                     </div>
 

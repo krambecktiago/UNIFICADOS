@@ -258,7 +258,6 @@ export default function AdminPage() {
                   <input
                     type="text"
                     required
-                    minLength={8}
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"

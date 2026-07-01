@@ -34,9 +34,6 @@ export async function POST(request: NextRequest) {
   if (!fullName || !email || !password) {
     return NextResponse.json({ error: 'Nome, email e senha são obrigatórios' }, { status: 400 })
   }
-  if (password.length < 8) {
-    return NextResponse.json({ error: 'Senha deve ter no mínimo 8 caracteres' }, { status: 400 })
-  }
 
   const adminClient = createAdminClient()
 

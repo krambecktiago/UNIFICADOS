@@ -16,10 +16,6 @@ export function ChangePasswordForm({ email }: { email: string }) {
     setError('')
     setSuccess(false)
 
-    if (newPassword.length < 8) {
-      setError('A nova senha deve ter no mínimo 8 caracteres')
-      return
-    }
     if (newPassword !== confirmPassword) {
       setError('As senhas não coincidem')
       return
@@ -75,12 +71,10 @@ export function ChangePasswordForm({ email }: { email: string }) {
           <input
             type="password"
             required
-            minLength={8}
             autoComplete="new-password"
             value={newPassword}
             onChange={e => setNewPassword(e.target.value)}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
-            placeholder="Mínimo 8 caracteres"
           />
         </div>
         <div>
@@ -88,7 +82,6 @@ export function ChangePasswordForm({ email }: { email: string }) {
           <input
             type="password"
             required
-            minLength={8}
             autoComplete="new-password"
             value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)}
