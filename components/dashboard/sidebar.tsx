@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import { ThemeToggle } from '@/components/theme-toggle'
 
 // Altura compartilhada entre o cabeçalho da sidebar e o cabeçalho do conteúdo
 // Garante que as duas áreas fiquem visualmente alinhadas na mesma linha horizontal
@@ -170,8 +169,7 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
       </nav>
 
       {/* ── Rodapé / Sair ───────────────────────────────────────────────── */}
-      <div className="px-3 py-3 border-t border-[#1c3168] space-y-0.5">
-        <ThemeToggle />
+      <div className="px-3 py-3 border-t border-[#1c3168]">
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium border-l-2 border-transparent text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"

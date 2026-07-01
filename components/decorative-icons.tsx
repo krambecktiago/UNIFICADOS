@@ -13,18 +13,3 @@ export function Wrench({ className }: { className: string }) {
     </svg>
   )
 }
-
-// Fundo decorativo de peças automotivas — mesma identidade visual da tela de login.
-// Visível apenas no tema escuro (no claro, o navy de fundo não existe).
-export function BackgroundDecor({ position = 'absolute' }: { position?: 'absolute' | 'fixed' }) {
-  return (
-    <div className={`hidden dark:block ${position} inset-0 overflow-hidden pointer-events-none`}>
-      <Gear className="absolute -top-16 -left-16 w-72 h-72 text-white opacity-[0.04] rotate-12" />
-      <Gear className="absolute -bottom-20 -right-20 w-96 h-96 text-white opacity-[0.05] -rotate-6" />
-      <Gear className="absolute top-1/2 -right-10 w-40 h-40 text-white opacity-[0.04] rotate-45" />
-      <Gear className="absolute bottom-24 left-10 w-24 h-24 text-white opacity-[0.04] rotate-12" />
-      <Wrench className="absolute top-16 right-20 w-28 h-28 text-white opacity-[0.04] rotate-[30deg]" />
-      <Wrench className="absolute bottom-12 left-1/3 w-20 h-20 text-white opacity-[0.03] -rotate-[20deg]" />
-    </div>
-  )
-}
