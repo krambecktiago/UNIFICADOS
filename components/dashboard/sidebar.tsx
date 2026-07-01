@@ -99,7 +99,7 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
       </div>
 
       {/* ── Badge Rede Ancora ────────────────────────────────────────────── */}
-      <div className="relative h-10 flex items-center gap-2.5 px-5 bg-gray-50 border-b border-gray-100">
+      <div className="relative h-10 flex items-center justify-center bg-gray-50 border-b border-gray-100">
         <Image
           src="/logo-ancora.png"
           alt="Rede Ancora"
@@ -107,9 +107,6 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
           height={22}
           className="object-contain shrink-0"
         />
-        <span className="text-[11px] font-semibold tracking-widest uppercase text-gray-500">
-          Rede Ancora
-        </span>
       </div>
 
       {/* ── Rótulo de seção ─────────────────────────────────────────────── */}
@@ -133,11 +130,11 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
               className={cn(
                 'flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors border-l-2',
                 active
-                  ? 'bg-[#0d1e45]/5 border-[#c8102e] text-[#0d1e45]'
+                  ? 'bg-[#0d1e45]/5 border-[#0d1e45] text-[#0d1e45]'
                   : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
               )}
             >
-              <span className={cn('flex items-center', active && 'text-[#c8102e]')}>
+              <span className={cn('flex items-center', active && 'text-[#0d1e45]')}>
                 {item.icon}
               </span>
               {item.label}
@@ -161,11 +158,11 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
                 className={cn(
                   'flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors border-l-2',
                   active
-                    ? 'bg-[#0d1e45]/5 border-[#c8102e] text-[#0d1e45]'
+                    ? 'bg-[#0d1e45]/5 border-[#0d1e45] text-[#0d1e45]'
                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                 )}
               >
-                <span className={cn('flex items-center', active && 'text-[#c8102e]')}>
+                <span className={cn('flex items-center', active && 'text-[#0d1e45]')}>
                   {item.icon}
                 </span>
                 {item.label}
