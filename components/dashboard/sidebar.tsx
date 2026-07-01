@@ -98,6 +98,7 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
           width={156}
           height={45}
           className="object-contain max-w-full"
+          unoptimized
           priority
         />
       </div>
@@ -110,6 +111,7 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
           width={59}
           height={45}
           className="object-contain shrink-0"
+          unoptimized
         />
       </div>
 

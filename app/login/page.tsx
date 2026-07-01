@@ -71,6 +71,7 @@ export default function LoginPage() {
                 width={148}
                 height={40}
                 className="object-contain"
+                unoptimized
                 priority
               />
               <div className="w-px h-10 bg-white/20" />
@@ -80,6 +81,7 @@ export default function LoginPage() {
                 width={40}
                 height={40}
                 className="object-contain"
+                unoptimized
               />
             </div>
 
