@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { Gear, Wrench } from '@/components/decorative-icons'
 
 // Altura compartilhada entre o cabeçalho da sidebar e o cabeçalho do conteúdo
 // Garante que as duas áreas fiquem visualmente alinhadas na mesma linha horizontal
@@ -77,10 +78,16 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   }
 
   return (
-    <aside className="w-64 shrink-0 flex flex-col h-screen sticky top-0 bg-[#0d1e45]">
+    <aside className="w-64 shrink-0 flex flex-col h-screen sticky top-0 bg-white relative overflow-hidden">
+
+      {/* Fundo decorativo — peças automotivas, mesma identidade da tela de login */}
+      <Gear className="absolute -top-10 -left-14 w-56 h-56 text-[#0d1e45] opacity-[0.04] rotate-12 pointer-events-none" />
+      <Gear className="absolute top-1/2 -right-14 w-48 h-48 text-[#0d1e45] opacity-[0.04] -rotate-6 pointer-events-none" />
+      <Wrench className="absolute bottom-24 -left-6 w-24 h-24 text-[#0d1e45] opacity-[0.04] rotate-[30deg] pointer-events-none" />
+      <Gear className="absolute -bottom-14 -right-10 w-44 h-44 text-[#0d1e45] opacity-[0.04] rotate-45 pointer-events-none" />
 
       {/* ── Logo Krambeck ────────────────────────────────────────────────── */}
-      <div className={`${HEADER_H} flex items-center justify-center px-6 border-b-2 border-[#c8102e]`}>
+      <div className={`${HEADER_H} relative flex items-center justify-center px-6 border-b-2 border-[#c8102e]`}>
         <Image
           src="/logo-krambeck.png"
           alt="Krambeck Autopeças e Tintas"
@@ -92,7 +99,7 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
       </div>
 
       {/* ── Badge Rede Ancora ────────────────────────────────────────────── */}
-      <div className="h-10 flex items-center gap-2.5 px-5 bg-[#09173a] border-b border-[#1c3168]">
+      <div className="relative h-10 flex items-center gap-2.5 px-5 bg-gray-50 border-b border-gray-100">
         <Image
           src="/logo-ancora.png"
           alt="Rede Ancora"
@@ -100,21 +107,21 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
           height={22}
           className="object-contain shrink-0"
         />
-        <span className="text-[11px] font-semibold tracking-widest uppercase text-slate-500">
+        <span className="text-[11px] font-semibold tracking-widest uppercase text-gray-500">
           Rede Ancora
         </span>
       </div>
 
       {/* ── Rótulo de seção ─────────────────────────────────────────────── */}
-      <div className="px-5 pt-6 pb-3">
-        <span className="text-[10px] font-bold tracking-widest uppercase text-[#3a5080]">
+      <div className="relative px-5 pt-6 pb-3">
+        <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
           Menu
         </span>
       </div>
 
       {/* ── Navegação ───────────────────────────────────────────────────── */}
       {/* Todos os itens têm h-10 + px-3 para ritmo idêntico */}
-      <nav className="flex-1 px-3 space-y-0.5">
+      <nav className="relative flex-1 px-3 space-y-0.5">
         {navItems.map((item) => {
           const active = item.exact
             ? pathname === item.href
@@ -126,11 +133,11 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
               className={cn(
                 'flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors border-l-2',
                 active
-                  ? 'bg-white/10 border-[#c8102e] text-white'
-                  : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                  ? 'bg-[#0d1e45]/5 border-[#c8102e] text-[#0d1e45]'
+                  : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
               )}
             >
-              <span className={cn('flex items-center', active && 'text-red-400')}>
+              <span className={cn('flex items-center', active && 'text-[#c8102e]')}>
                 {item.icon}
               </span>
               {item.label}
@@ -145,7 +152,7 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
           return (
             <>
               <div className="pt-3 pb-1">
-                <span className="text-[10px] font-bold tracking-widest uppercase text-[#3a5080]">
+                <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
                   Sistema
                 </span>
               </div>
@@ -154,11 +161,11 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
                 className={cn(
                   'flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors border-l-2',
                   active
-                    ? 'bg-white/10 border-[#c8102e] text-white'
-                    : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                    ? 'bg-[#0d1e45]/5 border-[#c8102e] text-[#0d1e45]'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                 )}
               >
-                <span className={cn('flex items-center', active && 'text-red-400')}>
+                <span className={cn('flex items-center', active && 'text-[#c8102e]')}>
                   {item.icon}
                 </span>
                 {item.label}
@@ -169,10 +176,10 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
       </nav>
 
       {/* ── Rodapé / Sair ───────────────────────────────────────────────── */}
-      <div className="px-3 py-3 border-t border-[#1c3168]">
+      <div className="relative px-3 py-3 border-t border-gray-100">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium border-l-2 border-transparent text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+          className="w-full flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium border-l-2 border-transparent text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-[18px] h-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
