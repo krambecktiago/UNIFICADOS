@@ -237,7 +237,7 @@ export default function AdminPage() {
                   required
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
                   placeholder="Nome do usuário"
                 />
               </div>
@@ -248,7 +248,7 @@ export default function AdminPage() {
                   required
                   value={newEmail}
                   onChange={e => setNewEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
                   placeholder="email@krambeck.com.br"
                 />
               </div>
@@ -261,13 +261,13 @@ export default function AdminPage() {
                     minLength={8}
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
                   />
                   <button
                     type="button"
                     onClick={() => setNewPassword(generatePassword())}
                     title="Gerar nova senha"
-                    className="px-2.5 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 shrink-0"
+                    className="px-2.5 border border-gray-200 rounded-lg text-gray-500 bg-white hover:bg-gray-50 shrink-0"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
                   </button>
