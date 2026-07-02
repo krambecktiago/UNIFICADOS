@@ -93,6 +93,19 @@ const ALL_TOOLS = [
     ),
     accent: '#32bcad',
   },
+  {
+    href: '/dashboard/ferramentas/conciliacao-recibos',
+    slug: 'conciliacao-recibos',
+    title: 'Conciliação de Recibos',
+    description: 'Confere vendas no cartão (Rede) x recibos emitidos pelo sistema, por NSU + Autorização',
+    inputs: 'XLSX + XLSX',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 14.25l6-6m-5.25-.75h.008v.008H9.75V7.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 4.125h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    accent: '#ea580c',
+  },
 ]
 
 export default async function FerramentasPage() {

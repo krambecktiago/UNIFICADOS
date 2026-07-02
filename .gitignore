@@ -32,6 +32,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# arquivos de exemplo com dados sensíveis usados durante o desenvolvimento
+/projetos-implemetação/
+/projetos-implementação/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
