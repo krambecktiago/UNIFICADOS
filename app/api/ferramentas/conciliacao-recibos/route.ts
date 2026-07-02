@@ -225,16 +225,52 @@ function reconcile(vendas: Venda[], recibos: Recibo[]) {
   // pelo valor idêntico — provável erro de digitação do NSU/Autorização ao
   // registrar o recibo. Vai para divergências (revisão manual) em vez de
   // sumir em duas listas soltas sem relação aparente entre si.
+  //
+  // Quando várias vendas (às vezes de lojas diferentes) têm exatamente o
+  // mesmo valor, pegar o primeiro recibo disponível na ordem do arquivo faz
+  // uma venda "roubar" o recibo que na verdade pertence a outra, deixando a
+  // segunda sem nenhum candidato (vira "sem recibo" indevidamente). Por isso
+  // o pareamento dentro de cada grupo de mesmo valor prioriza o par
+  // venda-recibo com a data mais próxima, não a ordem de aparição.
   const todosRecibos = [...recIdx.values()].flat()
   const missing: Venda[] = []
+
+  const valorKey = (n: number) => Math.round(n * 100)
+  const recibosPorValor = new Map<number, RecIndexed[]>()
+  for (const r of todosRecibos) {
+    const k = valorKey(r.valor)
+    const list = recibosPorValor.get(k)
+    if (list) list.push(r)
+    else recibosPorValor.set(k, [r])
+  }
+  const vendasPorValor = new Map<number, Venda[]>()
   for (const v of semChavePorValor) {
-    const candidate = todosRecibos.find(r => !r._used && Math.abs(r.valor - v.valor) <= 0.01)
-    if (candidate) {
-      candidate._used = true
-      matched.push({ venda: v, recibo: candidate, divergente: true, diferenca: candidate.valor - v.valor, motivo: 'identificador' })
-    } else {
-      missing.push(v)
+    const k = valorKey(v.valor)
+    const list = vendasPorValor.get(k)
+    if (list) list.push(v)
+    else vendasPorValor.set(k, [v])
+  }
+
+  const dateDiff = (v: Venda, r: Recibo) =>
+    Math.abs(new Date(dateSortKey(r.dataMvto)).getTime() - new Date(dateSortKey(v.data)).getTime())
+
+  for (const [k, vs] of vendasPorValor) {
+    const candidates = (recibosPorValor.get(k) ?? []).filter(r => !r._used)
+    if (candidates.length === 0) {
+      missing.push(...vs)
+      continue
     }
+    const pairs = vs.flatMap(v => candidates.map(r => ({ v, r, diff: dateDiff(v, r) })))
+    pairs.sort((a, b) => a.diff - b.diff)
+
+    const usedVendas = new Set<Venda>()
+    for (const { v, r } of pairs) {
+      if (usedVendas.has(v) || r._used) continue
+      r._used = true
+      usedVendas.add(v)
+      matched.push({ venda: v, recibo: r, divergente: true, diferenca: r.valor - v.valor, motivo: 'identificador' })
+    }
+    for (const v of vs) if (!usedVendas.has(v)) missing.push(v)
   }
 
   const pending = todosRecibos.filter(r => !r._used)
