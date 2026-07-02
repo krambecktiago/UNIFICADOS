@@ -5,7 +5,6 @@ import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { normText } from '@/lib/utils/br-format'
-import { formatDate } from '@/lib/utils'
 
 interface Venda {
   data: string
@@ -56,8 +55,23 @@ function buildLojaMap(recibos: string[]): Record<string, string> {
   return map
 }
 
+// Datas do Excel não têm fuso horário — são um calendário "puro". Ler os
+// componentes em UTC (em vez de formatar num fuso real) evita que um horário
+// embutido perto da meia-noite empurre a data exibida para o dia errado.
 function cellText(v: unknown): string {
-  return v instanceof Date ? formatDate(v) : String(v ?? '')
+  if (v instanceof Date) {
+    const dd = String(v.getUTCDate()).padStart(2, '0')
+    const mm = String(v.getUTCMonth() + 1).padStart(2, '0')
+    return `${dd}/${mm}/${v.getUTCFullYear()}`
+  }
+  return String(v ?? '')
+}
+
+// "dd/mm/yyyy" -> "yyyy-mm-dd", para ordenar cronologicamente (comparar a
+// string original ordena por dia primeiro, o que fica errado entre meses).
+function dateSortKey(dataBR: string): string {
+  const [dd, mm, yyyy] = dataBR.split('/')
+  return dd && mm && yyyy ? `${yyyy}-${mm}-${dd}` : dataBR
 }
 
 function findHeaderRow(rows: unknown[][], mustInclude: string[]): number {
@@ -191,9 +205,9 @@ function reconcile(vendas: Venda[], recibos: Recibo[]) {
 
   const pending = [...recIdx.values()].filter(r => !r._used)
 
-  missing.sort((a, b) => a.data.localeCompare(b.data))
-  matched.sort((a, b) => a.venda.data.localeCompare(b.venda.data))
-  pending.sort((a, b) => a.dataMvto.localeCompare(b.dataMvto))
+  missing.sort((a, b) => dateSortKey(a.data).localeCompare(dateSortKey(b.data)))
+  matched.sort((a, b) => dateSortKey(a.venda.data).localeCompare(dateSortKey(b.venda.data)))
+  pending.sort((a, b) => dateSortKey(a.dataMvto).localeCompare(dateSortKey(b.dataMvto)))
 
   return { matched, missing, pending }
 }
