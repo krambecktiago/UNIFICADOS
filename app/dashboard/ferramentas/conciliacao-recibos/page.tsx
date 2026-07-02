@@ -109,6 +109,16 @@ export default function ConciliacaoRecibosPage() {
     }
   }
 
+  function handleReset() {
+    setVendasFile(null)
+    setRecibosFile(null)
+    setData(null)
+    setError(null)
+    setActiveTab('missing')
+    if (vendasRef.current) vendasRef.current.value = ''
+    if (recibosRef.current) recibosRef.current.value = ''
+  }
+
   const fileInputClass =
     'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white ' +
     'file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium ' +
@@ -177,6 +187,14 @@ export default function ConciliacaoRecibosPage() {
             >
               {loading ? 'Processando…' : 'Processar Conciliação'}
             </button>
+            {(vendasFile || recibosFile || data || error) && !loading && (
+              <button
+                onClick={handleReset}
+                className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors"
+              >
+                Limpar
+              </button>
+            )}
             {loading && (
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <svg className="animate-spin h-4 w-4 text-[#0369a1]" fill="none" viewBox="0 0 24 24">

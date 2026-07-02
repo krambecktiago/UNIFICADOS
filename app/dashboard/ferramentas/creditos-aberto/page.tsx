@@ -119,6 +119,13 @@ export default function CreditosAbertoPage() {
     if (refBaixadas.current) refBaixadas.current.value = ''
   }
 
+  function handleReset() {
+    resetAberto()
+    resetBaixadas()
+    setData(null)
+    setError(null)
+  }
+
   async function handleProcess() {
     if (!fileAberto || !fileBaixadas) {
       setError('Selecione ambos os arquivos antes de processar.')
@@ -202,6 +209,14 @@ export default function CreditosAbertoPage() {
             >
               {loading ? 'Processando...' : 'Processar'}
             </button>
+            {(fileAberto || fileBaixadas || data || error) && !loading && (
+              <button
+                onClick={handleReset}
+                className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors"
+              >
+                Limpar
+              </button>
+            )}
             {loading && (
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">

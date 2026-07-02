@@ -104,6 +104,16 @@ export default function CompararExtratoPage() {
     }
   }
 
+  function handleReset() {
+    setErpFile(null)
+    setBankFile(null)
+    setData(null)
+    setError(null)
+    setActiveTab('miss')
+    if (erpRef.current) erpRef.current.value = ''
+    if (bankRef.current) bankRef.current.value = ''
+  }
+
   const fileInputClass =
     'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white ' +
     'file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium ' +
@@ -179,6 +189,14 @@ export default function CompararExtratoPage() {
                 className="px-5 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 Exportar Faltando (.csv)
+              </button>
+            )}
+            {(erpFile || bankFile || data || error) && !loading && (
+              <button
+                onClick={handleReset}
+                className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors"
+              >
+                Limpar
               </button>
             )}
             {loading && (

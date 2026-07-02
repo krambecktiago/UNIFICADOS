@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 interface DDAResult {
   beneficiario: string;
@@ -73,6 +73,9 @@ export default function ComparadorDDAPage() {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<DDAResponse | null>(null);
 
+  const txtRef = useRef<HTMLInputElement>(null);
+  const csvRef = useRef<HTMLInputElement>(null);
+
   const canProcess = txtFile !== null && csvFile !== null && !loading;
 
   async function handleProcess() {
@@ -110,6 +113,15 @@ export default function ComparadorDDAPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleReset() {
+    setTxtFile(null);
+    setCsvFile(null);
+    setData(null);
+    setError(null);
+    if (txtRef.current) txtRef.current.value = '';
+    if (csvRef.current) csvRef.current.value = '';
   }
 
   return (
@@ -232,6 +244,21 @@ export default function ComparadorDDAPage() {
         .btn-primary:focus-visible {
           outline: 2px solid #1D4ED8;
           outline-offset: 2px;
+        }
+
+        .btn-secondary {
+          padding: 0.5rem 1rem;
+          background: transparent;
+          color: #64748B;
+          border: none;
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: color 0.15s;
+        }
+
+        .btn-secondary:hover {
+          color: #1E293B;
         }
 
         .processing-note {
@@ -500,6 +527,7 @@ export default function ComparadorDDAPage() {
               </label>
               <input
                 id="file-cp"
+                ref={txtRef}
                 type="file"
                 accept=".txt,text/plain"
                 className="file-input"
@@ -519,6 +547,7 @@ export default function ComparadorDDAPage() {
               </label>
               <input
                 id="file-dda"
+                ref={csvRef}
                 type="file"
                 accept=".csv,text/csv,text/plain"
                 className="file-input"
@@ -542,6 +571,11 @@ export default function ComparadorDDAPage() {
             >
               {loading ? 'Processando…' : 'Processar'}
             </button>
+            {(txtFile || csvFile || data || error) && !loading && (
+              <button className="btn-secondary" onClick={handleReset}>
+                Limpar
+              </button>
+            )}
             {!canProcess && !loading && (
               <span className="processing-note">
                 {!txtFile && !csvFile

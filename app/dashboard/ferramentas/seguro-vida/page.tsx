@@ -175,6 +175,15 @@ export default function SeguroVidaPage() {
     }
   }
 
+  function handleReset() {
+    setPdfFile(null);
+    setXlsxFile(null);
+    setData(null);
+    setError(null);
+    if (pdfRef.current) pdfRef.current.value = '';
+    if (xlsxRef.current) xlsxRef.current.value = '';
+  }
+
   const fileInputClass =
     'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white ' +
     'file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium ' +
@@ -292,6 +301,14 @@ export default function SeguroVidaPage() {
               >
                 {loading ? 'Processando…' : 'Processar'}
               </button>
+              {(pdfFile || xlsxFile || data || error) && !loading && (
+                <button
+                  onClick={handleReset}
+                  className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors"
+                >
+                  Limpar
+                </button>
+              )}
             </div>
           </div>
         </div>
