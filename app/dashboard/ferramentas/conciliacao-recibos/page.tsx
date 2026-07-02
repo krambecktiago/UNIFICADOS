@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 interface Venda {
   data: string
@@ -63,6 +63,55 @@ function lojaLabel(venda: Venda) {
   return venda.lojaNumero ? `${venda.loja} (${venda.lojaNumero})` : venda.loja
 }
 
+// Espelha a rolagem horizontal da tabela numa barra fina logo abaixo das
+// abas, para não precisar rolar a página até o rodapé pra achar o scroll
+// nativo do navegador.
+function TopScrollbar({ targetRef, watch }: { targetRef: React.RefObject<HTMLDivElement | null>; watch: unknown }) {
+  const topRef = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(0)
+  const syncing = useRef(false)
+
+  useEffect(() => {
+    const el = targetRef.current
+    if (!el) return
+    const update = () => setWidth(el.scrollWidth)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watch])
+
+  function fromTop() {
+    if (syncing.current) { syncing.current = false; return }
+    const bottom = targetRef.current
+    if (!bottom || !topRef.current) return
+    syncing.current = true
+    bottom.scrollLeft = topRef.current.scrollLeft
+  }
+
+  useEffect(() => {
+    const bottom = targetRef.current
+    const top = topRef.current
+    if (!bottom || !top) return
+    const fromBottom = () => {
+      if (syncing.current) { syncing.current = false; return }
+      syncing.current = true
+      top.scrollLeft = bottom.scrollLeft
+    }
+    bottom.addEventListener('scroll', fromBottom)
+    return () => bottom.removeEventListener('scroll', fromBottom)
+  }, [targetRef])
+
+  if (width <= 0) return null
+
+  return (
+    <div ref={topRef} onScroll={fromTop} className="overflow-x-auto overflow-y-hidden border-b border-gray-100" style={{ height: 14 }}>
+      <div style={{ width, height: 1 }} />
+    </div>
+  )
+}
+
 interface KpiCardProps { label: string; value: string; sub: string; accent: string }
 function KpiCard({ label, value, sub, accent }: KpiCardProps) {
   return (
@@ -84,6 +133,7 @@ export default function ConciliacaoRecibosPage() {
 
   const vendasRef = useRef<HTMLInputElement>(null)
   const recibosRef = useRef<HTMLInputElement>(null)
+  const tableScrollRef = useRef<HTMLDivElement>(null)
 
   const canProcess = !!vendasFile && !!recibosFile && !loading
 
@@ -258,7 +308,9 @@ export default function ConciliacaoRecibosPage() {
                 ))}
               </div>
 
-              <div className="overflow-x-auto">
+              <TopScrollbar targetRef={tableScrollRef} watch={`${activeTab}-${data.matched.length}-${data.divergent.length}-${data.missing.length}-${data.pending.length}`} />
+
+              <div ref={tableScrollRef} className="overflow-x-auto">
 
                 {activeTab === 'missing' && (
                   <table className="w-full text-sm min-w-[780px]">
@@ -358,8 +410,8 @@ export default function ConciliacaoRecibosPage() {
                           </td>
                           <td className={tdRight + ' text-amber-800'}>{fmtBRL(m.venda.valor)}</td>
                           <td className={tdRight + ' text-amber-800'}>{fmtBRL(m.recibo.valor)}</td>
-                          <td className={tdRight + ' font-semibold ' + (m.diferenca > 0 ? 'text-red-700' : 'text-blue-700')}>
-                            {m.diferenca > 0 ? 'Recibo +' : 'Recibo '}{fmtBRL(m.diferenca)}
+                          <td className={tdRight + ' font-semibold ' + (Math.abs(m.diferenca) <= 0.01 ? '' : m.diferenca > 0 ? 'text-red-700' : 'text-blue-700')}>
+                            {Math.abs(m.diferenca) <= 0.01 ? '' : `${m.diferenca > 0 ? 'Recibo +' : 'Recibo '}${fmtBRL(m.diferenca)}`}
                           </td>
                           <td className={tdClass + ' font-mono text-xs'}>
                             {m.venda.nsu === m.recibo.nsu ? m.venda.nsu : `${m.venda.nsu} / ${m.recibo.nsu}`}
