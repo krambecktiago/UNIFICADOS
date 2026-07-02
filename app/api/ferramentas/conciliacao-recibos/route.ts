@@ -6,6 +6,14 @@ import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { normText } from '@/lib/utils/br-format'
 
+// Autorização às vezes vem com zero à esquerda num arquivo (célula texto) e
+// sem no outro (célula número, o Excel descarta o zero) — normaliza os dois
+// lados removendo zeros à esquerda antes de comparar, senão o match por
+// NSU+Autorização quebra mesmo sendo a mesma autorização.
+function normAutorizacao(str: unknown): string {
+  return normText(str).replace(/^0+(?=\d)/, '')
+}
+
 interface Venda {
   data: string
   valor: number
@@ -124,7 +132,7 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
     if (maquininha.toUpperCase().startsWith('PV')) continue
 
     const nsu = normText(row[idxNsu])
-    const autorizacao = normText(row[idxAutorizacao])
+    const autorizacao = normAutorizacao(row[idxAutorizacao])
     if (!nsu || !autorizacao) continue
 
     results.push({
@@ -163,16 +171,22 @@ function parseRecibosXLSX(buffer: Buffer): Recibo[] {
   const dataRows = rows.slice(headerIdx + 1).filter(row => row && row.length)
   const lojaMap = buildLojaMap(dataRows.map(row => String(row[idxRecibo] ?? '')))
 
+  // Um NSU tipo UUID (ex: "2e19ff80-8fe6-4c7d-9210-95a27599b671") é transação
+  // TEF de venda em maquininha PV — essas vendas já são excluídas do lado
+  // "vendas" (ver parseVendasXLSX), então nunca teriam par aqui; ignorar para
+  // não aparecerem como "recibo sem venda". Checar o formato exato do UUID
+  // (e não só "contém letra"), pois NSU digitado errado com prefixo de
+  // máquina (ex: "SN112904", "M78517") também foge do padrão numérico da
+  // Rede mas é um recibo válido — descartá-lo por engano faz a venda
+  // correspondente sumir para "sem recibo" mesmo com o recibo existindo.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
   const results: Recibo[] = []
   for (const row of dataRows) {
     const nsu = normText(row[idxNsu])
-    const autorizacao = normText(row[idxAutorizacao])
+    const autorizacao = normAutorizacao(row[idxAutorizacao])
     if (!nsu || !autorizacao) continue
-    // NSU da Rede é sempre numérico. Um NSU tipo UUID (ex: "2e19ff80-8fe6-...")
-    // é transação TEF de venda em maquininha PV — essas vendas já são
-    // excluídas do lado "vendas" (ver parseVendasXLSX), então nunca teriam
-    // par aqui; ignorar para não aparecerem como "recibo sem venda".
-    if (!/^\d+$/.test(nsu)) continue
+    if (UUID_RE.test(String(row[idxNsu] ?? '').trim())) continue
 
     const recibo = String(row[idxRecibo] ?? '')
     const prefixo = recibo.split('/')[0]?.trim()
