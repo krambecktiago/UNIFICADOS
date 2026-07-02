@@ -48,23 +48,14 @@ interface MatchedEntry {
   motivo: 'valor' | 'identificador'
 }
 
-// Prefixo numérico do campo "Recibo" (ex: "5/209529") identifica a loja. O
-// código 4 nunca foi usado nos dados reais — quando a loja 6 (Gaspar) existe
-// no arquivo, o 5 é Blumenau; quando não existe, é o 4 que é Blumenau e o 5
-// vira Gaspar. Ambas as variantes seguem regra combinada com o usuário.
-const LOJA_BASE: Record<string, string> = { '1': 'Matriz', '2': 'Indaial', '3': 'Diesel' }
-
-function buildLojaMap(recibos: string[]): Record<string, string> {
-  const prefixes = new Set(recibos.map(r => r.split('/')[0]?.trim()))
-  const map = { ...LOJA_BASE }
-  if (prefixes.has('6')) {
-    map['5'] = 'Blumenau'
-    map['6'] = 'Gaspar'
-  } else {
-    map['4'] = 'Blumenau'
-    map['5'] = 'Gaspar'
-  }
-  return map
+// Prefixo numérico do campo "Recibo" (ex: "5/209529") identifica a loja.
+// Código 4 não é usado (nenhuma loja com esse número).
+const LOJA_MAP: Record<string, string> = {
+  '1': 'Matriz',
+  '2': 'Indaial',
+  '3': 'Diesel',
+  '5': 'Blumenau',
+  '6': 'Gaspar',
 }
 
 // Datas do Excel não têm fuso horário — são um calendário "puro". Ler os
@@ -169,7 +160,6 @@ function parseRecibosXLSX(buffer: Buffer): Recibo[] {
   const idxValor = colIndex(headers, ['VALOR', 'PAGO'])
 
   const dataRows = rows.slice(headerIdx + 1).filter(row => row && row.length)
-  const lojaMap = buildLojaMap(dataRows.map(row => String(row[idxRecibo] ?? '')))
 
   // Um NSU tipo UUID (ex: "2e19ff80-8fe6-4c7d-9210-95a27599b671") é transação
   // TEF de venda em maquininha PV — essas vendas já são excluídas do lado
@@ -199,7 +189,7 @@ function parseRecibosXLSX(buffer: Buffer): Recibo[] {
       dataMvto: cellText(row[idxDataMvto]),
       dataEmissao: cellText(row[idxDataEmissao]),
       valor: Number(row[idxValor]) || 0,
-      loja: lojaMap[prefixo] ?? prefixo ?? '',
+      loja: LOJA_MAP[prefixo] ?? prefixo ?? '',
     })
   }
   return results
