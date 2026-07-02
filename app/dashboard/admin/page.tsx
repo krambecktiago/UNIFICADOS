@@ -17,6 +17,13 @@ interface ToolOption {
   label: string
 }
 
+interface ManagedTool {
+  id: string
+  slug: string
+  name: string
+  active: boolean
+}
+
 // Telas (não ferramentas de processamento) que reaproveitam a tabela "tools"
 // só para controle de acesso — mesmo critério usado no Dashboard.
 const SCREEN_SLUGS = ['dashboard', 'configuracoes']
@@ -60,6 +67,9 @@ export default function AdminPage() {
   const [createError, setCreateError] = useState('')
   const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null)
   const [allTools, setAllTools] = useState<ToolOption[]>([])
+  const [manageTools, setManageTools] = useState<ManagedTool[]>([])
+  const [toolsError, setToolsError] = useState('')
+  const [savingToolId, setSavingToolId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -85,6 +95,43 @@ export default function AdminPage() {
         setAllTools(tools)
       })
   }, [])
+
+  useEffect(() => {
+    fetch('/api/admin/tools')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setManageTools(data.filter(t => !SCREEN_SLUGS.includes(t.slug)))
+        else setToolsError(data.error ?? 'Erro ao carregar ferramentas')
+      })
+      .catch(() => setToolsError('Erro de rede'))
+  }, [])
+
+  async function toggleToolActive(tool: ManagedTool) {
+    const newActive = !tool.active
+    setSavingToolId(tool.id)
+    setManageTools(prev => prev.map(t => t.id === tool.id ? { ...t, active: newActive } : t))
+
+    try {
+      const res = await fetch(`/api/admin/tools/${tool.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: newActive }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        alert(d.error ?? 'Erro ao salvar')
+        setManageTools(prev => prev.map(t => t.id === tool.id ? { ...t, active: tool.active } : t))
+        return
+      }
+      if (!newActive) setAllTools(prev => prev.filter(t => t.slug !== tool.slug))
+      else setAllTools(prev => [...prev, { slug: tool.slug, label: tool.name }])
+    } catch {
+      alert('Erro de rede')
+      setManageTools(prev => prev.map(t => t.id === tool.id ? { ...t, active: tool.active } : t))
+    } finally {
+      setSavingToolId(null)
+    }
+  }
 
   async function patchUser(userId: string, body: Partial<{ role: string; tools: string[]; full_name: string }>) {
     setSaving(userId)
@@ -313,6 +360,41 @@ export default function AdminPage() {
             </div>
           </form>
         )}
+
+        <div className="mb-6 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <p className="text-sm font-semibold text-gray-900 mb-1">Ferramentas do sistema</p>
+          <p className="text-xs text-gray-400 mb-4">Uma ferramenta inativa some do painel de todos os usuários com acesso a ela, mesmo que já tenha sido liberada.</p>
+
+          {toolsError && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{toolsError}</p>
+          )}
+
+          {!toolsError && manageTools.length === 0 && (
+            <p className="text-sm text-gray-400">Nenhuma ferramenta cadastrada.</p>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            {manageTools.map(tool => (
+              <button
+                key={tool.id}
+                onClick={() => toggleToolActive(tool)}
+                disabled={savingToolId === tool.id}
+                className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all disabled:opacity-40 ${
+                  tool.active
+                    ? 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                    : 'bg-red-50 text-red-600 border-red-200'
+                }`}
+                title={tool.active ? 'Clique para desativar' : 'Clique para reativar'}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${tool.active ? 'bg-green-500' : 'bg-red-400'}`} />
+                {tool.name}
+                <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">
+                  {tool.active ? 'Ativa' : 'Inativa'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {loading && (
           <div className="flex items-center gap-3 text-sm text-gray-400">

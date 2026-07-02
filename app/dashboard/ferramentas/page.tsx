@@ -135,6 +135,7 @@ export default async function FerramentasPage() {
         .from('tools')
         .select('slug')
         .in('id', toolIds)
+        .eq('active', true)
       ;(toolRows ?? []).forEach(t => accessibleSlugs.add(t.slug))
     }
   }
