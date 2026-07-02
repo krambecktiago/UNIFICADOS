@@ -30,6 +30,7 @@ interface MatchedEntry {
   recibo: Recibo
   divergente: boolean
   diferenca: number
+  motivo: 'valor' | 'identificador'
 }
 
 interface Summary {
@@ -326,34 +327,46 @@ export default function ConciliacaoRecibosPage() {
                 )}
 
                 {activeTab === 'divergent' && (
-                  <table className="w-full text-sm min-w-[880px]">
+                  <table className="w-full text-sm min-w-[980px]">
                     <thead className="bg-gray-50 border-b border-gray-100">
                       <tr>
                         <th className={thClass} style={{ width: 96 }}>Data</th>
                         <th className={thClass}>Loja</th>
+                        <th className={thClass} style={{ width: 170 }}>Motivo</th>
                         <th className={thRight} style={{ width: 110 }}>Valor Venda</th>
                         <th className={thRight} style={{ width: 110 }}>Valor Recibo</th>
                         <th className={thRight} style={{ width: 150 }}>Diferença</th>
-                        <th className={thClass}>NSU</th>
-                        <th className={thClass}>Autorização</th>
+                        <th className={thClass}>NSU (venda / recibo)</th>
+                        <th className={thClass}>Autorização (venda / recibo)</th>
                         <th className={thClass}>Cliente</th>
                         <th className={thClass}>Recibo</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {data.divergent.length === 0 ? (
-                        <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-400">Nenhuma divergência de valor.</td></tr>
+                        <tr><td colSpan={10} className="px-4 py-10 text-center text-sm text-gray-400">Nenhuma divergência encontrada.</td></tr>
                       ) : data.divergent.map((m, i) => (
                         <tr key={i} className="bg-amber-50 hover:bg-amber-100 transition-colors">
                           <td className={tdClass}>{m.venda.data}</td>
                           <td className={tdClass + ' font-medium'}>{lojaLabel(m.venda)}</td>
+                          <td className={tdClass}>
+                            {m.motivo === 'identificador' ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">NSU/Autorização não conferem</span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Valor diferente</span>
+                            )}
+                          </td>
                           <td className={tdRight + ' text-amber-800'}>{fmtBRL(m.venda.valor)}</td>
                           <td className={tdRight + ' text-amber-800'}>{fmtBRL(m.recibo.valor)}</td>
                           <td className={tdRight + ' font-semibold ' + (m.diferenca > 0 ? 'text-red-700' : 'text-blue-700')}>
                             {m.diferenca > 0 ? 'Recibo +' : 'Recibo '}{fmtBRL(m.diferenca)}
                           </td>
-                          <td className={tdClass + ' font-mono text-xs'}>{m.venda.nsu}</td>
-                          <td className={tdClass + ' font-mono text-xs'}>{m.venda.autorizacao}</td>
+                          <td className={tdClass + ' font-mono text-xs'}>
+                            {m.venda.nsu === m.recibo.nsu ? m.venda.nsu : `${m.venda.nsu} / ${m.recibo.nsu}`}
+                          </td>
+                          <td className={tdClass + ' font-mono text-xs'}>
+                            {m.venda.autorizacao === m.recibo.autorizacao ? m.venda.autorizacao : `${m.venda.autorizacao} / ${m.recibo.autorizacao}`}
+                          </td>
                           <td className="px-4 py-3 text-sm text-gray-800 max-w-xs truncate">{m.recibo.cliente}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{m.recibo.recibo}</td>
                         </tr>

@@ -34,6 +34,10 @@ interface MatchedEntry {
   recibo: Recibo
   divergente: boolean
   diferenca: number
+  // 'valor': NSU+Autorização batem, mas o valor diverge.
+  // 'identificador': valor idêntico, mas NSU+Autorização não batem — provável
+  // erro de digitação ao registrar o recibo (ver reconcile()).
+  motivo: 'valor' | 'identificador'
 }
 
 // Prefixo numérico do campo "Recibo" (ex: "5/209529") identifica a loja. O
@@ -196,22 +200,39 @@ function reconcile(vendas: Venda[], recibos: Recibo[]) {
   }
 
   const matched: MatchedEntry[] = []
-  const missing: Venda[] = []
+  const semChavePorValor: Venda[] = []
 
+  // Fase 1: match exato por NSU + Autorização.
   for (const v of vendas) {
     const candidates = (recIdx.get(`${v.nsu}|${v.autorizacao}`) ?? []).filter(r => !r._used)
     if (candidates.length === 0) {
-      missing.push(v)
+      semChavePorValor.push(v)
       continue
     }
     // Entre candidatos com a mesma chave, usa o de valor mais próximo da venda.
     const rec = candidates.reduce((a, b) => (Math.abs(a.valor - v.valor) <= Math.abs(b.valor - v.valor) ? a : b))
     rec._used = true
     const diferenca = rec.valor - v.valor
-    matched.push({ venda: v, recibo: rec, divergente: Math.abs(diferenca) > 0.01, diferenca })
+    matched.push({ venda: v, recibo: rec, divergente: Math.abs(diferenca) > 0.01, diferenca, motivo: 'valor' })
   }
 
-  const pending = [...recIdx.values()].flat().filter(r => !r._used)
+  // Fase 2: entre o que sobrou sem NSU+Autorização correspondente, tenta casar
+  // pelo valor idêntico — provável erro de digitação do NSU/Autorização ao
+  // registrar o recibo. Vai para divergências (revisão manual) em vez de
+  // sumir em duas listas soltas sem relação aparente entre si.
+  const todosRecibos = [...recIdx.values()].flat()
+  const missing: Venda[] = []
+  for (const v of semChavePorValor) {
+    const candidate = todosRecibos.find(r => !r._used && Math.abs(r.valor - v.valor) <= 0.01)
+    if (candidate) {
+      candidate._used = true
+      matched.push({ venda: v, recibo: candidate, divergente: true, diferenca: candidate.valor - v.valor, motivo: 'identificador' })
+    } else {
+      missing.push(v)
+    }
+  }
+
+  const pending = todosRecibos.filter(r => !r._used)
 
   missing.sort((a, b) => dateSortKey(a.data).localeCompare(dateSortKey(b.data)))
   matched.sort((a, b) => dateSortKey(a.venda.data).localeCompare(dateSortKey(b.venda.data)))
