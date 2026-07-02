@@ -15,6 +15,7 @@ interface Venda {
   nsu: string
   autorizacao: string
   maquininha: string
+  loja: string
 }
 
 interface Recibo {
@@ -25,12 +26,33 @@ interface Recibo {
   dataMvto: string
   dataEmissao: string
   valor: number
+  loja: string
 }
 
 interface MatchedEntry {
   venda: Venda
   recibo: Recibo
   divergente: boolean
+  diferenca: number
+}
+
+// Prefixo numérico do campo "Recibo" (ex: "5/209529") identifica a loja. O
+// código 4 nunca foi usado nos dados reais — quando a loja 6 (Gaspar) existe
+// no arquivo, o 5 é Blumenau; quando não existe, é o 4 que é Blumenau e o 5
+// vira Gaspar. Ambas as variantes seguem regra combinada com o usuário.
+const LOJA_BASE: Record<string, string> = { '1': 'Matriz', '2': 'Indaial', '3': 'Diesel' }
+
+function buildLojaMap(recibos: string[]): Record<string, string> {
+  const prefixes = new Set(recibos.map(r => r.split('/')[0]?.trim()))
+  const map = { ...LOJA_BASE }
+  if (prefixes.has('6')) {
+    map['5'] = 'Blumenau'
+    map['6'] = 'Gaspar'
+  } else {
+    map['4'] = 'Blumenau'
+    map['5'] = 'Gaspar'
+  }
+  return map
 }
 
 function cellText(v: unknown): string {
@@ -70,6 +92,7 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
   // "AUTORIZ" sozinho também bate com a coluna "pré-autorizado" (quase sempre "-") — excluir.
   const idxAutorizacao = colIndex(headers, ['AUTORIZ'], ['PRE'])
   const idxMaquininha = colIndex(headers, ['CODIGO', 'MAQUININHA'])
+  const idxLoja = colIndex(headers, ['NOME', 'ESTABELECIMENTO'])
 
   const results: Venda[] = []
   for (let i = headerIdx + 1; i < rows.length; i++) {
@@ -92,6 +115,7 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
       nsu,
       autorizacao,
       maquininha,
+      loja: String(row[idxLoja] ?? ''),
     })
   }
   return results
@@ -115,23 +139,27 @@ function parseRecibosXLSX(buffer: Buffer): Recibo[] {
   const idxDataEmissao = colIndex(headers, ['DATA', 'EMISS'])
   const idxValor = colIndex(headers, ['VALOR', 'PAGO'])
 
-  const results: Recibo[] = []
-  for (let i = headerIdx + 1; i < rows.length; i++) {
-    const row = rows[i]
-    if (!row || !row.length) continue
+  const dataRows = rows.slice(headerIdx + 1).filter(row => row && row.length)
+  const lojaMap = buildLojaMap(dataRows.map(row => String(row[idxRecibo] ?? '')))
 
+  const results: Recibo[] = []
+  for (const row of dataRows) {
     const nsu = normText(row[idxNsu])
     const autorizacao = normText(row[idxAutorizacao])
     if (!nsu || !autorizacao) continue
 
+    const recibo = String(row[idxRecibo] ?? '')
+    const prefixo = recibo.split('/')[0]?.trim()
+
     results.push({
       cliente: String(row[idxCliente] ?? ''),
-      recibo: String(row[idxRecibo] ?? ''),
+      recibo,
       nsu,
       autorizacao,
       dataMvto: cellText(row[idxDataMvto]),
       dataEmissao: cellText(row[idxDataEmissao]),
       valor: Number(row[idxValor]) || 0,
+      loja: lojaMap[prefixo] ?? prefixo ?? '',
     })
   }
   return results
@@ -154,7 +182,8 @@ function reconcile(vendas: Venda[], recibos: Recibo[]) {
       continue
     }
     rec._used = true
-    matched.push({ venda: v, recibo: rec, divergente: Math.abs(rec.valor - v.valor) > 0.01 })
+    const diferenca = rec.valor - v.valor
+    matched.push({ venda: v, recibo: rec, divergente: Math.abs(diferenca) > 0.01, diferenca })
   }
 
   const pending = [...recIdx.values()].filter(r => !r._used)

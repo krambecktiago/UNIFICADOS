@@ -10,6 +10,7 @@ interface Venda {
   nsu: string
   autorizacao: string
   maquininha: string
+  loja: string
 }
 
 interface Recibo {
@@ -20,12 +21,14 @@ interface Recibo {
   dataMvto: string
   dataEmissao: string
   valor: number
+  loja: string
 }
 
 interface MatchedEntry {
   venda: Venda
   recibo: Recibo
   divergente: boolean
+  diferenca: number
 }
 
 interface Summary {
@@ -234,10 +237,11 @@ export default function ConciliacaoRecibosPage() {
               <div className="overflow-x-auto">
 
                 {activeTab === 'missing' && (
-                  <table className="w-full text-sm min-w-[700px]">
+                  <table className="w-full text-sm min-w-[780px]">
                     <thead className="bg-gray-50 border-b border-gray-100">
                       <tr>
                         <th className={thClass} style={{ width: 96 }}>Data</th>
+                        <th className={thClass}>Loja</th>
                         <th className={thRight} style={{ width: 110 }}>Valor</th>
                         <th className={thClass}>Modalidade</th>
                         <th className={thClass}>Bandeira</th>
@@ -248,10 +252,11 @@ export default function ConciliacaoRecibosPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {data.missing.length === 0 ? (
-                        <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">Nenhuma venda sem recibo.</td></tr>
+                        <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">Nenhuma venda sem recibo.</td></tr>
                       ) : data.missing.map((v, i) => (
                         <tr key={i} className="bg-orange-50 hover:bg-orange-100 transition-colors">
                           <td className={tdClass}>{v.data}</td>
+                          <td className={tdClass + ' font-medium'}>{v.loja}</td>
                           <td className={tdRight + ' text-orange-800'}>{fmtBRL(v.valor)}</td>
                           <td className={tdClass}>{v.modalidade}</td>
                           <td className={tdClass}>{v.bandeira}</td>
@@ -265,10 +270,11 @@ export default function ConciliacaoRecibosPage() {
                 )}
 
                 {activeTab === 'ok' && (
-                  <table className="w-full text-sm min-w-[760px]">
+                  <table className="w-full text-sm min-w-[820px]">
                     <thead className="bg-gray-50 border-b border-gray-100">
                       <tr>
                         <th className={thClass} style={{ width: 96 }}>Data</th>
+                        <th className={thClass}>Loja</th>
                         <th className={thRight} style={{ width: 110 }}>Valor</th>
                         <th className={thClass}>NSU</th>
                         <th className={thClass}>Autorização</th>
@@ -279,10 +285,11 @@ export default function ConciliacaoRecibosPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {data.matched.length === 0 ? (
-                        <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">Nenhum item conciliado.</td></tr>
+                        <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">Nenhum item conciliado.</td></tr>
                       ) : data.matched.map((m, i) => (
                         <tr key={i} className="hover:bg-gray-50 transition-colors">
                           <td className={tdClass}>{m.venda.data}</td>
+                          <td className={tdClass + ' font-medium'}>{m.venda.loja}</td>
                           <td className={tdRight + ' text-green-800'}>{fmtBRL(m.venda.valor)}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{m.venda.nsu}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{m.venda.autorizacao}</td>
@@ -296,12 +303,14 @@ export default function ConciliacaoRecibosPage() {
                 )}
 
                 {activeTab === 'divergent' && (
-                  <table className="w-full text-sm min-w-[760px]">
+                  <table className="w-full text-sm min-w-[880px]">
                     <thead className="bg-gray-50 border-b border-gray-100">
                       <tr>
                         <th className={thClass} style={{ width: 96 }}>Data</th>
+                        <th className={thClass}>Loja</th>
                         <th className={thRight} style={{ width: 110 }}>Valor Venda</th>
                         <th className={thRight} style={{ width: 110 }}>Valor Recibo</th>
+                        <th className={thRight} style={{ width: 150 }}>Diferença</th>
                         <th className={thClass}>NSU</th>
                         <th className={thClass}>Autorização</th>
                         <th className={thClass}>Cliente</th>
@@ -310,12 +319,16 @@ export default function ConciliacaoRecibosPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {data.divergent.length === 0 ? (
-                        <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">Nenhuma divergência de valor.</td></tr>
+                        <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-400">Nenhuma divergência de valor.</td></tr>
                       ) : data.divergent.map((m, i) => (
                         <tr key={i} className="bg-amber-50 hover:bg-amber-100 transition-colors">
                           <td className={tdClass}>{m.venda.data}</td>
+                          <td className={tdClass + ' font-medium'}>{m.venda.loja}</td>
                           <td className={tdRight + ' text-amber-800'}>{fmtBRL(m.venda.valor)}</td>
                           <td className={tdRight + ' text-amber-800'}>{fmtBRL(m.recibo.valor)}</td>
+                          <td className={tdRight + ' font-semibold ' + (m.diferenca > 0 ? 'text-red-700' : 'text-blue-700')}>
+                            {m.diferenca > 0 ? 'Recibo +' : 'Recibo '}{fmtBRL(m.diferenca)}
+                          </td>
                           <td className={tdClass + ' font-mono text-xs'}>{m.venda.nsu}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{m.venda.autorizacao}</td>
                           <td className="px-4 py-3 text-sm text-gray-800 max-w-xs truncate">{m.recibo.cliente}</td>
@@ -327,10 +340,11 @@ export default function ConciliacaoRecibosPage() {
                 )}
 
                 {activeTab === 'pending' && (
-                  <table className="w-full text-sm min-w-[640px]">
+                  <table className="w-full text-sm min-w-[720px]">
                     <thead className="bg-gray-50 border-b border-gray-100">
                       <tr>
                         <th className={thClass} style={{ width: 100 }}>Mvto Adquirente</th>
+                        <th className={thClass}>Loja</th>
                         <th className={thRight} style={{ width: 110 }}>Valor</th>
                         <th className={thClass}>NSU</th>
                         <th className={thClass}>Autorização</th>
@@ -340,10 +354,11 @@ export default function ConciliacaoRecibosPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {data.pending.length === 0 ? (
-                        <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">Nenhum recibo sem venda correspondente.</td></tr>
+                        <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">Nenhum recibo sem venda correspondente.</td></tr>
                       ) : data.pending.map((r, i) => (
                         <tr key={i} className="hover:bg-gray-50 transition-colors">
                           <td className={tdClass}>{r.dataMvto}</td>
+                          <td className={tdClass + ' font-medium'}>{r.loja}</td>
                           <td className={tdRight}>{fmtBRL(r.valor)}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{r.nsu}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{r.autorizacao}</td>
