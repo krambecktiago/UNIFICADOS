@@ -168,6 +168,11 @@ function parseRecibosXLSX(buffer: Buffer): Recibo[] {
     const nsu = normText(row[idxNsu])
     const autorizacao = normText(row[idxAutorizacao])
     if (!nsu || !autorizacao) continue
+    // NSU da Rede é sempre numérico. Um NSU tipo UUID (ex: "2e19ff80-8fe6-...")
+    // é transação TEF de venda em maquininha PV — essas vendas já são
+    // excluídas do lado "vendas" (ver parseVendasXLSX), então nunca teriam
+    // par aqui; ignorar para não aparecerem como "recibo sem venda".
+    if (!/^\d+$/.test(nsu)) continue
 
     const recibo = String(row[idxRecibo] ?? '')
     const prefixo = recibo.split('/')[0]?.trim()
