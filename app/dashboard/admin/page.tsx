@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 interface AdminUser {
   id: string
@@ -11,15 +12,14 @@ interface AdminUser {
   created_at: string
 }
 
-const ALL_TOOLS = [
-  { slug: 'duplicatas', label: 'Duplicatas' },
-  { slug: 'seguro-vida', label: 'Seguro de Vida' },
-  { slug: 'contas-pagar', label: 'Contas a Pagar' },
-  { slug: 'comparador-dda', label: 'Comp. DDA' },
-  { slug: 'conciliacao-cartao', label: 'Conc. Cartão' },
-  { slug: 'comparar-extrato', label: 'Conc. Bancária' },
-  { slug: 'pix', label: 'Conciliação PIX' },
-]
+interface ToolOption {
+  slug: string
+  label: string
+}
+
+// Telas (não ferramentas de processamento) que reaproveitam a tabela "tools"
+// só para controle de acesso — mesmo critério usado no Dashboard.
+const SCREEN_SLUGS = ['dashboard', 'configuracoes']
 
 const ALL_SCREENS = [
   { slug: 'dashboard', label: 'Dashboard' },
@@ -59,6 +59,7 @@ export default function AdminPage() {
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
   const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null)
+  const [allTools, setAllTools] = useState<ToolOption[]>([])
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -69,6 +70,20 @@ export default function AdminPage() {
       })
       .catch(() => setError('Erro de rede'))
       .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('tools')
+      .select('slug, name')
+      .eq('active', true)
+      .then(({ data }) => {
+        const tools = (data ?? [])
+          .filter(t => !SCREEN_SLUGS.includes(t.slug))
+          .map(t => ({ slug: t.slug, label: t.name }))
+        setAllTools(tools)
+      })
   }, [])
 
   async function patchUser(userId: string, body: Partial<{ role: string; tools: string[]; full_name: string }>) {
@@ -438,7 +453,7 @@ export default function AdminPage() {
                     Ferramentas
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {ALL_TOOLS.map(tool => {
+                    {allTools.map(tool => {
                       const active = user.tools.includes(tool.slug)
                       return (
                         <button
