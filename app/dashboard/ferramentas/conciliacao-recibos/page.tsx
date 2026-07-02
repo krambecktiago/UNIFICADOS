@@ -1,8 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo } from 'react'
-import JSZip from 'jszip'
-import { normText } from '@/lib/utils/br-format'
+import { useState, useRef, useEffect } from 'react'
 
 interface Venda {
   data: string
@@ -63,29 +61,6 @@ function fmtBRL(v: number) {
 
 function lojaLabel(venda: Venda) {
   return venda.lojaNumero ? `${venda.loja} (${venda.lojaNumero})` : venda.loja
-}
-
-// Nomes canônicos das lojas (mesmos do LOJA_MAP do lado recibos). O nome do
-// estabelecimento no relatório da Rede (lado vendas) normalmente contém um
-// desses nomes embutido no texto — por isso o filtro casa por "contém", não
-// por igualdade exata, para funcionar nos dois lados com nomenclaturas diferentes.
-const STORE_NAMES = ['Matriz', 'Indaial', 'Diesel', 'Blumenau', 'Gaspar']
-
-function storeKey(raw: string): string {
-  const trimmed = raw.trim()
-  if (!trimmed) return '(Sem loja)'
-  const normed = normText(trimmed)
-  const found = STORE_NAMES.find(name => normed.includes(normText(name)))
-  return found ?? trimmed
-}
-
-function csvEscape(v: string): string {
-  return /[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
-}
-
-function toCSV(headers: string[], rows: string[][]): string {
-  const lines = [headers.join(';'), ...rows.map(r => r.map(csvEscape).join(';'))]
-  return '﻿' + lines.join('\r\n')
 }
 
 // Espelha a rolagem horizontal da tabela numa barra fina logo abaixo das
@@ -155,7 +130,6 @@ export default function ConciliacaoRecibosPage() {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<ApiResponse | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('missing')
-  const [storeFilter, setStoreFilter] = useState<string>('all')
 
   const vendasRef = useRef<HTMLInputElement>(null)
   const recibosRef = useRef<HTMLInputElement>(null)
@@ -169,7 +143,6 @@ export default function ConciliacaoRecibosPage() {
     setError(null)
     setData(null)
     setActiveTab('missing')
-    setStoreFilter('all')
     try {
       const formData = new FormData()
       formData.append('vendasFile', vendasFile)
@@ -193,101 +166,8 @@ export default function ConciliacaoRecibosPage() {
     setData(null)
     setError(null)
     setActiveTab('missing')
-    setStoreFilter('all')
     if (vendasRef.current) vendasRef.current.value = ''
     if (recibosRef.current) recibosRef.current.value = ''
-  }
-
-  const storeOptions = useMemo(() => {
-    if (!data) return []
-    const set = new Set<string>()
-    data.missing.forEach(v => set.add(storeKey(v.loja)))
-    data.matched.forEach(m => set.add(storeKey(m.venda.loja)))
-    data.divergent.forEach(m => set.add(storeKey(m.venda.loja)))
-    data.pending.forEach(r => set.add(storeKey(r.loja)))
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'))
-  }, [data])
-
-  const filteredMissing = useMemo(
-    () => !data ? [] : storeFilter === 'all' ? data.missing : data.missing.filter(v => storeKey(v.loja) === storeFilter),
-    [data, storeFilter]
-  )
-  const filteredMatched = useMemo(
-    () => !data ? [] : storeFilter === 'all' ? data.matched : data.matched.filter(m => storeKey(m.venda.loja) === storeFilter),
-    [data, storeFilter]
-  )
-  const filteredDivergent = useMemo(
-    () => !data ? [] : storeFilter === 'all' ? data.divergent : data.divergent.filter(m => storeKey(m.venda.loja) === storeFilter),
-    [data, storeFilter]
-  )
-  const filteredPending = useMemo(
-    () => !data ? [] : storeFilter === 'all' ? data.pending : data.pending.filter(r => storeKey(r.loja) === storeFilter),
-    [data, storeFilter]
-  )
-
-  const displaySummary: Summary | null = useMemo(() => {
-    if (!data) return null
-    const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
-    const vendasValores = [
-      ...filteredMissing.map(v => v.valor),
-      ...filteredMatched.map(m => m.venda.valor),
-      ...filteredDivergent.map(m => m.venda.valor),
-    ]
-    return {
-      vendasTotal: vendasValores.length,
-      vendasValor: sum(vendasValores),
-      okCount: filteredMatched.length,
-      okValor: sum(filteredMatched.map(m => m.venda.valor)),
-      divergentCount: filteredDivergent.length,
-      missingCount: filteredMissing.length,
-      missingValor: sum(filteredMissing.map(v => v.valor)),
-      pendingCount: filteredPending.length,
-      pendingValor: sum(filteredPending.map(r => r.valor)),
-    }
-  }, [data, filteredMissing, filteredMatched, filteredDivergent, filteredPending])
-
-  async function handleExport() {
-    if (!data) return
-    const zip = new JSZip()
-    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-    const storeSuffix = (storeFilter === 'all' ? 'TodasLojas' : storeFilter).replace(/[^\p{L}\p{N}]+/gu, '')
-
-    zip.file(`VendasSemRecibo_${storeSuffix}.csv`, toCSV(
-      ['Data', 'Loja', 'Valor (R$)', 'Modalidade', 'Bandeira', 'NSU', 'Autorização', 'Maquininha'],
-      filteredMissing.map(v => [v.data, lojaLabel(v), v.valor.toFixed(2).replace('.', ','), v.modalidade, v.bandeira, v.nsu, v.autorizacao, v.maquininha])
-    ))
-    zip.file(`Conciliados_${storeSuffix}.csv`, toCSV(
-      ['Data', 'Loja', 'Valor (R$)', 'NSU', 'Autorização', 'Cliente', 'Recibo', 'Emissão'],
-      filteredMatched.map(m => [m.venda.data, lojaLabel(m.venda), m.venda.valor.toFixed(2).replace('.', ','), m.venda.nsu, m.venda.autorizacao, m.recibo.cliente, m.recibo.recibo, m.recibo.dataEmissao])
-    ))
-    zip.file(`Divergencias_${storeSuffix}.csv`, toCSV(
-      ['Data', 'Loja', 'Motivo', 'Valor Venda (R$)', 'Valor Recibo (R$)', 'Diferença (R$)', 'NSU Venda', 'NSU Recibo', 'Autorização Venda', 'Autorização Recibo', 'Cliente', 'Recibo'],
-      filteredDivergent.map(m => [
-        m.venda.data,
-        lojaLabel(m.venda),
-        m.motivo === 'identificador' ? 'NSU/Autorização não conferem' : 'Valor diferente',
-        m.venda.valor.toFixed(2).replace('.', ','),
-        m.recibo.valor.toFixed(2).replace('.', ','),
-        m.diferenca.toFixed(2).replace('.', ','),
-        m.venda.nsu,
-        m.recibo.nsu,
-        m.venda.autorizacao,
-        m.recibo.autorizacao,
-        m.recibo.cliente,
-        m.recibo.recibo,
-      ])
-    ))
-    zip.file(`RecibosSemVenda_${storeSuffix}.csv`, toCSV(
-      ['Data Mvto', 'Loja', 'Valor (R$)', 'NSU', 'Autorização', 'Cliente', 'Recibo'],
-      filteredPending.map(r => [r.dataMvto, r.loja, r.valor.toFixed(2).replace('.', ','), r.nsu, r.autorizacao, r.cliente, r.recibo])
-    ))
-
-    const blob = await zip.generateAsync({ type: 'blob' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `Conciliacao_Recibos_${storeSuffix}_${stamp}.zip`
-    a.click()
-    URL.revokeObjectURL(a.href)
   }
 
   const fileInputClass =
@@ -295,12 +175,12 @@ export default function ConciliacaoRecibosPage() {
     'file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium ' +
     'file:bg-blue-50 file:text-blue-700 cursor-pointer'
 
-  const tabs: { key: Tab; label: string; count: number; border: string; text: string }[] = displaySummary
+  const tabs: { key: Tab; label: string; count: number; border: string; text: string }[] = data
     ? [
-        { key: 'missing',    label: 'Vendas sem recibo',    count: displaySummary.missingCount,   border: 'border-orange-500', text: 'text-orange-600' },
-        { key: 'ok',         label: 'Conciliados',          count: displaySummary.okCount,        border: 'border-green-500',  text: 'text-green-600'  },
-        { key: 'divergent',  label: 'Divergências',         count: displaySummary.divergentCount, border: 'border-amber-500',  text: 'text-amber-600'  },
-        { key: 'pending',    label: 'Recibos sem venda',    count: displaySummary.pendingCount,   border: 'border-gray-400',   text: 'text-gray-600'   },
+        { key: 'missing',    label: 'Vendas sem recibo',    count: data.summary.missingCount,   border: 'border-orange-500', text: 'text-orange-600' },
+        { key: 'ok',         label: 'Conciliados',          count: data.summary.okCount,        border: 'border-green-500',  text: 'text-green-600'  },
+        { key: 'divergent',  label: 'Divergências',         count: data.summary.divergentCount, border: 'border-amber-500',  text: 'text-amber-600'  },
+        { key: 'pending',    label: 'Recibos sem venda',    count: data.summary.pendingCount,   border: 'border-gray-400',   text: 'text-gray-600'   },
       ]
     : []
 
@@ -384,46 +264,26 @@ export default function ConciliacaoRecibosPage() {
           </div>
         )}
 
-        {data && displaySummary && (
+        {data && (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Loja</label>
-                <select
-                  value={storeFilter}
-                  onChange={e => setStoreFilter(e.target.value)}
-                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-900"
-                >
-                  <option value="all">Todas as lojas</option>
-                  {storeOptions.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <button
-                onClick={handleExport}
-                className="px-4 py-1.5 text-sm font-medium text-[#0369a1] border border-[#0369a1] rounded-lg hover:bg-blue-50 transition-colors"
-              >
-                Exportar {storeFilter === 'all' ? '(todas as lojas)' : `— ${storeFilter}`}
-              </button>
-            </div>
-
-            {displaySummary.missingCount === 0 && displaySummary.divergentCount === 0 ? (
+            {data.summary.missingCount === 0 && data.summary.divergentCount === 0 ? (
               <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 font-medium">
-                Tudo conciliado — {displaySummary.okCount} venda(s) com recibo. Total vendas: {fmtBRL(displaySummary.vendasValor)}
+                Tudo conciliado — {data.summary.okCount} venda(s) com recibo. Total vendas: {fmtBRL(data.summary.vendasValor)}
               </div>
             ) : (
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
-                <span className="font-semibold">{displaySummary.missingCount} venda(s) sem recibo</span>
-                {' '}·{' '}{fmtBRL(displaySummary.missingValor)}
-                {' '}·{' '}{displaySummary.divergentCount} divergência(s)
-                {' '}·{' '}{displaySummary.okCount} conciliados
+                <span className="font-semibold">{data.summary.missingCount} venda(s) sem recibo</span>
+                {' '}·{' '}{fmtBRL(data.summary.missingValor)}
+                {' '}·{' '}{data.summary.divergentCount} divergência(s)
+                {' '}·{' '}{data.summary.okCount} conciliados
               </div>
             )}
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <KpiCard label="Vendas no Período" value={fmtBRL(displaySummary.vendasValor)} sub={`${displaySummary.vendasTotal} venda(s)`} accent="border-[#0369a1]" />
-              <KpiCard label="Conciliado" value={fmtBRL(displaySummary.okValor)} sub={`${displaySummary.okCount} venda(s)`} accent="border-green-500" />
-              <KpiCard label="Sem Recibo" value={fmtBRL(displaySummary.missingValor)} sub={`${displaySummary.missingCount} venda(s)`} accent="border-orange-500" />
-              <KpiCard label="Recibos sem Venda" value={fmtBRL(displaySummary.pendingValor)} sub={`${displaySummary.pendingCount} recibo(s)`} accent="border-gray-400" />
+              <KpiCard label="Vendas no Período" value={fmtBRL(data.summary.vendasValor)} sub={`${data.summary.vendasTotal} venda(s)`} accent="border-[#0369a1]" />
+              <KpiCard label="Conciliado" value={fmtBRL(data.summary.okValor)} sub={`${data.summary.okCount} venda(s)`} accent="border-green-500" />
+              <KpiCard label="Sem Recibo" value={fmtBRL(data.summary.missingValor)} sub={`${data.summary.missingCount} venda(s)`} accent="border-orange-500" />
+              <KpiCard label="Recibos sem Venda" value={fmtBRL(data.summary.pendingValor)} sub={`${data.summary.pendingCount} recibo(s)`} accent="border-gray-400" />
             </div>
 
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -448,7 +308,7 @@ export default function ConciliacaoRecibosPage() {
                 ))}
               </div>
 
-              <TopScrollbar targetRef={tableScrollRef} watch={`${activeTab}-${filteredMatched.length}-${filteredDivergent.length}-${filteredMissing.length}-${filteredPending.length}`} />
+              <TopScrollbar targetRef={tableScrollRef} watch={`${activeTab}-${data.matched.length}-${data.divergent.length}-${data.missing.length}-${data.pending.length}`} />
 
               <div ref={tableScrollRef} className="overflow-x-auto">
 
@@ -467,9 +327,9 @@ export default function ConciliacaoRecibosPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {filteredMissing.length === 0 ? (
+                      {data.missing.length === 0 ? (
                         <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">Nenhuma venda sem recibo.</td></tr>
-                      ) : filteredMissing.map((v, i) => (
+                      ) : data.missing.map((v, i) => (
                         <tr key={i} className="bg-orange-50 hover:bg-orange-100 transition-colors">
                           <td className={tdClass}>{v.data}</td>
                           <td className={tdClass + ' font-medium'}>{lojaLabel(v)}</td>
@@ -500,9 +360,9 @@ export default function ConciliacaoRecibosPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {filteredMatched.length === 0 ? (
+                      {data.matched.length === 0 ? (
                         <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">Nenhum item conciliado.</td></tr>
-                      ) : filteredMatched.map((m, i) => (
+                      ) : data.matched.map((m, i) => (
                         <tr key={i} className="hover:bg-gray-50 transition-colors">
                           <td className={tdClass}>{m.venda.data}</td>
                           <td className={tdClass + ' font-medium'}>{lojaLabel(m.venda)}</td>
@@ -535,9 +395,9 @@ export default function ConciliacaoRecibosPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {filteredDivergent.length === 0 ? (
+                      {data.divergent.length === 0 ? (
                         <tr><td colSpan={10} className="px-4 py-10 text-center text-sm text-gray-400">Nenhuma divergência encontrada.</td></tr>
-                      ) : filteredDivergent.map((m, i) => (
+                      ) : data.divergent.map((m, i) => (
                         <tr key={i} className="bg-amber-50 hover:bg-amber-100 transition-colors">
                           <td className={tdClass}>{m.venda.data}</td>
                           <td className={tdClass + ' font-medium'}>{lojaLabel(m.venda)}</td>
@@ -581,9 +441,9 @@ export default function ConciliacaoRecibosPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {filteredPending.length === 0 ? (
+                      {data.pending.length === 0 ? (
                         <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">Nenhum recibo sem venda correspondente.</td></tr>
-                      ) : filteredPending.map((r, i) => (
+                      ) : data.pending.map((r, i) => (
                         <tr key={i} className="hover:bg-gray-50 transition-colors">
                           <td className={tdClass}>{r.dataMvto}</td>
                           <td className={tdClass + ' font-medium'}>{r.loja}</td>
