@@ -184,26 +184,34 @@ function parseRecibosXLSX(buffer: Buffer): Recibo[] {
 
 function reconcile(vendas: Venda[], recibos: Recibo[]) {
   type RecIndexed = Recibo & { _used: boolean }
-  const recIdx = new Map<string, RecIndexed>()
+  // NSU+Autorização pode se repetir (ex: recibo corrigido/reemitido para o
+  // mesmo cartão) — mantém todos os candidatos por chave em vez de sobrescrever,
+  // senão um deles some silenciosamente da conciliação.
+  const recIdx = new Map<string, RecIndexed[]>()
   for (const r of recibos) {
-    recIdx.set(`${r.nsu}|${r.autorizacao}`, { ...r, _used: false })
+    const key = `${r.nsu}|${r.autorizacao}`
+    const list = recIdx.get(key)
+    if (list) list.push({ ...r, _used: false })
+    else recIdx.set(key, [{ ...r, _used: false }])
   }
 
   const matched: MatchedEntry[] = []
   const missing: Venda[] = []
 
   for (const v of vendas) {
-    const rec = recIdx.get(`${v.nsu}|${v.autorizacao}`)
-    if (!rec) {
+    const candidates = (recIdx.get(`${v.nsu}|${v.autorizacao}`) ?? []).filter(r => !r._used)
+    if (candidates.length === 0) {
       missing.push(v)
       continue
     }
+    // Entre candidatos com a mesma chave, usa o de valor mais próximo da venda.
+    const rec = candidates.reduce((a, b) => (Math.abs(a.valor - v.valor) <= Math.abs(b.valor - v.valor) ? a : b))
     rec._used = true
     const diferenca = rec.valor - v.valor
     matched.push({ venda: v, recibo: rec, divergente: Math.abs(diferenca) > 0.01, diferenca })
   }
 
-  const pending = [...recIdx.values()].filter(r => !r._used)
+  const pending = [...recIdx.values()].flat().filter(r => !r._used)
 
   missing.sort((a, b) => dateSortKey(a.data).localeCompare(dateSortKey(b.data)))
   matched.sort((a, b) => dateSortKey(a.venda.data).localeCompare(dateSortKey(b.venda.data)))
