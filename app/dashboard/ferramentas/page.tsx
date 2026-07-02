@@ -122,7 +122,12 @@ export default async function FerramentasPage() {
 
   let accessibleSlugs = new Set<string>()
   if (isAdmin) {
-    ALL_TOOLS.forEach(t => accessibleSlugs.add(t.slug))
+    // Admin vê todas as ferramentas, mas uma ferramenta desativada some do
+    // painel igual para todo mundo — pode ser reativada em /dashboard/admin,
+    // ou acessada direto pela URL (requireToolAccess libera admin mesmo inativa).
+    const { data: activeTools } = await supabase.from('tools').select('slug').eq('active', true)
+    const activeSlugs = new Set((activeTools ?? []).map(t => t.slug))
+    ALL_TOOLS.forEach(t => { if (activeSlugs.has(t.slug)) accessibleSlugs.add(t.slug) })
   } else {
     const { data: accessRows } = await supabase
       .from('user_tool_access')
