@@ -16,6 +16,7 @@ interface Venda {
   autorizacao: string
   maquininha: string
   loja: string
+  lojaNumero: string
 }
 
 interface Recibo {
@@ -93,6 +94,7 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
   const idxAutorizacao = colIndex(headers, ['AUTORIZ'], ['PRE'])
   const idxMaquininha = colIndex(headers, ['CODIGO', 'MAQUININHA'])
   const idxLoja = colIndex(headers, ['NOME', 'ESTABELECIMENTO'])
+  const idxLojaNumero = colIndex(headers, ['NUMERO', 'ESTABELECIMENTO'])
 
   const results: Venda[] = []
   for (let i = headerIdx + 1; i < rows.length; i++) {
@@ -116,6 +118,7 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
       autorizacao,
       maquininha,
       loja: String(row[idxLoja] ?? ''),
+      lojaNumero: String(row[idxLojaNumero] ?? ''),
     })
   }
   return results

@@ -11,6 +11,7 @@ interface Venda {
   autorizacao: string
   maquininha: string
   loja: string
+  lojaNumero: string
 }
 
 interface Recibo {
@@ -55,6 +56,10 @@ type Tab = 'missing' | 'ok' | 'divergent' | 'pending'
 
 function fmtBRL(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function lojaLabel(venda: Venda) {
+  return venda.lojaNumero ? `${venda.loja} (${venda.lojaNumero})` : venda.loja
 }
 
 interface KpiCardProps { label: string; value: string; sub: string; accent: string }
@@ -256,7 +261,7 @@ export default function ConciliacaoRecibosPage() {
                       ) : data.missing.map((v, i) => (
                         <tr key={i} className="bg-orange-50 hover:bg-orange-100 transition-colors">
                           <td className={tdClass}>{v.data}</td>
-                          <td className={tdClass + ' font-medium'}>{v.loja}</td>
+                          <td className={tdClass + ' font-medium'}>{lojaLabel(v)}</td>
                           <td className={tdRight + ' text-orange-800'}>{fmtBRL(v.valor)}</td>
                           <td className={tdClass}>{v.modalidade}</td>
                           <td className={tdClass}>{v.bandeira}</td>
@@ -289,7 +294,7 @@ export default function ConciliacaoRecibosPage() {
                       ) : data.matched.map((m, i) => (
                         <tr key={i} className="hover:bg-gray-50 transition-colors">
                           <td className={tdClass}>{m.venda.data}</td>
-                          <td className={tdClass + ' font-medium'}>{m.venda.loja}</td>
+                          <td className={tdClass + ' font-medium'}>{lojaLabel(m.venda)}</td>
                           <td className={tdRight + ' text-green-800'}>{fmtBRL(m.venda.valor)}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{m.venda.nsu}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{m.venda.autorizacao}</td>
@@ -323,7 +328,7 @@ export default function ConciliacaoRecibosPage() {
                       ) : data.divergent.map((m, i) => (
                         <tr key={i} className="bg-amber-50 hover:bg-amber-100 transition-colors">
                           <td className={tdClass}>{m.venda.data}</td>
-                          <td className={tdClass + ' font-medium'}>{m.venda.loja}</td>
+                          <td className={tdClass + ' font-medium'}>{lojaLabel(m.venda)}</td>
                           <td className={tdRight + ' text-amber-800'}>{fmtBRL(m.venda.valor)}</td>
                           <td className={tdRight + ' text-amber-800'}>{fmtBRL(m.recibo.valor)}</td>
                           <td className={tdRight + ' font-semibold ' + (m.diferenca > 0 ? 'text-red-700' : 'text-blue-700')}>
