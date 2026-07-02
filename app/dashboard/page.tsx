@@ -38,7 +38,7 @@ export default async function DashboardPage() {
     usageByTool.set(log.tool_slug, (usageByTool.get(log.tool_slug) ?? 0) + 1)
     usageByUser.set(log.user_id, (usageByUser.get(log.user_id) ?? 0) + 1)
     const dayKey = toDateKey(log.created_at)
-    usageByDay.set(dayKey, (usageByDay.get(dayKey) ?? 0) + log.files_count)
+    usageByDay.set(dayKey, (usageByDay.get(dayKey) ?? 0) + 1)
   }
 
   // Busca as ferramentas direto da tabela "tools" — assim, toda ferramenta
@@ -172,7 +172,7 @@ export default async function DashboardPage() {
                     <div
                       className="w-full bg-[#0d1e45] rounded-sm group-hover:bg-[#c8102e] transition-colors min-h-[2px]"
                       style={{ height: `${(day.count / maxDailyCount) * 100}%` }}
-                      title={`${day.label}: ${day.count} arquivo${day.count === 1 ? '' : 's'}`}
+                      title={`${day.label}: ${day.count} uso${day.count === 1 ? '' : 's'}`}
                     />
                   </div>
                 ))}
