@@ -31,10 +31,7 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register')
-  // Rotas server-to-server com autenticação própria (bearer/token), sem sessão
-  // de usuário — cron do GitHub Actions e push do Bradesco.
-  const isServiceRoute = pathname === '/api/pix/cron' || pathname === '/api/pix/webhook'
-  const isPublicRoute = pathname === '/' || isAuthRoute || pathname.startsWith('/auth') || isServiceRoute
+  const isPublicRoute = pathname === '/' || isAuthRoute || pathname.startsWith('/auth')
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()

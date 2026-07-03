@@ -222,16 +222,6 @@ on conflict (slug) do nothing;
 -- delete from public.user_tool_access where tool_id in (select id from public.tools where slug = 'ia');
 -- delete from public.tools where slug = 'ia';
 
--- ============================================================
--- MIGRAÇÃO: Conciliação PIX (Bradesco + ERP JJW)
--- Execute no SQL Editor do Supabase após o schema inicial
--- Portado do serviço Java "AUTOMACAO-PIX": ingere PIX recebidos via
--- Bradesco, concilia automaticamente com títulos abertos no ERP JJW e
--- dá baixa. Fallback de conciliação manual pela UI. Ingestão/baixa só
--- ocorrem via service role (cron/webhook/rotas de servidor) — usuários
--- comuns só leem, e apenas se tiverem a ferramenta 'pix' liberada.
--- ============================================================
-
 -- Função reutilizável: usuário tem acesso à ferramenta <slug>?
 -- (mesmo espírito do is_admin(), evita repetir o exists(...) em cada policy)
 create or replace function public.has_tool_access(tool_slug text)
@@ -249,58 +239,11 @@ as $$
   );
 $$;
 
-create table public.pix_transactions (
-  id                     uuid primary key default gen_random_uuid(),
-  end_to_end_id          text not null unique,
-  txid                   text,
-  valor                  numeric(15,2) not null,
-  pagador_cpf_cnpj       text,
-  pagador_nome           text,
-  chave_pix              text not null,
-  data_hora_pagamento    timestamptz not null,
-  info_pagador           text,
-  status                 text not null default 'RECEIVED'
-    check (status in ('RECEIVED', 'RECONCILING', 'MATCHED', 'RECONCILED', 'ERROR', 'IGNORED')),
-  erp_titulo_id          text,
-  erp_baixa_response     text,
-  reconciliation_source  text check (reconciliation_source in ('AUTOMATIC', 'MANUAL')),
-  reconciled_at          timestamptz,
-  reconciled_by          text,
-  raw_payload            jsonb,
-  created_at             timestamptz not null default now(),
-  updated_at             timestamptz not null default now()
-);
-
-create index pix_transactions_status_idx on public.pix_transactions(status);
-create index pix_transactions_data_idx on public.pix_transactions(data_hora_pagamento desc);
-create index pix_transactions_cpf_idx on public.pix_transactions(pagador_cpf_cnpj);
-
-alter table public.pix_transactions enable row level security;
-
--- Dados sensíveis (CPF/CNPJ, valores) — diferente do padrão mais aberto usado
--- em tool_usage_logs (que só expõe estatísticas agregadas), aqui só admin ou
--- quem tem a ferramenta 'pix' liberada pode ler. Escritas só via service role.
-create policy "Admin ou acesso à ferramenta pix lê transações"
-  on public.pix_transactions for select
-  using (public.is_admin() or public.has_tool_access('pix'));
-
-create table public.pix_reconciliation_log (
-  id                 uuid primary key default gen_random_uuid(),
-  pix_transaction_id uuid references public.pix_transactions(id) on delete cascade,
-  action             text not null,
-  detail             text,
-  performed_by       text,
-  created_at         timestamptz not null default now()
-);
-
-create index pix_reconciliation_log_pix_idx on public.pix_reconciliation_log(pix_transaction_id);
-
-alter table public.pix_reconciliation_log enable row level security;
-
-create policy "Admin ou acesso à ferramenta pix lê logs"
-  on public.pix_reconciliation_log for select
-  using (public.is_admin() or public.has_tool_access('pix'));
-
-insert into public.tools (name, slug, description) values
-  ('Conciliação PIX', 'pix', 'Concilia pagamentos PIX recebidos (Bradesco) com títulos abertos no ERP JJW')
-on conflict (slug) do nothing;
+-- As ferramentas "Conciliação PIX" (Bradesco + ERP JJW), "Comparador DDA" e
+-- "Conciliação Cartão" foram removidas do produto (nunca chegaram a
+-- processar dados reais — tabelas vazias). Se você já executou a migração
+-- do PIX em produção, limpe o resíduo com:
+-- drop table if exists public.pix_reconciliation_log;
+-- drop table if exists public.pix_transactions;
+-- delete from public.user_tool_access where tool_id in (select id from public.tools where slug in ('pix', 'comparador-dda', 'conciliacao-cartao'));
+-- delete from public.tools where slug in ('pix', 'comparador-dda', 'conciliacao-cartao');
