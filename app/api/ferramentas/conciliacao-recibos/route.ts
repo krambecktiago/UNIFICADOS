@@ -85,6 +85,20 @@ function findHeaderRow(rows: unknown[][], mustInclude: string[]): number {
   return -1
 }
 
+// O relatório de recibos exporta várias abas auxiliares (listas de filtro:
+// "Empresa", "Bandeira", "Cliente"...) antes da aba com os dados reais —
+// a aba de dados nem sempre é a primeira, e seu nome varia (é truncado em 31
+// caracteres pelo Excel). Por isso não se pode assumir wb.SheetNames[0]: é
+// preciso procurar a aba cujo cabeçalho contém as colunas esperadas.
+function findDataSheet(wb: XLSX.WorkBook, mustInclude: string[]): { rows: unknown[][]; headerIdx: number } {
+  for (const name of wb.SheetNames) {
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[name], { header: 1 })
+    const headerIdx = findHeaderRow(rows, mustInclude)
+    if (headerIdx !== -1) return { rows, headerIdx }
+  }
+  return { rows: [], headerIdx: -1 }
+}
+
 function colIndex(headers: string[], keywords: string[], exclude: string[] = []): number {
   return headers.findIndex(h => keywords.every(k => h.includes(k)) && !exclude.some(k => h.includes(k)))
 }
@@ -94,10 +108,7 @@ function colIndex(headers: string[], keywords: string[], exclude: string[] = [])
 // conciliação as vendas aprovadas em outras maquininhas (SN/SV/LG...).
 function parseVendasXLSX(buffer: Buffer): Venda[] {
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true })
-  const ws = wb.Sheets[wb.SheetNames[0]]
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1 })
-
-  const headerIdx = findHeaderRow(rows, ['NSU', 'AUTORIZ'])
+  const { rows, headerIdx } = findDataSheet(wb, ['NSU', 'AUTORIZ'])
   if (headerIdx === -1) return []
   const headers = (rows[headerIdx] ?? []).map(h => normText(h))
 
@@ -144,10 +155,7 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
 // Relatório interno "Clientes x Recibos" — um recibo emitido por linha.
 function parseRecibosXLSX(buffer: Buffer): Recibo[] {
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true })
-  const ws = wb.Sheets[wb.SheetNames[0]]
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1 })
-
-  const headerIdx = findHeaderRow(rows, ['NSU', 'AUTORIZ'])
+  const { rows, headerIdx } = findDataSheet(wb, ['NSU', 'AUTORIZ'])
   if (headerIdx === -1) return []
   const headers = (rows[headerIdx] ?? []).map(h => normText(h))
 
