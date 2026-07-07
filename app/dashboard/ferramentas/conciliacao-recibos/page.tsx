@@ -133,6 +133,7 @@ export default function ConciliacaoRecibosPage() {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<ApiResponse | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('missing')
+  const [exporting, setExporting] = useState(false)
 
   const vendasRef = useRef<HTMLInputElement>(null)
   const recibosRef = useRef<HTMLInputElement>(null)
@@ -160,6 +161,33 @@ export default function ConciliacaoRecibosPage() {
       setError(e instanceof Error ? e.message : 'Erro inesperado.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleExport() {
+    if (!data) return
+    setExporting(true)
+    try {
+      const res = await fetch('/api/ferramentas/conciliacao-recibos/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error ?? `Erro ${res.status}`)
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'conciliacao-recibos.xlsx'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao exportar planilha.')
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -269,18 +297,29 @@ export default function ConciliacaoRecibosPage() {
 
         {data && (
           <>
-            {data.summary.missingCount === 0 && data.summary.divergentCount === 0 ? (
-              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 font-medium">
-                Tudo conciliado — {data.summary.okCount} venda(s) com recibo. Total vendas: {fmtBRL(data.summary.vendasValor)}
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                {data.summary.missingCount === 0 && data.summary.divergentCount === 0 ? (
+                  <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 font-medium">
+                    Tudo conciliado — {data.summary.okCount} venda(s) com recibo. Total vendas: {fmtBRL(data.summary.vendasValor)}
+                  </div>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+                    <span className="font-semibold">{data.summary.missingCount} venda(s) sem recibo</span>
+                    {' '}·{' '}{fmtBRL(data.summary.missingValor)}
+                    {' '}·{' '}{data.summary.divergentCount} divergência(s)
+                    {' '}·{' '}{data.summary.okCount} conciliados
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
-                <span className="font-semibold">{data.summary.missingCount} venda(s) sem recibo</span>
-                {' '}·{' '}{fmtBRL(data.summary.missingValor)}
-                {' '}·{' '}{data.summary.divergentCount} divergência(s)
-                {' '}·{' '}{data.summary.okCount} conciliados
-              </div>
-            )}
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="shrink-0 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                {exporting ? 'Exportando…' : 'Exportar Excel'}
+              </button>
+            </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <KpiCard label="Vendas no Período" value={fmtBRL(data.summary.vendasValor)} sub={`${data.summary.vendasTotal} venda(s)`} accent="border-[#0369a1]" />
