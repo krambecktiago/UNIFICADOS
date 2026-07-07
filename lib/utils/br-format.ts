@@ -17,8 +17,11 @@ export function normText(str: unknown): string {
 }
 
 export function normDup(dup: string): string {
-  const parts = String(dup).trim().split('.')
-  if (parts.length < 2) return dup.trim()
+  let s = String(dup).trim()
+  const slashIdx = s.lastIndexOf('/')
+  if (slashIdx !== -1) s = s.slice(slashIdx + 1)
+  const parts = s.split('.')
+  if (parts.length < 2) return s
   const intPart = parseInt(parts[0], 10).toString()
   const decPart = parseInt(parts[1], 10).toString()
   return `${intPart}.${decPart}`
