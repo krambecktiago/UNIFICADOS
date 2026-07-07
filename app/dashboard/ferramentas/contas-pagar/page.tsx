@@ -86,14 +86,10 @@ export default function ContasPagarPage() {
   const [data, setData] = useState(getTodayBR())
   const [pagamentos, setPagamentos] = useState<PagamentosState>(emptyPagamentos())
   const [saldos, setSaldos] = useState<SaldosState>(emptySaldos())
-  const [webhook, setWebhook] = useState('')
   const [template, setTemplate] = useState(DEFAULT_TEMPLATE)
   const [loading, setLoading] = useState(false)
-  const [testLoading, setTestLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [testSuccess, setTestSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [testError, setTestError] = useState<string | null>(null)
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsMsg, setSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
@@ -102,7 +98,6 @@ export default function ContasPagarPage() {
       .then(async r => {
         const json = await r.json()
         if (!r.ok) { console.error('[Settings] Erro ao carregar:', json); return }
-        if (json.settings?.webhook) setWebhook(json.settings.webhook)
         if (json.settings?.template) setTemplate(json.settings.template)
       })
       .catch(e => console.error('[Settings] Falha de rede ao carregar:', e))
@@ -115,7 +110,7 @@ export default function ContasPagarPage() {
       const r = await fetch('/api/ferramentas/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tool: 'contas-pagar', settings: { webhook, template } }),
+        body: JSON.stringify({ tool: 'contas-pagar', settings: { template } }),
       })
       if (!r.ok) {
         const err = await r.json().catch(() => ({}))
@@ -159,7 +154,6 @@ export default function ContasPagarPage() {
     ) as Record<typeof LOJAS[number], Record<typeof BANCOS[number], number>>
 
     return {
-      webhook,
       template,
       data,
       pagamentos: pagamentosNum,
@@ -170,10 +164,6 @@ export default function ContasPagarPage() {
   async function handleSend() {
     setError(null)
     setSuccess(false)
-    if (!webhook.trim()) {
-      setError('Informe a URL do Webhook Discord antes de enviar.')
-      return
-    }
     setLoading(true)
     try {
       const res = await fetch('/api/ferramentas/contas-pagar', {
@@ -190,41 +180,6 @@ export default function ContasPagarPage() {
       setError(e instanceof Error ? e.message : 'Erro ao enviar mensagem.')
     } finally {
       setLoading(false)
-    }
-  }
-
-  async function handleTest() {
-    setTestError(null)
-    setTestSuccess(false)
-    if (!webhook.trim()) {
-      setTestError('Informe a URL do Webhook antes de testar.')
-      return
-    }
-    setTestLoading(true)
-    try {
-      const res = await fetch('/api/ferramentas/contas-pagar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          webhook,
-          template: '🔔 **Teste de conexão** — Webhook configurado com sucesso.',
-          data,
-          pagamentos: Object.fromEntries(LOJAS.map((l) => [l, 0])),
-          saldos: Object.fromEntries(
-            LOJAS.map((l) => [l, Object.fromEntries(BANCOS.map((b) => [b, 0]))])
-          ),
-          test: true,
-        }),
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body?.error ?? `Erro ${res.status}`)
-      }
-      setTestSuccess(true)
-    } catch (e: unknown) {
-      setTestError(e instanceof Error ? e.message : 'Erro ao testar webhook.')
-    } finally {
-      setTestLoading(false)
     }
   }
 
@@ -346,40 +301,14 @@ export default function ContasPagarPage() {
           </div>
         </Card>
 
-        {/* Section 4: Webhook Discord */}
-        <Card padding="6">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="w-1 h-5 bg-blue-500 rounded-full flex-shrink-0" />
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-              Webhook Discord
-            </h2>
-          </div>
-          <div className="flex gap-3 items-start">
-            <div className="flex-1">
-              <label className="block text-xs text-gray-500 mb-1.5">URL do Webhook</label>
-              <input
-                type="url"
-                value={webhook}
-                onChange={(e) => setWebhook(e.target.value)}
-                placeholder="https://discord.com/api/webhooks/..."
-                className={inputBase}
-              />
-            </div>
-            <div className="pt-6">
-              <Button type="button" variant="secondary" onClick={handleTest} loading={testLoading}>
-                {testLoading ? 'Testando…' : 'Testar'}
-              </Button>
-            </div>
-          </div>
-          {testSuccess && (
-            <p className="mt-2 text-sm text-green-700 font-medium">
-              Mensagem de teste enviada com sucesso.
-            </p>
-          )}
-          {testError && (
-            <p className="mt-2 text-sm text-red-600">{testError}</p>
-          )}
-        </Card>
+        {/* Section 4: Webhook Discord — gerenciado centralmente em Conexões */}
+        <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>
+          <p className="text-sm text-blue-800">
+            O webhook do Discord é configurado por um administrador em{' '}
+            <span className="font-semibold">Administração → Conexões</span>. Se o envio falhar, verifique se a conexão está configurada lá.
+          </p>
+        </div>
 
         {/* Section 5: Template da Mensagem */}
         <Card padding="6">

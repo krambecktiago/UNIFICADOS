@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { formatBRL } from '@/lib/utils/br-format'
 
@@ -9,7 +10,6 @@ type Lojas = 'L01' | 'L02' | 'L03' | 'L04' | 'L05'
 type Bancos = 'VIACREDI' | 'BRADESCO' | 'SANTANDER' | 'ITAU'
 
 interface Payload {
-  webhook: string
   template: string
   data: string
   pagamentos: Record<Lojas, number>
@@ -23,10 +23,21 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: Payload = await request.json()
-    const { webhook, template, data, pagamentos, saldos } = body
+    const { template, data, pagamentos, saldos } = body
 
-    if (!webhook.startsWith('https://discord.com/api/webhooks/')) {
-      return NextResponse.json({ error: 'URL do webhook inválida' }, { status: 400 })
+    const adminClient = createAdminClient()
+    const { data: integration } = await adminClient
+      .from('integrations')
+      .select('value')
+      .eq('slug', 'discord-contas-pagar')
+      .maybeSingle()
+
+    const webhook = integration?.value
+    if (!webhook || !webhook.startsWith('https://discord.com/api/webhooks/')) {
+      return NextResponse.json(
+        { error: 'Webhook do Discord não configurado. Configure em Administração → Conexões.' },
+        { status: 400 }
+      )
     }
 
     const lojas: Lojas[] = ['L01', 'L02', 'L03', 'L04', 'L05']

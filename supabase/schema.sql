@@ -247,3 +247,47 @@ $$;
 -- drop table if exists public.pix_transactions;
 -- delete from public.user_tool_access where tool_id in (select id from public.tools where slug in ('pix', 'comparador-dda', 'conciliacao-cartao'));
 -- delete from public.tools where slug in ('pix', 'comparador-dda', 'conciliacao-cartao');
+
+-- ============================================================
+-- MIGRAÇÃO: Integrações (conexões de API/webhook centralizadas)
+-- Execute no SQL Editor do Supabase após o schema inicial
+-- Antes, cada ferramenta guardava sua própria credencial em
+-- user_tool_settings (por usuário). A partir daqui, credenciais como o
+-- webhook do Discord passam a ser gerenciadas em um único lugar, só por
+-- admin, em Administração → Conexões.
+-- ============================================================
+create table public.integrations (
+  id          uuid primary key default gen_random_uuid(),
+  slug        text not null unique,
+  name        text not null,
+  type        text not null default 'webhook' check (type in ('webhook', 'api_key', 'other')),
+  value       text not null default '',
+  description text,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+alter table public.integrations enable row level security;
+
+create policy "Admin gerencia integrações"
+  on public.integrations for all
+  using (public.is_admin())
+  with check (public.is_admin());
+
+insert into public.integrations (slug, name, type, description) values
+  ('discord-contas-pagar', 'Discord — Contas a Pagar', 'webhook', 'Webhook do canal Discord que recebe o resumo diário de pagamentos')
+on conflict (slug) do nothing;
+
+-- Migração de dados: se algum usuário já tinha um webhook salvo na
+-- ferramenta (user_tool_settings), copia o mais recente para a conexão
+-- central antes de a ferramenta deixar de aceitar webhook por usuário.
+update public.integrations
+set value = sub.webhook, updated_at = now()
+from (
+  select settings->>'webhook' as webhook
+  from public.user_tool_settings
+  where tool_slug = 'contas-pagar' and settings->>'webhook' is not null and settings->>'webhook' != ''
+  order by updated_at desc
+  limit 1
+) sub
+where public.integrations.slug = 'discord-contas-pagar' and public.integrations.value = '';

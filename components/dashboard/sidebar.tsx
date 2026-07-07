@@ -22,6 +22,17 @@ const adminNavItem = {
   ),
 }
 
+const conexoesNavItem = {
+  href: '/dashboard/admin/conexoes',
+  exact: false,
+  label: 'Conexões',
+  icon: (
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-[18px] h-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+    </svg>
+  ),
+}
+
 const navItems = [
   {
     href: '/dashboard',
@@ -139,34 +150,38 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
           )
         })}
 
-        {/* Link de Administração — visível apenas para admins */}
-        {isAdmin && (() => {
-          const item = adminNavItem
-          const active = pathname === item.href || pathname.startsWith(item.href + '/')
-          return (
-            <>
-              <div className="pt-3 pb-1">
-                <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
-                  Sistema
-                </span>
-              </div>
-              <Link
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors border-l-2',
-                  active
-                    ? 'bg-brand-navy/5 border-brand-navy text-brand-navy'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
-                )}
-              >
-                <span className={cn('flex items-center', active && 'text-brand-navy')}>
-                  {item.icon}
-                </span>
-                {item.label}
-              </Link>
-            </>
-          )
-        })()}
+        {/* Links de Administração e Conexões — visíveis apenas para admins */}
+        {isAdmin && (
+          <>
+            <div className="pt-3 pb-1">
+              <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
+                Sistema
+              </span>
+            </div>
+            {[adminNavItem, conexoesNavItem].map((item) => {
+              const active = item === adminNavItem
+                ? pathname === item.href
+                : pathname === item.href || pathname.startsWith(item.href + '/')
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors border-l-2',
+                    active
+                      ? 'bg-brand-navy/5 border-brand-navy text-brand-navy'
+                      : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
+                  )}
+                >
+                  <span className={cn('flex items-center', active && 'text-brand-navy')}>
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </Link>
+              )
+            })}
+          </>
+        )}
       </nav>
 
       {/* ── Rodapé / Sair ───────────────────────────────────────────────── */}
