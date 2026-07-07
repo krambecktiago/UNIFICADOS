@@ -62,6 +62,16 @@ function lojaLabel(v: Venda): string {
   return v.lojaNumero ? `${v.loja} (${v.lojaNumero})` : v.loja
 }
 
+// Barra proporcional feita com blocos Unicode, colorida via fonte. A
+// formatação condicional "barra de dados" nativa do Excel (o jeito mais óbvio
+// de fazer isso) tem um bug conhecido e ainda aberto na exceljs que corrompe
+// o arquivo no Excel de verdade (github.com/exceljs/exceljs/issues/3015) —
+// essa alternativa usa só cor de fonte, um recurso básico e sem esse risco.
+function bar(pct: number, width = 24): string {
+  const filled = Math.max(0, Math.min(width, Math.round(pct * width)))
+  return '█'.repeat(filled) + '░'.repeat(width - filled)
+}
+
 const NAVY = 'FF0D1E45'
 const CURRENCY_FMT = '"R$" #,##0.00'
 const PERCENT_FMT = '0.0%'
@@ -83,13 +93,13 @@ function styleHeaderRow(ws: ExcelJS.Worksheet) {
 
 function buildResumoSheet(wb: ExcelJS.Workbook, body: ExportBody) {
   const ws = wb.addWorksheet('Resumo', { views: [{ showGridLines: false }] })
-  ws.columns = [{ width: 3 }, { width: 32 }, { width: 14 }, { width: 16 }, { width: 34 }]
+  ws.columns = [{ width: 3 }, { width: 32 }, { width: 14 }, { width: 16 }, { width: 12 }, { width: 30 }]
 
   const { summary, divergent } = body
   const divergentValor = divergent.reduce((a, m) => a + m.venda.valor, 0)
   const total = summary.vendasTotal || 1
 
-  ws.mergeCells('A1:E1')
+  ws.mergeCells('A1:F1')
   const title = ws.getCell('A1')
   title.value = 'KRAMBECK — Conciliação de Recibos'
   title.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } }
@@ -97,7 +107,7 @@ function buildResumoSheet(wb: ExcelJS.Workbook, body: ExportBody) {
   title.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
   ws.getRow(1).height = 30
 
-  ws.mergeCells('A2:E2')
+  ws.mergeCells('A2:F2')
   const subtitle = ws.getCell('A2')
   subtitle.value = `Resumo gerado em ${new Date().toLocaleString('pt-BR')}`
   subtitle.font = { italic: true, size: 10, color: { argb: 'FF6B7280' } }
@@ -113,7 +123,7 @@ function buildResumoSheet(wb: ExcelJS.Workbook, body: ExportBody) {
   ws.getCell('D4').font = { bold: true }
 
   const headerRow = ws.getRow(6)
-  headerRow.values = ['', 'Categoria', 'Quantidade', 'Valor', '% das vendas no período']
+  headerRow.values = ['', 'Categoria', 'Quantidade', 'Valor', '% das vendas', 'Proporção']
   headerRow.font = HEADER_FONT
   headerRow.eachCell(cell => { cell.fill = HEADER_FILL })
   headerRow.height = 20
@@ -134,23 +144,9 @@ function buildResumoSheet(wb: ExcelJS.Workbook, body: ExportBody) {
     r.getCell(4).numFmt = CURRENCY_FMT
     r.getCell(5).value = c.pct
     r.getCell(5).numFmt = PERCENT_FMT
+    r.getCell(6).value = bar(c.pct)
+    r.getCell(6).font = { name: 'Consolas', color: { argb: c.color } }
     r.eachCell(cell => { cell.border = { bottom: { style: 'hair', color: { argb: 'FFE5E7EB' } } } })
-  })
-
-  // Barra de dados nativa do Excel na coluna de % — é o recurso mais próximo
-  // de um gráfico que dá pra gerar de forma confiável sem lib paga ou risco
-  // de corromper o arquivo (gerar um objeto de gráfico OOXML na mão é frágil
-  // e não há lib gratuita e mantida que faça isso).
-  ws.addConditionalFormatting({
-    ref: 'E7:E9',
-    rules: [{
-      type: 'dataBar',
-      cfvo: [{ type: 'num', value: 0 }, { type: 'num', value: 1 }],
-      color: { argb: NAVY },
-      gradient: false,
-      border: true,
-      priority: 1,
-    } as ExcelJS.DataBarRuleType],
   })
 
   ws.mergeCells('B11:C11')
