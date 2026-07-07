@@ -24,6 +24,7 @@ interface Venda {
   maquininha: string
   loja: string
   lojaNumero: string
+  parcelas: number
 }
 
 interface Recibo {
@@ -35,6 +36,7 @@ interface Recibo {
   dataEmissao: string
   valor: number
   loja: string
+  parcelas: number
 }
 
 interface MatchedEntry {
@@ -46,6 +48,9 @@ interface MatchedEntry {
   // 'identificador': valor idêntico, mas NSU+Autorização não batem — provável
   // erro de digitação ao registrar o recibo (ver reconcile()).
   motivo: 'valor' | 'identificador'
+  // true quando o número de parcelas do recibo não bate com o da venda,
+  // mesmo que valor e NSU/Autorização estejam corretos.
+  parcelasDivergentes: boolean
 }
 
 // Prefixo numérico do campo "Recibo" (ex: "5/209529") identifica a loja.
@@ -123,6 +128,7 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
   const idxMaquininha = colIndex(headers, ['CODIGO', 'MAQUININHA'])
   const idxLoja = colIndex(headers, ['NOME', 'ESTABELECIMENTO'])
   const idxLojaNumero = colIndex(headers, ['NUMERO', 'ESTABELECIMENTO'])
+  const idxParcelas = colIndex(headers, ['PARCELA'])
 
   const results: Venda[] = []
   for (let i = headerIdx + 1; i < rows.length; i++) {
@@ -147,6 +153,7 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
       maquininha,
       loja: String(row[idxLoja] ?? ''),
       lojaNumero: String(row[idxLojaNumero] ?? ''),
+      parcelas: Number(row[idxParcelas]) || 0,
     })
   }
   return results
@@ -166,6 +173,7 @@ function parseRecibosXLSX(buffer: Buffer): Recibo[] {
   const idxDataMvto = colIndex(headers, ['DATA', 'MVTO'])
   const idxDataEmissao = colIndex(headers, ['DATA', 'EMISS'])
   const idxValor = colIndex(headers, ['VALOR', 'PAGO'])
+  const idxParcelas = colIndex(headers, ['PARCELA'])
 
   const dataRows = rows.slice(headerIdx + 1).filter(row => row && row.length)
 
@@ -198,6 +206,7 @@ function parseRecibosXLSX(buffer: Buffer): Recibo[] {
       dataEmissao: cellText(row[idxDataEmissao]),
       valor: Number(row[idxValor]) || 0,
       loja: LOJA_MAP[prefixo] ?? prefixo ?? '',
+      parcelas: Number(row[idxParcelas]) || 0,
     })
   }
   return results
@@ -230,7 +239,15 @@ function reconcile(vendas: Venda[], recibos: Recibo[]) {
     const rec = candidates.reduce((a, b) => (Math.abs(a.valor - v.valor) <= Math.abs(b.valor - v.valor) ? a : b))
     rec._used = true
     const diferenca = rec.valor - v.valor
-    matched.push({ venda: v, recibo: rec, divergente: Math.abs(diferenca) > 0.01, diferenca, motivo: 'valor' })
+    const parcelasDivergentes = v.parcelas !== rec.parcelas
+    matched.push({
+      venda: v,
+      recibo: rec,
+      divergente: Math.abs(diferenca) > 0.01 || parcelasDivergentes,
+      diferenca,
+      motivo: 'valor',
+      parcelasDivergentes,
+    })
   }
 
   // Fase 2: entre o que sobrou sem NSU+Autorização correspondente, tenta casar
@@ -280,7 +297,14 @@ function reconcile(vendas: Venda[], recibos: Recibo[]) {
       if (usedVendas.has(v) || r._used) continue
       r._used = true
       usedVendas.add(v)
-      matched.push({ venda: v, recibo: r, divergente: true, diferenca: r.valor - v.valor, motivo: 'identificador' })
+      matched.push({
+        venda: v,
+        recibo: r,
+        divergente: true,
+        diferenca: r.valor - v.valor,
+        motivo: 'identificador',
+        parcelasDivergentes: v.parcelas !== r.parcelas,
+      })
     }
     for (const v of vs) if (!usedVendas.has(v)) missing.push(v)
   }
