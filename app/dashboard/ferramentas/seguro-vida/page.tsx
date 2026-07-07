@@ -1,6 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { PageHeader } from '@/components/ui/page-header';
+import { Card, TableCard } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { FileInput } from '@/components/ui/file-input';
+import { Spinner } from '@/components/ui/spinner';
+import { TH_CLASS } from '@/components/ui/table';
 
 interface ResultRow {
   nome: string;
@@ -41,24 +49,14 @@ function getRowStyle(status: string): string {
   }
 }
 
-function getStatusBadge(status: string): string {
-  const base = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ';
-  switch (status) {
-    case 'ATIVO':
-    case 'OK':
-      return base + 'bg-green-100 text-green-800';
-    case 'SOMENTE_PDF':
-      return base + 'bg-orange-100 text-orange-800';
-    case 'SOMENTE_XLSX':
-      return base + 'bg-blue-100 text-blue-800';
-    case 'INCLUSAO':
-      return base + 'bg-yellow-100 text-yellow-800';
-    case 'EXCLUSAO':
-      return base + 'bg-red-100 text-red-800';
-    default:
-      return base + 'bg-gray-100 text-gray-800';
-  }
-}
+const STATUS_TONE: Record<string, 'green' | 'orange' | 'blue' | 'yellow' | 'red' | 'gray'> = {
+  ATIVO: 'green',
+  OK: 'green',
+  SOMENTE_PDF: 'orange',
+  SOMENTE_XLSX: 'blue',
+  INCLUSAO: 'yellow',
+  EXCLUSAO: 'red',
+};
 
 function formatStatus(status: string): string {
   const labels: Record<string, string> = {
@@ -70,25 +68,6 @@ function formatStatus(status: string): string {
     EXCLUSAO: 'Exclusão',
   };
   return labels[status] ?? status;
-}
-
-interface KpiCardProps {
-  label: string;
-  value: number;
-  accent?: string;
-}
-
-function KpiCard({ label, value, accent = 'text-gray-900' }: KpiCardProps) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-1 min-w-0">
-      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide truncate">
-        {label}
-      </span>
-      <span className={`text-2xl font-semibold tabular-nums ${accent}`}>
-        {value.toLocaleString('pt-BR')}
-      </span>
-    </div>
-  );
 }
 
 export default function SeguroVidaPage() {
@@ -184,71 +163,32 @@ export default function SeguroVidaPage() {
     if (xlsxRef.current) xlsxRef.current.value = '';
   }
 
-  const fileInputClass =
-    'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white ' +
-    'file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium ' +
-    'file:bg-blue-50 file:text-blue-700 cursor-pointer';
-
-  const buttonClass =
-    'px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium ' +
-    'hover:bg-blue-700 disabled:opacity-50 transition-colors';
-
-  const buttonSave =
-    'px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium ' +
-    'hover:bg-gray-50 disabled:opacity-50 transition-colors';
-
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
-        <div>
-          <h1 className="text-base font-bold text-gray-900 leading-tight">Seguro de Vida</h1>
-          <p className="text-xs text-gray-400 leading-tight mt-0.5">Cruzamento entre o relatório do seguro (PDF) e a planilha de funcionários (XLSX).</p>
-        </div>
-      </div>
+      <PageHeader title="Seguro de Vida" subtitle="Cruzamento entre o relatório do seguro (PDF) e a planilha de funcionários (XLSX)." />
 
       <div className="max-w-5xl mx-auto px-8 py-8 space-y-6">
 
-        {/* Upload panel */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
+        <Card padding="5" className="space-y-5">
           <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Arquivos</h2>
 
-          {/* File inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">
-                Relatório Seguro (PDF)
-              </label>
-              <input
-                ref={pdfRef}
-                type="file"
-                accept=".pdf,application/pdf"
-                className={fileInputClass}
-                onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
-              />
-              {pdfFile && (
-                <p className="text-xs text-gray-400 truncate">{pdfFile.name}</p>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">
-                Planilha Funcionários (XLSX)
-              </label>
-              <input
-                ref={xlsxRef}
-                type="file"
-                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-                className={fileInputClass}
-                onChange={(e) => setXlsxFile(e.target.files?.[0] ?? null)}
-              />
-              {xlsxFile && (
-                <p className="text-xs text-gray-400 truncate">{xlsxFile.name}</p>
-              )}
-            </div>
+            <FileInput
+              ref={pdfRef}
+              label="Relatório Seguro (PDF)"
+              accept=".pdf,application/pdf"
+              file={pdfFile}
+              onChange={setPdfFile}
+            />
+            <FileInput
+              ref={xlsxRef}
+              label="Planilha Funcionários (XLSX)"
+              accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+              file={xlsxFile}
+              onChange={setXlsxFile}
+            />
           </div>
 
-          {/* Config row */}
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">
@@ -286,102 +226,45 @@ export default function SeguroVidaPage() {
                   {settingsMsg.text}
                 </span>
               )}
-              <button
-                type="button"
-                onClick={handleSaveSettings}
-                disabled={settingsSaving}
-                className={buttonSave}
-              >
+              <Button type="button" variant="secondary" onClick={handleSaveSettings} loading={settingsSaving}>
                 {settingsSaving ? 'Salvando…' : 'Salvar Configurações'}
-              </button>
-              <button
-                onClick={handleProcess}
-                disabled={!canProcess}
-                className={buttonClass}
-              >
+              </Button>
+              <Button onClick={handleProcess} disabled={!canProcess} loading={loading}>
                 {loading ? 'Processando…' : 'Processar'}
-              </button>
+              </Button>
               {(pdfFile || xlsxFile || data || error) && !loading && (
-                <button
-                  onClick={handleReset}
-                  className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors"
-                >
-                  Limpar
-                </button>
+                <Button variant="ghost" onClick={handleReset}>Limpar</Button>
               )}
             </div>
           </div>
-        </div>
+        </Card>
 
-        {/* Loading */}
         {loading && (
           <div className="flex items-center justify-center gap-3 py-12">
-            <svg
-              className="animate-spin h-5 w-5 text-blue-600"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              />
-            </svg>
+            <Spinner size="lg" className="text-blue-600" />
             <span className="text-sm text-gray-500">Processando arquivos…</span>
           </div>
         )}
 
-        {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 animate-fade-in-up">
             <p className="text-sm font-medium text-red-800">Erro ao processar</p>
             <p className="text-sm text-red-700 mt-0.5">{error}</p>
           </div>
         )}
 
-        {/* Results */}
         {data && !loading && (
           <div className="space-y-5">
 
-            {/* KPI cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              <KpiCard
-                label="Em Ambos"
-                value={data.summary.emAmbos}
-                accent="text-green-700"
-              />
-              <KpiCard
-                label="Só PDF"
-                value={data.summary.soPdf}
-                accent="text-orange-700"
-              />
-              <KpiCard
-                label="Só Planilha"
-                value={data.summary.soXlsx}
-                accent="text-blue-700"
-              />
-              <KpiCard
-                label="Inclusões"
-                value={data.summary.inclusoes}
-                accent="text-yellow-700"
-              />
-              <KpiCard
-                label="Exclusões"
-                value={data.summary.exclusoes}
-                accent="text-red-700"
-              />
+              <KpiCard label="Em Ambos" value={data.summary.emAmbos} accent="#16a34a" />
+              <KpiCard label="Só PDF" value={data.summary.soPdf} accent="#ea580c" />
+              <KpiCard label="Só Planilha" value={data.summary.soXlsx} accent="#2563eb" />
+              <KpiCard label="Inclusões" value={data.summary.inclusoes} accent="#f59e0b" />
+              <KpiCard label="Exclusões" value={data.summary.exclusoes} accent="#dc2626" />
             </div>
 
-            {/* Table */}
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <TableCard>
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-700">
                   Resultados
@@ -394,20 +277,12 @@ export default function SeguroVidaPage() {
 
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50">
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                        Nome
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                        Status
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                        Ação
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                        Origem
-                      </th>
+                  <thead className="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                      <th className={TH_CLASS}>Nome</th>
+                      <th className={TH_CLASS}>Status</th>
+                      <th className={TH_CLASS}>Ação</th>
+                      <th className={TH_CLASS}>Origem</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -420,9 +295,7 @@ export default function SeguroVidaPage() {
                           {row.nome}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={getStatusBadge(row.status)}>
-                            {formatStatus(row.status)}
-                          </span>
+                          <Badge tone={STATUS_TONE[row.status] ?? 'gray'}>{formatStatus(row.status)}</Badge>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {row.acao || '—'}
@@ -446,7 +319,7 @@ export default function SeguroVidaPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </TableCard>
           </div>
         )}
       </div>

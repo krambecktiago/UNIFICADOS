@@ -1,6 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { PageHeader } from '@/components/ui/page-header'
+import { Card, TableCard } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { KpiCard } from '@/components/ui/kpi-card'
+import { FileInput } from '@/components/ui/file-input'
+import { Tabs, TabPanel, type TabDef } from '@/components/ui/tabs'
+import { TH_CLASS as thClass, TH_RIGHT_CLASS as thRight, TD_CLASS as tdClass, TD_RIGHT_CLASS as tdRight } from '@/components/ui/table'
 
 interface Venda {
   data: string
@@ -115,17 +123,6 @@ function TopScrollbar({ targetRef, watch }: { targetRef: React.RefObject<HTMLDiv
   )
 }
 
-interface KpiCardProps { label: string; value: string; sub: string; accent: string }
-function KpiCard({ label, value, sub, accent }: KpiCardProps) {
-  return (
-    <div className={`bg-white border border-gray-200 rounded-xl p-5 border-l-4 ${accent}`}>
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className="text-2xl font-bold text-gray-900 tabular-nums mt-1">{value}</p>
-      <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
-    </div>
-  )
-}
-
 export default function ConciliacaoRecibosPage() {
   const [vendasFile, setVendasFile] = useState<File | null>(null)
   const [recibosFile, setRecibosFile] = useState<File | null>(null)
@@ -201,12 +198,7 @@ export default function ConciliacaoRecibosPage() {
     if (recibosRef.current) recibosRef.current.value = ''
   }
 
-  const fileInputClass =
-    'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white ' +
-    'file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium ' +
-    'file:bg-blue-50 file:text-blue-700 cursor-pointer'
-
-  const tabs: { key: Tab; label: string; count: number; border: string; text: string }[] = data
+  const tabs: TabDef<Tab>[] = data
     ? [
         { key: 'missing',    label: 'Vendas sem recibo',    count: data.summary.missingCount,   border: 'border-orange-500', text: 'text-orange-600' },
         { key: 'ok',         label: 'Conciliados',          count: data.summary.okCount,        border: 'border-green-500',  text: 'text-green-600'  },
@@ -215,89 +207,40 @@ export default function ConciliacaoRecibosPage() {
       ]
     : []
 
-  const thClass = 'px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide'
-  const thRight = thClass + ' text-right'
-  const tdClass = 'px-4 py-3 text-sm text-gray-800 whitespace-nowrap'
-  const tdRight = tdClass + ' text-right tabular-nums font-medium'
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
-        <div>
-          <h1 className="text-base font-bold text-gray-900 leading-tight">Conciliação de Recibos</h1>
-          <p className="text-xs text-gray-400 leading-tight mt-0.5">Confere vendas no cartão (Rede) x recibos emitidos pelo sistema, por NSU + Autorização.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Conciliação de Recibos"
+        subtitle="Confere vendas no cartão (Rede) x recibos emitidos pelo sistema, por NSU + Autorização."
+      />
 
       <div className="max-w-6xl mx-auto px-8 py-8 space-y-6">
 
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+        <Card padding="5" className="space-y-4">
           <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Arquivos</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">
-                Vendas Rede (.xlsx)
-              </label>
-              <input
-                ref={vendasRef}
-                type="file"
-                accept=".xlsx"
-                className={fileInputClass}
-                onChange={e => setVendasFile(e.target.files?.[0] ?? null)}
-              />
-              {vendasFile && <p className="text-xs text-gray-400 truncate">{vendasFile.name}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">
-                Recibos Emitidos (.xlsx)
-              </label>
-              <input
-                ref={recibosRef}
-                type="file"
-                accept=".xlsx"
-                className={fileInputClass}
-                onChange={e => setRecibosFile(e.target.files?.[0] ?? null)}
-              />
-              {recibosFile && <p className="text-xs text-gray-400 truncate">{recibosFile.name}</p>}
-            </div>
+            <FileInput ref={vendasRef} label="Vendas Rede (.xlsx)" accept=".xlsx" file={vendasFile} onChange={setVendasFile} />
+            <FileInput ref={recibosRef} label="Recibos Emitidos (.xlsx)" accept=".xlsx" file={recibosFile} onChange={setRecibosFile} />
           </div>
           <div className="flex items-center gap-4">
-            <button
-              onClick={handleProcess}
-              disabled={!canProcess}
-              className="px-6 py-2 bg-[#0369a1] text-white rounded-lg text-sm font-medium hover:bg-[#025a8e] disabled:opacity-50 transition-colors"
-            >
+            <Button onClick={handleProcess} disabled={!canProcess} loading={loading}>
               {loading ? 'Processando…' : 'Processar Conciliação'}
-            </button>
+            </Button>
             {(vendasFile || recibosFile || data || error) && !loading && (
-              <button
-                onClick={handleReset}
-                className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors"
-              >
-                Limpar
-              </button>
-            )}
-            {loading && (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <svg className="animate-spin h-4 w-4 text-[#0369a1]" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Aguarde…
-              </div>
+              <Button variant="ghost" onClick={handleReset}>Limpar</Button>
             )}
           </div>
-        </div>
+        </Card>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 animate-fade-in-up">
             <span className="font-medium">Erro:</span> {error}
           </div>
         )}
 
         {data && (
           <>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 animate-fade-in-up">
               <div className="flex-1">
                 {data.summary.missingCount === 0 && data.summary.divergentCount === 0 ? (
                   <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 font-medium">
@@ -312,47 +255,25 @@ export default function ConciliacaoRecibosPage() {
                   </div>
                 )}
               </div>
-              <button
-                onClick={handleExport}
-                disabled={exporting}
-                className="shrink-0 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
-              >
+              <Button variant="secondary" onClick={handleExport} loading={exporting} className="shrink-0">
                 {exporting ? 'Exportando…' : 'Exportar Excel'}
-              </button>
+              </Button>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <KpiCard label="Vendas no Período" value={fmtBRL(data.summary.vendasValor)} sub={`${data.summary.vendasTotal} venda(s)`} accent="border-[#0369a1]" />
-              <KpiCard label="Conciliado" value={fmtBRL(data.summary.okValor)} sub={`${data.summary.okCount} venda(s)`} accent="border-green-500" />
-              <KpiCard label="Sem Recibo" value={fmtBRL(data.summary.missingValor)} sub={`${data.summary.missingCount} venda(s)`} accent="border-orange-500" />
-              <KpiCard label="Recibos sem Venda" value={fmtBRL(data.summary.pendingValor)} sub={`${data.summary.pendingCount} recibo(s)`} accent="border-gray-400" />
+              <KpiCard label="Vendas no Período" value={data.summary.vendasValor} format={fmtBRL} sub={`${data.summary.vendasTotal} venda(s)`} accent="#0369a1" />
+              <KpiCard label="Conciliado" value={data.summary.okValor} format={fmtBRL} sub={`${data.summary.okCount} venda(s)`} accent="#22c55e" />
+              <KpiCard label="Sem Recibo" value={data.summary.missingValor} format={fmtBRL} sub={`${data.summary.missingCount} venda(s)`} accent="#f97316" />
+              <KpiCard label="Recibos sem Venda" value={data.summary.pendingValor} format={fmtBRL} sub={`${data.summary.pendingCount} recibo(s)`} accent="#9ca3af" />
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div className="flex border-b border-gray-100 overflow-x-auto">
-                {tabs.map(tab => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`flex items-center gap-2 px-5 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                      activeTab === tab.key
-                        ? `${tab.border} ${tab.text} bg-white`
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    {tab.label}
-                    <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                      activeTab === tab.key ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {tab.count}
-                    </span>
-                  </button>
-                ))}
-              </div>
+            <TableCard>
+              <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
               <TopScrollbar targetRef={tableScrollRef} watch={`${activeTab}-${data.matched.length}-${data.divergent.length}-${data.missing.length}-${data.pending.length}`} />
 
               <div ref={tableScrollRef} className="overflow-x-auto">
+                <TabPanel tabKey={activeTab}>
 
                 {activeTab === 'missing' && (
                   <table className="w-full text-sm min-w-[780px]">
@@ -447,13 +368,11 @@ export default function ConciliacaoRecibosPage() {
                           <td className={tdClass}>
                             <div className="flex flex-wrap gap-1">
                               {m.motivo === 'identificador' ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">NSU/Autorização não conferem</span>
+                                <Badge tone="purple">NSU/Autorização não conferem</Badge>
                               ) : Math.abs(m.diferenca) > 0.01 ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Valor diferente</span>
+                                <Badge tone="amber">Valor diferente</Badge>
                               ) : null}
-                              {m.parcelasDivergentes && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-700">Parcelas diferentes</span>
-                              )}
+                              {m.parcelasDivergentes && <Badge tone="sky">Parcelas diferentes</Badge>}
                             </div>
                           </td>
                           <td className={tdRight + ' text-amber-800'}>{fmtBRL(m.venda.valor)}</td>
@@ -509,8 +428,9 @@ export default function ConciliacaoRecibosPage() {
                   </table>
                 )}
 
+                </TabPanel>
               </div>
-            </div>
+            </TableCard>
           </>
         )}
       </div>

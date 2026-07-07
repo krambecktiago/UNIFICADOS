@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { PageHeader } from '@/components/ui/page-header'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 const LOJAS = ['L01', 'L02', 'L03', 'L04', 'L05'] as const
 const LOJAS_LABELS: Record<string, string> = {
@@ -229,25 +232,15 @@ export default function ContasPagarPage() {
     'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow'
   const currencyInput =
     inputBase + ' font-variant-numeric tabular-nums text-right'
-  const buttonPrimary =
-    'px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer'
-  const buttonSecondary =
-    'px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors cursor-pointer'
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Page header */}
-      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
-        <div>
-          <h1 className="text-base font-bold text-gray-900 leading-tight">Resumo Diário de Pagamentos</h1>
-          <p className="text-xs text-gray-400 leading-tight mt-0.5">Preencha os dados e envie o resumo ao canal Discord via webhook.</p>
-        </div>
-      </div>
+      <PageHeader title="Resumo Diário de Pagamentos" subtitle="Preencha os dados e envie o resumo ao canal Discord via webhook." />
 
       <div className="max-w-4xl mx-auto px-8 py-8 space-y-6 pb-32">
 
         {/* Section 1: Data de Referência */}
-        <section className="bg-white border border-gray-200 rounded-xl p-6">
+        <Card padding="6">
           <div className="flex items-center gap-3 mb-4">
             <span className="w-1 h-5 bg-blue-500 rounded-full flex-shrink-0" />
             <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
@@ -264,10 +257,10 @@ export default function ContasPagarPage() {
               className={inputBase + ' tabular-nums'}
             />
           </div>
-        </section>
+        </Card>
 
         {/* Section 2: Pagamentos por Loja */}
-        <section className="bg-white border border-gray-200 rounded-xl p-6">
+        <Card padding="6">
           <div className="flex items-center gap-3 mb-4">
             <span className="w-1 h-5 bg-blue-500 rounded-full flex-shrink-0" />
             <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
@@ -304,10 +297,10 @@ export default function ContasPagarPage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </Card>
 
         {/* Section 3: Saldos por Banco */}
-        <section className="bg-white border border-gray-200 rounded-xl p-6">
+        <Card padding="6">
           <div className="flex items-center gap-3 mb-4">
             <span className="w-1 h-5 bg-blue-500 rounded-full flex-shrink-0" />
             <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
@@ -351,10 +344,10 @@ export default function ContasPagarPage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </Card>
 
         {/* Section 4: Webhook Discord */}
-        <section className="bg-white border border-gray-200 rounded-xl p-6">
+        <Card padding="6">
           <div className="flex items-center gap-3 mb-4">
             <span className="w-1 h-5 bg-blue-500 rounded-full flex-shrink-0" />
             <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
@@ -373,14 +366,9 @@ export default function ContasPagarPage() {
               />
             </div>
             <div className="pt-6">
-              <button
-                type="button"
-                onClick={handleTest}
-                disabled={testLoading}
-                className={buttonSecondary}
-              >
+              <Button type="button" variant="secondary" onClick={handleTest} loading={testLoading}>
                 {testLoading ? 'Testando…' : 'Testar'}
-              </button>
+              </Button>
             </div>
           </div>
           {testSuccess && (
@@ -391,10 +379,10 @@ export default function ContasPagarPage() {
           {testError && (
             <p className="mt-2 text-sm text-red-600">{testError}</p>
           )}
-        </section>
+        </Card>
 
         {/* Section 5: Template da Mensagem */}
-        <section className="bg-white border border-gray-200 rounded-xl p-6">
+        <Card padding="6">
           <div className="flex items-center gap-3 mb-1">
             <span className="w-1 h-5 bg-blue-500 rounded-full flex-shrink-0" />
             <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
@@ -419,7 +407,7 @@ export default function ContasPagarPage() {
             }
             spellCheck={false}
           />
-        </section>
+        </Card>
       </div>
 
       {/* Sticky footer bar */}
@@ -435,22 +423,12 @@ export default function ContasPagarPage() {
               <span className="text-red-600">{settingsMsg.text}</span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={handleSaveSettings}
-            disabled={settingsSaving}
-            className={buttonSecondary}
-          >
+          <Button type="button" variant="secondary" onClick={handleSaveSettings} loading={settingsSaving}>
             {settingsSaving ? 'Salvando…' : 'Salvar Configurações'}
-          </button>
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={loading}
-            className={buttonPrimary}
-          >
+          </Button>
+          <Button type="button" onClick={handleSend} loading={loading}>
             {loading ? 'Enviando…' : 'Enviar ao Discord'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

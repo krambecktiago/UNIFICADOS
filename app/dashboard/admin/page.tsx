@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { PageHeader } from '@/components/ui/page-header'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Spinner } from '@/components/ui/spinner'
 
 interface AdminUser {
   id: string
@@ -251,27 +256,26 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Cabeçalho */}
-      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-base font-bold text-gray-900 leading-tight">Administração</h1>
-          <p className="text-xs text-gray-400 leading-tight mt-0.5">Gerencie usuários e acessos às ferramentas</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {!loading && !error && (
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#0d1e45]/10 text-[#0d1e45]">
-              {users.length} {users.length === 1 ? 'usuário' : 'usuários'}
-            </span>
-          )}
-          <button
-            onClick={openCreateForm}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#0d1e45] text-white hover:bg-[#162b5e] transition-colors flex items-center gap-1.5"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-            Novo usuário
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Administração"
+        subtitle="Gerencie usuários e acessos às ferramentas"
+        right={
+          <div className="flex items-center gap-3">
+            {!loading && !error && (
+              <Badge tone="navy">
+                {users.length} {users.length === 1 ? 'usuário' : 'usuários'}
+              </Badge>
+            )}
+            <button
+              onClick={openCreateForm}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-navy text-white hover:bg-brand-navy-hover transition-colors flex items-center gap-1.5"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              Novo usuário
+            </button>
+          </div>
+        }
+      />
 
       <div className="px-8 py-8">
         {createdCredentials && (
@@ -290,7 +294,7 @@ export default function AdminPage() {
         )}
 
         {showCreateForm && (
-          <form onSubmit={createUser} className="mb-6 bg-white rounded-xl p-6 border border-gray-200 shadow-sm space-y-4">
+          <form onSubmit={createUser} className="mb-6 bg-white rounded-xl p-6 border border-gray-200 animate-fade-in-up space-y-4">
             <p className="text-sm font-semibold text-gray-900">Novo usuário</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
@@ -300,7 +304,7 @@ export default function AdminPage() {
                   required
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
                   placeholder="Nome do usuário"
                 />
               </div>
@@ -311,7 +315,7 @@ export default function AdminPage() {
                   required
                   value={newEmail}
                   onChange={e => setNewEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
                   placeholder="email@krambeck.com.br"
                 />
               </div>
@@ -323,7 +327,7 @@ export default function AdminPage() {
                     required
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
                   />
                   <button
                     type="button"
@@ -342,26 +346,17 @@ export default function AdminPage() {
             )}
 
             <div className="flex items-center gap-2">
-              <button
-                type="submit"
-                disabled={creating}
-                className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#0d1e45] text-white hover:bg-[#162b5e] disabled:opacity-50 transition-colors"
-              >
+              <Button type="submit" loading={creating}>
                 {creating ? 'Criando...' : 'Criar usuário'}
-              </button>
-              <button
-                type="button"
-                onClick={closeCreateForm}
-                disabled={creating}
-                className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-              >
+              </Button>
+              <Button type="button" variant="ghost" onClick={closeCreateForm} disabled={creating}>
                 Cancelar
-              </button>
+              </Button>
             </div>
           </form>
         )}
 
-        <div className="mb-6 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+        <Card padding="6" className="mb-6">
           <p className="text-sm font-semibold text-gray-900 mb-1">Ferramentas do sistema</p>
           <p className="text-xs text-gray-400 mb-4">Uma ferramenta inativa some do painel de todos os usuários com acesso a ela, mesmo que já tenha sido liberada.</p>
 
@@ -394,14 +389,11 @@ export default function AdminPage() {
               </button>
             ))}
           </div>
-        </div>
+        </Card>
 
         {loading && (
           <div className="flex items-center gap-3 text-sm text-gray-400">
-            <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
+            <Spinner size="md" />
             Carregando usuários...
           </div>
         )}
@@ -420,16 +412,16 @@ export default function AdminPage() {
           {users.map(user => {
             const isSaving = saving === user.id
             return (
-              <div
+              <Card
                 key={user.id}
-                className="bg-white rounded-xl p-6 transition-all border border-gray-200 shadow-sm"
+                padding="6"
               >
                 {/* Linha superior: avatar + info + role + ação */}
                 <div className="flex items-start gap-4">
                   {/* Avatar */}
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                    style={{ backgroundColor: user.role === 'admin' ? '#0d1e45' : '#6b7280' }}
+                    style={{ backgroundColor: user.role === 'admin' ? 'var(--color-brand-navy)' : '#6b7280' }}
                   >
                     {initials(user)}
                   </div>
@@ -447,11 +439,11 @@ export default function AdminPage() {
                             if (e.key === 'Enter') saveName(user)
                             if (e.key === 'Escape') cancelEdit()
                           }}
-                          className="text-sm font-semibold text-gray-900 border border-[#0d1e45]/30 rounded-md px-2 py-0.5 w-full max-w-[220px] focus:outline-none focus:ring-1 focus:ring-[#0d1e45]/40"
+                          className="text-sm font-semibold text-gray-900 border border-brand-navy/30 rounded-md px-2 py-0.5 w-full max-w-[220px] focus:outline-none focus:ring-1 focus:ring-brand-navy/40"
                         />
                         <button
                           onClick={() => saveName(user)}
-                          className="text-[#0d1e45] hover:opacity-70 shrink-0"
+                          className="text-brand-navy hover:opacity-70 shrink-0"
                           title="Salvar"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 12l5 5L20 7" /></svg>
@@ -479,22 +471,16 @@ export default function AdminPage() {
 
                   {/* Badge role + botão */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                        user.role === 'admin'
-                          ? 'bg-[#0d1e45]/10 text-[#0d1e45]'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
+                    <Badge tone={user.role === 'admin' ? 'navy' : 'gray'}>
                       {user.role === 'admin' ? 'Admin' : 'Usuário'}
-                    </span>
+                    </Badge>
                     <button
                       onClick={() => toggleRole(user)}
                       disabled={isSaving}
                       className={`text-xs font-medium px-3 py-1 rounded-lg border transition-colors disabled:opacity-40 ${
                         user.role === 'admin'
                           ? 'border-red-200 text-red-600 hover:bg-red-50'
-                          : 'border-[#0d1e45]/20 text-[#0d1e45] hover:bg-[#0d1e45]/5'
+                          : 'border-brand-navy/20 text-brand-navy hover:bg-brand-navy/5'
                       }`}
                     >
                       {user.role === 'admin' ? 'Rebaixar' : 'Promover'}
@@ -517,7 +503,7 @@ export default function AdminPage() {
                           disabled={isSaving}
                           className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all disabled:opacity-40 ${
                             active
-                              ? 'bg-[#0d1e45] text-white border-[#0d1e45]'
+                              ? 'bg-brand-navy text-white border-brand-navy'
                               : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
                           }`}
                         >
@@ -544,7 +530,7 @@ export default function AdminPage() {
                           disabled={isSaving}
                           className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all disabled:opacity-40 ${
                             active
-                              ? 'bg-[#0d1e45] text-white border-[#0d1e45]'
+                              ? 'bg-brand-navy text-white border-brand-navy'
                               : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
                           }`}
                         >
@@ -558,14 +544,11 @@ export default function AdminPage() {
 
                 {isSaving && (
                   <p className="mt-2 text-[11px] text-gray-400 flex items-center gap-1.5">
-                    <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
+                    <Spinner size="sm" />
                     Salvando...
                   </p>
                 )}
-              </div>
+              </Card>
             )
           })}
         </div>

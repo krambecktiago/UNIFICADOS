@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { PageHeader } from '@/components/ui/page-header'
 
 const ALL_TOOLS = [
   {
@@ -110,12 +111,7 @@ export default async function FerramentasPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
-        <div>
-          <h1 className="text-base font-bold text-gray-900 leading-tight">Ferramentas</h1>
-          <p className="text-xs text-gray-400 leading-tight mt-0.5">Selecione uma ferramenta para processar seus arquivos</p>
-        </div>
-      </div>
+      <PageHeader title="Ferramentas" subtitle="Selecione uma ferramenta para processar seus arquivos" />
 
       <div className="px-8 py-8">
         {tools.length === 0 ? (
@@ -130,13 +126,14 @@ export default async function FerramentasPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {tools.map((tool) => (
+            {tools.map((tool, i) => (
               <Link
                 key={tool.href}
                 href={tool.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group bg-white rounded-xl p-6 hover:shadow-xl transition-all border border-gray-200"
+                className="group bg-white rounded-xl p-6 hover:shadow-xl hover:-translate-y-0.5 transition-all border border-gray-200 animate-fade-in-up"
+                style={{ animationDelay: `${i * 40}ms` }}
               >
                 <div className="flex items-start gap-4">
                   <div
@@ -148,10 +145,10 @@ export default async function FerramentasPage() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-gray-900 group-hover:text-[#0d1e45] transition-colors leading-snug">
+                      <h3 className="text-sm font-semibold text-gray-900 group-hover:text-brand-navy transition-colors leading-snug">
                         {tool.title}
                       </h3>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 group-hover:text-[#0d1e45] transition-colors shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 group-hover:text-brand-navy transition-colors shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </div>

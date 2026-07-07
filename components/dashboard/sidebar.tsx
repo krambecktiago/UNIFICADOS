@@ -74,13 +74,13 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
     <aside className="w-64 shrink-0 flex flex-col h-screen sticky top-0 bg-white relative overflow-hidden">
 
       {/* Fundo decorativo — peças automotivas, mesma identidade da tela de login */}
-      <Gear className="absolute -top-10 -left-14 w-56 h-56 text-[#0d1e45] opacity-[0.04] rotate-12 pointer-events-none" />
-      <Gear className="absolute top-1/2 -right-14 w-48 h-48 text-[#0d1e45] opacity-[0.04] -rotate-6 pointer-events-none" />
-      <Wrench className="absolute bottom-24 -left-6 w-24 h-24 text-[#0d1e45] opacity-[0.04] rotate-[30deg] pointer-events-none" />
-      <Gear className="absolute -bottom-14 -right-10 w-44 h-44 text-[#0d1e45] opacity-[0.04] rotate-45 pointer-events-none" />
+      <Gear className="absolute -top-10 -left-14 w-56 h-56 text-brand-navy opacity-[0.04] rotate-12 pointer-events-none" />
+      <Gear className="absolute top-1/2 -right-14 w-48 h-48 text-brand-navy opacity-[0.04] -rotate-6 pointer-events-none" />
+      <Wrench className="absolute bottom-24 -left-6 w-24 h-24 text-brand-navy opacity-[0.04] rotate-[30deg] pointer-events-none" />
+      <Gear className="absolute -bottom-14 -right-10 w-44 h-44 text-brand-navy opacity-[0.04] rotate-45 pointer-events-none" />
 
       {/* ── Logo Krambeck ────────────────────────────────────────────────── */}
-      <div className={`${HEADER_H} relative flex items-center justify-center px-6 border-b-2 border-[#c8102e]`}>
+      <div className={`${HEADER_H} relative flex items-center justify-center px-6 border-b-2 border-brand-red`}>
         <Image
           src="/logo-krambeck.png"
           alt="Krambeck Autopeças e Tintas"
@@ -127,11 +127,11 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
               className={cn(
                 'flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors border-l-2',
                 active
-                  ? 'bg-[#0d1e45]/5 border-[#0d1e45] text-[#0d1e45]'
+                  ? 'bg-brand-navy/5 border-brand-navy text-brand-navy'
                   : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
               )}
             >
-              <span className={cn('flex items-center', active && 'text-[#0d1e45]')}>
+              <span className={cn('flex items-center', active && 'text-brand-navy')}>
                 {item.icon}
               </span>
               {item.label}
@@ -155,11 +155,11 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
                 className={cn(
                   'flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors border-l-2',
                   active
-                    ? 'bg-[#0d1e45]/5 border-[#0d1e45] text-[#0d1e45]'
+                    ? 'bg-brand-navy/5 border-brand-navy text-brand-navy'
                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                 )}
               >
-                <span className={cn('flex items-center', active && 'text-[#0d1e45]')}>
+                <span className={cn('flex items-center', active && 'text-brand-navy')}>
                   {item.icon}
                 </span>
                 {item.label}

@@ -1,6 +1,14 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { PageHeader } from '@/components/ui/page-header'
+import { Card, TableCard } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { KpiCard } from '@/components/ui/kpi-card'
+import { FileInput } from '@/components/ui/file-input'
+import { Tabs, TabPanel, type TabDef } from '@/components/ui/tabs'
+import { TH_CLASS as thClass, TH_RIGHT_CLASS as thRight, TD_CLASS as tdClass, TD_RIGHT_CLASS as tdRight } from '@/components/ui/table'
 
 interface BankEntry {
   date: string
@@ -57,17 +65,6 @@ function exportCSV(missing: BankEntry[]) {
   a.click()
 }
 
-interface KpiCardProps { label: string; value: string; sub: string; accent: string }
-function KpiCard({ label, value, sub, accent }: KpiCardProps) {
-  return (
-    <div className={`bg-white border border-gray-200 rounded-xl p-5 border-l-4 ${accent}`}>
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className="text-2xl font-bold text-gray-900 tabular-nums mt-1">{value}</p>
-      <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
-    </div>
-  )
-}
-
 export default function CompararExtratoPage() {
   const [erpFile, setErpFile] = useState<File | null>(null)
   const [bankFile, setBankFile] = useState<File | null>(null)
@@ -114,12 +111,7 @@ export default function CompararExtratoPage() {
     if (bankRef.current) bankRef.current.value = ''
   }
 
-  const fileInputClass =
-    'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white ' +
-    'file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium ' +
-    'file:bg-blue-50 file:text-blue-700 cursor-pointer'
-
-  const tabs: { key: Tab; label: string; count: number; border: string; text: string }[] = data
+  const tabs: TabDef<Tab>[] = data
     ? [
         { key: 'miss', label: 'Faltando no ERP',   count: data.summary.missCount, border: 'border-orange-500', text: 'text-orange-600' },
         { key: 'ok',   label: 'Conciliados',        count: data.summary.okCount,   border: 'border-green-500',  text: 'text-green-600'  },
@@ -127,107 +119,50 @@ export default function CompararExtratoPage() {
       ]
     : []
 
-  const thClass = 'px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide'
-  const thRight = thClass + ' text-right'
-  const tdClass = 'px-4 py-3 text-sm text-gray-800 whitespace-nowrap'
-  const tdRight = tdClass + ' text-right tabular-nums font-medium'
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
-        <div>
-          <h1 className="text-base font-bold text-gray-900 leading-tight">Conciliação Bancária — Viacredi</h1>
-          <p className="text-xs text-gray-400 leading-tight mt-0.5">Cruza o extrato ERP (.txt) com o extrato Viacredi (.csv) e identifica divergências.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Conciliação Bancária — Viacredi"
+        subtitle="Cruza o extrato ERP (.txt) com o extrato Viacredi (.csv) e identifica divergências."
+      />
 
       <div className="max-w-6xl mx-auto px-8 py-8 space-y-6">
 
-        {/* Upload */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+        <Card padding="5" className="space-y-4">
           <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Arquivos</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">
-                Extrato ERP (.txt)
-              </label>
-              <input
-                ref={erpRef}
-                type="file"
-                accept=".txt"
-                className={fileInputClass}
-                onChange={e => setErpFile(e.target.files?.[0] ?? null)}
-              />
-              {erpFile && <p className="text-xs text-gray-400 truncate">{erpFile.name}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">
-                Extrato Banco (.csv)
-              </label>
-              <input
-                ref={bankRef}
-                type="file"
-                accept=".csv"
-                className={fileInputClass}
-                onChange={e => setBankFile(e.target.files?.[0] ?? null)}
-              />
-              {bankFile && <p className="text-xs text-gray-400 truncate">{bankFile.name}</p>}
-            </div>
+            <FileInput ref={erpRef} label="Extrato ERP (.txt)" accept=".txt" file={erpFile} onChange={setErpFile} />
+            <FileInput ref={bankRef} label="Extrato Banco (.csv)" accept=".csv" file={bankFile} onChange={setBankFile} />
           </div>
           <div className="flex items-center gap-4">
-            <button
-              onClick={handleProcess}
-              disabled={!canProcess}
-              className="px-6 py-2 bg-[#0369a1] text-white rounded-lg text-sm font-medium hover:bg-[#025a8e] disabled:opacity-50 transition-colors"
-            >
+            <Button onClick={handleProcess} disabled={!canProcess} loading={loading}>
               {loading ? 'Processando…' : 'Processar Conciliação'}
-            </button>
+            </Button>
             {data && data.summary.missCount > 0 && (
-              <button
-                onClick={() => exportCSV(data.missing)}
-                className="px-5 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
+              <Button variant="secondary" onClick={() => exportCSV(data.missing)}>
                 Exportar Faltando (.csv)
-              </button>
+              </Button>
             )}
             {(erpFile || bankFile || data || error) && !loading && (
-              <button
-                onClick={handleReset}
-                className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors"
-              >
-                Limpar
-              </button>
-            )}
-            {loading && (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <svg className="animate-spin h-4 w-4 text-[#0369a1]" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Aguarde…
-              </div>
+              <Button variant="ghost" onClick={handleReset}>Limpar</Button>
             )}
           </div>
-        </div>
+        </Card>
 
-        {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 animate-fade-in-up">
             <span className="font-medium">Erro:</span> {error}
           </div>
         )}
 
-        {/* Results */}
         {data && (
           <>
-            {/* Status banner */}
             {data.summary.missCount === 0 ? (
-              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 font-medium">
+              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 font-medium animate-fade-in-up">
                 Tudo conciliado — {data.summary.okCount} lançamento(s) conferem. Banco: {fmtBRL(data.summary.bankTotal)} · ERP: {fmtBRL(data.summary.okTotal)}
               </div>
             ) : (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 animate-fade-in-up">
                 <span className="font-semibold">{data.summary.missCount} lançamento(s) faltando no ERP</span>
                 {' '}·{' '}{fmtBRL(data.summary.missTotal)}
                 {' '}·{' '}{data.summary.okCount} conciliados
@@ -235,40 +170,19 @@ export default function CompararExtratoPage() {
               </div>
             )}
 
-            {/* KPIs */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <KpiCard label="Total Créditos Banco" value={fmtBRL(data.summary.bankTotal)} sub={`${data.summary.bankCount} crédito(s)`} accent="border-[#0369a1]" />
-              <KpiCard label="Conciliado" value={fmtBRL(data.summary.okTotal)} sub={`${data.summary.okCount} lançamento(s)`} accent="border-green-500" />
-              <KpiCard label="Faltando no ERP" value={fmtBRL(data.summary.missTotal)} sub={`${data.summary.missCount} lançamento(s)`} accent="border-orange-500" />
-              <KpiCard label="Faltando no Banco" value={fmtBRL(data.summary.pendTotal)} sub={`${data.summary.pendCount} lançamento(s)`} accent="border-gray-400" />
+              <KpiCard label="Total Créditos Banco" value={data.summary.bankTotal} format={fmtBRL} sub={`${data.summary.bankCount} crédito(s)`} accent="#0369a1" />
+              <KpiCard label="Conciliado" value={data.summary.okTotal} format={fmtBRL} sub={`${data.summary.okCount} lançamento(s)`} accent="#22c55e" />
+              <KpiCard label="Faltando no ERP" value={data.summary.missTotal} format={fmtBRL} sub={`${data.summary.missCount} lançamento(s)`} accent="#f97316" />
+              <KpiCard label="Faltando no Banco" value={data.summary.pendTotal} format={fmtBRL} sub={`${data.summary.pendCount} lançamento(s)`} accent="#9ca3af" />
             </div>
 
-            {/* Tabs + Tables */}
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div className="flex border-b border-gray-100 overflow-x-auto">
-                {tabs.map(tab => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`flex items-center gap-2 px-5 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                      activeTab === tab.key
-                        ? `${tab.border} ${tab.text} bg-white`
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    {tab.label}
-                    <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                      activeTab === tab.key ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {tab.count}
-                    </span>
-                  </button>
-                ))}
-              </div>
+            <TableCard>
+              <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
               <div className="overflow-x-auto">
+                <TabPanel tabKey={activeTab}>
 
-                {/* Tab: Faltando no ERP */}
                 {activeTab === 'miss' && (
                   <table className="w-full text-sm min-w-[600px]">
                     <thead className="bg-gray-50 border-b border-gray-100">
@@ -290,7 +204,7 @@ export default function CompararExtratoPage() {
                           <td className="px-4 py-3 text-sm text-gray-800 max-w-xs truncate">{row.desc}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{row.ref}</td>
                           <td className="px-4 py-3">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">LANÇAR</span>
+                            <Badge tone="orange">LANÇAR</Badge>
                           </td>
                         </tr>
                       ))}
@@ -307,7 +221,6 @@ export default function CompararExtratoPage() {
                   </table>
                 )}
 
-                {/* Tab: Conciliados */}
                 {activeTab === 'ok' && (
                   <table className="w-full text-sm min-w-[640px]">
                     <thead className="bg-gray-50 border-b border-gray-100">
@@ -372,7 +285,6 @@ export default function CompararExtratoPage() {
                   </table>
                 )}
 
-                {/* Tab: Faltando no Banco */}
                 {activeTab === 'pend' && (
                   <table className="w-full text-sm min-w-[480px]">
                     <thead className="bg-gray-50 border-b border-gray-100">
@@ -392,7 +304,7 @@ export default function CompararExtratoPage() {
                           <td className={tdRight}>{fmtBRL(row.valor)}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{row.lanc}</td>
                           <td className="px-4 py-3">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">Lançado no ERP, aguardando banco</span>
+                            <Badge tone="gray">Lançado no ERP, aguardando banco</Badge>
                           </td>
                         </tr>
                       ))}
@@ -410,8 +322,9 @@ export default function CompararExtratoPage() {
                   </table>
                 )}
 
+                </TabPanel>
               </div>
-            </div>
+            </TableCard>
           </>
         )}
       </div>

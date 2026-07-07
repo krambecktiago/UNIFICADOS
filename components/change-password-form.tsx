@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
 
 export function ChangePasswordForm({ email }: { email: string }) {
   const [currentPassword, setCurrentPassword] = useState('')
@@ -63,7 +64,7 @@ export function ChangePasswordForm({ email }: { email: string }) {
             autoComplete="current-password"
             value={currentPassword}
             onChange={e => setCurrentPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
           />
         </div>
         <div>
@@ -74,7 +75,7 @@ export function ChangePasswordForm({ email }: { email: string }) {
             autoComplete="new-password"
             value={newPassword}
             onChange={e => setNewPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
           />
         </div>
         <div>
@@ -85,7 +86,7 @@ export function ChangePasswordForm({ email }: { email: string }) {
             autoComplete="new-password"
             value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45]/30"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
           />
         </div>
       </div>
@@ -97,13 +98,9 @@ export function ChangePasswordForm({ email }: { email: string }) {
         <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 max-w-sm">Senha alterada com sucesso.</p>
       )}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#0d1e45] text-white hover:bg-[#162b5e] disabled:opacity-50 transition-colors"
-      >
+      <Button type="submit" loading={loading}>
         {loading ? 'Salvando...' : 'Salvar nova senha'}
-      </button>
+      </Button>
     </form>
   )
 }

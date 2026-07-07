@@ -1,6 +1,13 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { PageHeader } from '@/components/ui/page-header'
+import { Card, TableCard } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { KpiCard } from '@/components/ui/kpi-card'
+import { FileInput } from '@/components/ui/file-input'
+import { TH_CLASS, TH_RIGHT_CLASS, TD_CLASS, TD_RIGHT_CLASS } from '@/components/ui/table'
 
 interface DuplicataResult {
   duplicata: string
@@ -33,9 +40,9 @@ function formatDate(value: string): string {
   return value
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  BAIXADA: 'bg-green-50 text-green-700 border-green-200',
-  NAO_BAIXADA: 'bg-red-50 text-red-700 border-red-200',
+const STATUS_TONE: Record<string, 'green' | 'red'> = {
+  BAIXADA: 'green',
+  NAO_BAIXADA: 'red',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -97,96 +104,40 @@ export default function DuplicatasPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
-        <div>
-          <h1 className="text-base font-bold text-gray-900 leading-tight">Conferir Duplicatas</h1>
-          <p className="text-xs text-gray-400 leading-tight mt-0.5">Compara retorno bancário (XLSX) com fluxo de caixa do ERP (TXT)</p>
-        </div>
-      </div>
+      <PageHeader title="Conferir Duplicatas" subtitle="Compara retorno bancário (XLSX) com fluxo de caixa do ERP (TXT)" />
 
       <div className="px-8 py-8 max-w-7xl">
 
-      {/* File inputs */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+      <Card padding="6" className="mb-6">
         <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-4">
           Arquivos de entrada
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Retorno Bancário
-              <span className="ml-2 text-xs font-normal text-gray-400">XLSX</span>
-            </label>
-            <input
-              ref={xlsxRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={(e) => setXlsxFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700"
-            />
-            {xlsxFile && (
-              <p className="mt-1.5 text-xs text-gray-500 truncate">{xlsxFile.name}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Fluxo de Caixa ERP
-              <span className="ml-2 text-xs font-normal text-gray-400">TXT</span>
-            </label>
-            <input
-              ref={txtRef}
-              type="file"
-              accept=".txt"
-              onChange={(e) => setTxtFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700"
-            />
-            {txtFile && (
-              <p className="mt-1.5 text-xs text-gray-500 truncate">{txtFile.name}</p>
-            )}
-          </div>
+          <FileInput
+            ref={xlsxRef}
+            label={<>Retorno Bancário <span className="ml-2 text-xs font-normal text-gray-400">XLSX</span></>}
+            accept=".xlsx,.xls"
+            file={xlsxFile}
+            onChange={setXlsxFile}
+          />
+          <FileInput
+            ref={txtRef}
+            label={<>Fluxo de Caixa ERP <span className="ml-2 text-xs font-normal text-gray-400">TXT</span></>}
+            accept=".txt"
+            file={txtFile}
+            onChange={setTxtFile}
+          />
         </div>
 
         <div className="mt-5 flex items-center gap-4">
-          <button
-            onClick={handleProcess}
-            disabled={!canProcess}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <svg
-                  className="animate-spin h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                  />
-                </svg>
-                Processando...
-              </span>
-            ) : (
-              'Processar'
-            )}
-          </button>
+          <Button onClick={handleProcess} disabled={!canProcess} loading={loading}>
+            {loading ? 'Processando...' : 'Processar'}
+          </Button>
 
           {(xlsxFile || txtFile) && !loading && (
-            <button
+            <Button
+              variant="ghost"
               onClick={() => {
                 setXlsxFile(null)
                 setTxtFile(null)
@@ -195,67 +146,38 @@ export default function DuplicatasPage() {
                 if (xlsxRef.current) xlsxRef.current.value = ''
                 if (txtRef.current) txtRef.current.value = ''
               }}
-              className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
             >
               Limpar
-            </button>
+            </Button>
           )}
         </div>
-      </div>
+      </Card>
 
-      {/* Error */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 animate-fade-in-up">
           {error}
         </div>
       )}
 
-      {/* Results */}
       {data && (
         <>
-          {/* KPI cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-                Total
-              </p>
-              <p className="text-3xl font-bold text-gray-900 font-variant-numeric tabular-nums">
-                {data.summary.total}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">duplicatas analisadas</p>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <p className="text-xs font-medium text-green-600 uppercase tracking-wide mb-2">
-                Baixadas
-              </p>
-              <p className="text-3xl font-bold text-green-700 tabular-nums">
-                {data.summary.baixadas}
-              </p>
-              {data.summary.total > 0 && (
-                <p className="text-xs text-gray-400 mt-1">
-                  {Math.round((data.summary.baixadas / data.summary.total) * 100)}% do total
-                </p>
-              )}
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <p className="text-xs font-medium text-red-600 uppercase tracking-wide mb-2">
-                Não Baixadas
-              </p>
-              <p className="text-3xl font-bold text-red-700 tabular-nums">
-                {data.summary.naoBaixadas}
-              </p>
-              {data.summary.total > 0 && (
-                <p className="text-xs text-gray-400 mt-1">
-                  {Math.round((data.summary.naoBaixadas / data.summary.total) * 100)}% do total
-                </p>
-              )}
-            </div>
+            <KpiCard label="Total" value={data.summary.total} sub="duplicatas analisadas" accent="#9ca3af" />
+            <KpiCard
+              label="Baixadas"
+              value={data.summary.baixadas}
+              sub={data.summary.total > 0 ? `${Math.round((data.summary.baixadas / data.summary.total) * 100)}% do total` : undefined}
+              accent="#22c55e"
+            />
+            <KpiCard
+              label="Não Baixadas"
+              value={data.summary.naoBaixadas}
+              sub={data.summary.total > 0 ? `${Math.round((data.summary.naoBaixadas / data.summary.total) * 100)}% do total` : undefined}
+              accent="#ef4444"
+            />
           </div>
 
-          {/* Table */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <TableCard>
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
                 Resultado detalhado
@@ -267,65 +189,31 @@ export default function DuplicatasPage() {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                      Duplicata
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                      Pagador
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                      Vencimento
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                      Liquidação
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                      Valor Título
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                      Valor Cobrado
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                      Juros
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                      Status
-                    </th>
+                    <th className={TH_CLASS}>Duplicata</th>
+                    <th className={TH_CLASS}>Pagador</th>
+                    <th className={TH_CLASS}>Vencimento</th>
+                    <th className={TH_CLASS}>Liquidação</th>
+                    <th className={TH_RIGHT_CLASS}>Valor Título</th>
+                    <th className={TH_RIGHT_CLASS}>Valor Cobrado</th>
+                    <th className={TH_RIGHT_CLASS}>Juros</th>
+                    <th className={TH_CLASS}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.results.map((row, i) => (
                     <tr
                       key={`${row.duplicata}-${i}`}
-                      className={`border-b border-gray-100 last:border-0 ${ROW_STYLES[row.status] ?? ''}`}
+                      className={`border-b border-gray-100 last:border-0 transition-colors ${ROW_STYLES[row.status] ?? ''}`}
                     >
-                      <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
-                        {row.duplicata}
-                      </td>
-                      <td className="px-4 py-3 text-gray-800 max-w-[200px] truncate" title={row.pagador}>
-                        {row.pagador}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap tabular-nums">
-                        {formatDate(row.vencimento)}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap tabular-nums">
-                        {formatDate(row.liquidacao)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-800 whitespace-nowrap tabular-nums">
-                        {formatCurrency(row.valorTitulo)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-800 whitespace-nowrap tabular-nums">
-                        {formatCurrency(row.valorCobrado)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap tabular-nums">
-                        {formatCurrency(row.juros)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded border text-xs font-medium ${STATUS_STYLES[row.status] ?? 'bg-gray-50 text-gray-600 border-gray-200'}`}
-                        >
-                          {STATUS_LABELS[row.status] ?? row.status}
-                        </span>
+                      <td className={TD_CLASS + ' font-mono text-xs'}>{row.duplicata}</td>
+                      <td className={TD_CLASS + ' max-w-[200px] truncate'} title={row.pagador}>{row.pagador}</td>
+                      <td className={TD_CLASS + ' tabular-nums'}>{formatDate(row.vencimento)}</td>
+                      <td className={TD_CLASS + ' tabular-nums'}>{formatDate(row.liquidacao)}</td>
+                      <td className={TD_RIGHT_CLASS}>{formatCurrency(row.valorTitulo)}</td>
+                      <td className={TD_RIGHT_CLASS}>{formatCurrency(row.valorCobrado)}</td>
+                      <td className={TD_RIGHT_CLASS}>{formatCurrency(row.juros)}</td>
+                      <td className={TD_CLASS}>
+                        <Badge tone={STATUS_TONE[row.status] ?? 'gray'}>{STATUS_LABELS[row.status] ?? row.status}</Badge>
                       </td>
                     </tr>
                   ))}
@@ -340,7 +228,7 @@ export default function DuplicatasPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </TableCard>
         </>
       )}
       </div>

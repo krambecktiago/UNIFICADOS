@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { Spinner } from '@/components/ui/spinner'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -59,8 +60,8 @@ export function AssistantWidget() {
   return (
     <div className="fixed bottom-5 right-5 z-50">
       {open && (
-        <div className="mb-3 w-80 sm:w-96 h-[28rem] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
-          <div className="bg-[#0d1e45] px-4 py-3 flex items-center justify-between shrink-0">
+        <div className="mb-3 w-80 sm:w-96 h-[28rem] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-scale-in">
+          <div className="bg-brand-navy px-4 py-3 flex items-center justify-between shrink-0">
             <div>
               <p className="text-sm font-semibold text-white leading-tight">Assistente da Plataforma</p>
               <p className="text-[11px] text-white/50 leading-tight mt-0.5">Powered by GROQ</p>
@@ -82,7 +83,7 @@ export function AssistantWidget() {
                 <div
                   className={`max-w-[85%] text-sm rounded-xl px-3 py-2 whitespace-pre-wrap leading-relaxed ${
                     m.role === 'user'
-                      ? 'bg-[#0d1e45] text-white'
+                      ? 'bg-brand-navy text-white'
                       : 'bg-gray-100 text-gray-800'
                   }`}
                 >
@@ -93,10 +94,7 @@ export function AssistantWidget() {
             {loading && (
               <div className="flex justify-start">
                 <div className="bg-gray-100 text-gray-400 text-sm rounded-xl px-3 py-2 flex items-center gap-1.5">
-                  <svg className="animate-spin w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+                  <Spinner size="sm" />
                   Digitando...
                 </div>
               </div>
@@ -113,13 +111,13 @@ export function AssistantWidget() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Digite sua dúvida..."
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0d1e45] focus:border-transparent transition-all"
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-transparent transition-all"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
               aria-label="Enviar"
-              className="w-9 h-9 shrink-0 rounded-xl bg-[#0d1e45] text-white flex items-center justify-center hover:bg-[#162b5e] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="w-9 h-9 shrink-0 rounded-xl bg-brand-navy text-white flex items-center justify-center hover:bg-brand-navy-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.77 59.77 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
@@ -132,7 +130,7 @@ export function AssistantWidget() {
       <button
         onClick={() => setOpen(v => !v)}
         aria-label={open ? 'Fechar assistente' : 'Abrir assistente'}
-        className="w-14 h-14 rounded-full bg-[#0d1e45] text-white shadow-xl flex items-center justify-center hover:bg-[#162b5e] transition-colors"
+        className="w-14 h-14 rounded-full bg-brand-navy text-white shadow-xl flex items-center justify-center hover:bg-brand-navy-hover hover:-translate-y-0.5 transition-all"
       >
         {open ? (
           <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

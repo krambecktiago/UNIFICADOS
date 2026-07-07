@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { ChangePasswordForm } from '@/components/change-password-form'
+import { PageHeader } from '@/components/ui/page-header'
 
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()
@@ -7,15 +8,10 @@ export default async function ConfiguracoesPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="h-[68px] bg-white border-b border-gray-200 px-8 flex items-center">
-        <div>
-          <h2 className="text-base font-bold text-gray-900 leading-tight">Configurações</h2>
-          <p className="text-xs text-gray-400 leading-tight mt-0.5">Gerencie sua conta</p>
-        </div>
-      </div>
+      <PageHeader title="Configurações" subtitle="Gerencie sua conta" />
 
       <div className="p-8 max-w-2xl">
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden divide-y divide-gray-100 border border-gray-200">
+        <div className="bg-white rounded-xl overflow-hidden divide-y divide-gray-100 border border-gray-200 animate-fade-in-up">
           <div className="px-6 py-5">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Conta</p>
             <div className="space-y-3">
