@@ -134,6 +134,8 @@ export default async function FerramentasPage() {
               <Link
                 key={tool.href}
                 href={tool.href}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group bg-white rounded-xl p-6 hover:shadow-xl transition-all border border-gray-200"
               >
                 <div className="flex items-start gap-4">
