@@ -272,12 +272,12 @@ export default function ConciliacaoRecibosPage() {
 
               <TopScrollbar targetRef={tableScrollRef} watch={`${activeTab}-${data.matched.length}-${data.divergent.length}-${data.missing.length}-${data.pending.length}`} />
 
-              <div ref={tableScrollRef} className="overflow-x-auto">
+              <div ref={tableScrollRef} className="overflow-auto max-h-[65vh]">
                 <TabPanel tabKey={activeTab}>
 
                 {activeTab === 'missing' && (
                   <table className="w-full text-sm min-w-[780px]">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
                       <tr>
                         <th className={thClass} style={{ width: 96 }}>Data</th>
                         <th className={thClass}>Loja</th>
@@ -310,7 +310,7 @@ export default function ConciliacaoRecibosPage() {
 
                 {activeTab === 'ok' && (
                   <table className="w-full text-sm min-w-[820px]">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
                       <tr>
                         <th className={thClass} style={{ width: 96 }}>Data</th>
                         <th className={thClass}>Loja</th>
@@ -343,7 +343,7 @@ export default function ConciliacaoRecibosPage() {
 
                 {activeTab === 'divergent' && (
                   <table className="w-full text-sm min-w-[1080px]">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
                       <tr>
                         <th className={thClass} style={{ width: 96 }}>Data</th>
                         <th className={thClass}>Loja</th>
@@ -399,7 +399,7 @@ export default function ConciliacaoRecibosPage() {
 
                 {activeTab === 'pending' && (
                   <table className="w-full text-sm min-w-[720px]">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
                       <tr>
                         <th className={thClass} style={{ width: 100 }}>Mvto Adquirente</th>
                         <th className={thClass}>Loja</th>
