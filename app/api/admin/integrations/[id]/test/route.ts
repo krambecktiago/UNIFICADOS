@@ -53,7 +53,7 @@ export async function POST(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         content: `🔔 **Teste de conexão** — "${integration.name}" configurado com sucesso.`,
-        username: integration.name,
+        username: 'Ferramentas Krambeck',
       }),
     })
     if (!res.ok) {
