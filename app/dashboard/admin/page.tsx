@@ -279,61 +279,61 @@ export default function AdminPage() {
 
       <div className="px-8 py-8">
         {createdCredentials && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-start justify-between gap-4">
-            <div className="text-sm text-green-800">
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-start justify-between gap-4 dark:bg-green-950/40 dark:border-green-900">
+            <div className="text-sm text-green-800 dark:text-green-400">
               <p className="font-semibold">Usuário criado com sucesso.</p>
               <p className="mt-0.5">
                 Email: <strong>{createdCredentials.email}</strong> · Senha provisória: <strong>{createdCredentials.password}</strong>
               </p>
-              <p className="text-xs text-green-700 mt-1">Compartilhe essa senha com o usuário — ela não será exibida novamente.</p>
+              <p className="text-xs text-green-700 mt-1 dark:text-green-400">Compartilhe essa senha com o usuário — ela não será exibida novamente.</p>
             </div>
-            <button onClick={() => setCreatedCredentials(null)} className="text-green-700 hover:opacity-70 shrink-0">
+            <button onClick={() => setCreatedCredentials(null)} className="text-green-700 hover:opacity-70 shrink-0 dark:text-green-400">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
         )}
 
         {showCreateForm && (
-          <form onSubmit={createUser} className="mb-6 bg-white rounded-xl p-6 border border-gray-200 animate-fade-in-up space-y-4">
-            <p className="text-sm font-semibold text-gray-900">Novo usuário</p>
+          <form onSubmit={createUser} className="mb-6 bg-white rounded-xl p-6 border border-gray-200 animate-fade-in-up space-y-4 dark:bg-gray-900 dark:border-gray-800">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Novo usuário</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Nome completo</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1 dark:text-gray-500">Nome completo</label>
                 <input
                   type="text"
                   required
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30 dark:border-gray-700 dark:text-gray-100 dark:bg-gray-800"
                   placeholder="Nome do usuário"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Email</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1 dark:text-gray-500">Email</label>
                 <input
                   type="email"
                   required
                   value={newEmail}
                   onChange={e => setNewEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30 dark:border-gray-700 dark:text-gray-100 dark:bg-gray-800"
                   placeholder="email@krambeck.com.br"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Senha provisória</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1 dark:text-gray-500">Senha provisória</label>
                 <div className="flex gap-1.5">
                   <input
                     type="text"
                     required
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30 dark:border-gray-700 dark:text-gray-100 dark:bg-gray-800"
                   />
                   <button
                     type="button"
                     onClick={() => setNewPassword(generatePassword())}
                     title="Gerar nova senha"
-                    className="px-2.5 border border-gray-200 rounded-lg text-gray-500 bg-white hover:bg-gray-50 shrink-0"
+                    className="px-2.5 border border-gray-200 rounded-lg text-gray-500 bg-white hover:bg-gray-50 shrink-0 dark:border-gray-700 dark:text-gray-400 dark:bg-gray-800 dark:hover:bg-gray-800"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
                   </button>
@@ -342,7 +342,7 @@ export default function AdminPage() {
             </div>
 
             {createError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{createError}</p>
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 dark:text-red-400 dark:bg-red-950/40 dark:border-red-900">{createError}</p>
             )}
 
             <div className="flex items-center gap-2">
@@ -357,15 +357,15 @@ export default function AdminPage() {
         )}
 
         <Card padding="6" className="mb-6">
-          <p className="text-sm font-semibold text-gray-900 mb-1">Ferramentas do sistema</p>
-          <p className="text-xs text-gray-400 mb-4">Uma ferramenta inativa some do painel de todos os usuários com acesso a ela, mesmo que já tenha sido liberada.</p>
+          <p className="text-sm font-semibold text-gray-900 mb-1 dark:text-gray-100">Ferramentas do sistema</p>
+          <p className="text-xs text-gray-400 mb-4 dark:text-gray-500">Uma ferramenta inativa some do painel de todos os usuários com acesso a ela, mesmo que já tenha sido liberada.</p>
 
           {toolsError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{toolsError}</p>
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 dark:text-red-400 dark:bg-red-950/40 dark:border-red-900">{toolsError}</p>
           )}
 
           {!toolsError && manageTools.length === 0 && (
-            <p className="text-sm text-gray-400">Nenhuma ferramenta cadastrada.</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Nenhuma ferramenta cadastrada.</p>
           )}
 
           <div className="flex flex-wrap gap-2">
@@ -376,8 +376,8 @@ export default function AdminPage() {
                 disabled={savingToolId === tool.id}
                 className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all disabled:opacity-40 ${
                   tool.active
-                    ? 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                    : 'bg-red-50 text-red-600 border-red-200'
+                    ? 'bg-white text-gray-700 border-gray-200 hover:border-gray-300 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-800 dark:hover:border-gray-700'
+                    : 'bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900'
                 }`}
                 title={tool.active ? 'Clique para desativar' : 'Clique para reativar'}
               >
@@ -392,20 +392,20 @@ export default function AdminPage() {
         </Card>
 
         {loading && (
-          <div className="flex items-center gap-3 text-sm text-gray-400">
+          <div className="flex items-center gap-3 text-sm text-gray-400 dark:text-gray-500">
             <Spinner size="md" />
             Carregando usuários...
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg dark:bg-red-950/40 dark:border-red-900 dark:text-red-400">
             {error}
           </div>
         )}
 
         {!loading && !error && users.length === 0 && (
-          <p className="text-sm text-gray-400">Nenhum usuário encontrado.</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum usuário encontrado.</p>
         )}
 
         <div className="space-y-4">
@@ -439,7 +439,7 @@ export default function AdminPage() {
                             if (e.key === 'Enter') saveName(user)
                             if (e.key === 'Escape') cancelEdit()
                           }}
-                          className="text-sm font-semibold text-gray-900 border border-brand-navy/30 rounded-md px-2 py-0.5 w-full max-w-[220px] focus:outline-none focus:ring-1 focus:ring-brand-navy/40"
+                          className="text-sm font-semibold text-gray-900 border border-brand-navy/30 rounded-md px-2 py-0.5 w-full max-w-[220px] focus:outline-none focus:ring-1 focus:ring-brand-navy/40 dark:text-gray-100"
                         />
                         <button
                           onClick={() => saveName(user)}
@@ -450,7 +450,7 @@ export default function AdminPage() {
                         </button>
                         <button
                           onClick={cancelEdit}
-                          className="text-gray-400 hover:opacity-70 shrink-0"
+                          className="text-gray-400 hover:opacity-70 shrink-0 dark:text-gray-500"
                           title="Cancelar"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -462,11 +462,11 @@ export default function AdminPage() {
                         className="group flex items-center gap-1.5 text-left"
                         title="Editar nome"
                       >
-                        <p className="text-sm font-semibold text-gray-900 truncate">{displayName(user)}</p>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-9.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 8.5-8.5z" /></svg>
+                        <p className="text-sm font-semibold text-gray-900 truncate dark:text-gray-100">{displayName(user)}</p>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 dark:text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-9.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 8.5-8.5z" /></svg>
                       </button>
                     )}
-                    <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                    <p className="text-xs text-gray-400 truncate dark:text-gray-500">{user.email}</p>
                   </div>
 
                   {/* Badge role + botão */}
@@ -479,7 +479,7 @@ export default function AdminPage() {
                       disabled={isSaving}
                       className={`text-xs font-medium px-3 py-1 rounded-lg border transition-colors disabled:opacity-40 ${
                         user.role === 'admin'
-                          ? 'border-red-200 text-red-600 hover:bg-red-50'
+                          ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40'
                           : 'border-brand-navy/20 text-brand-navy hover:bg-brand-navy/5'
                       }`}
                     >
@@ -489,8 +489,8 @@ export default function AdminPage() {
                 </div>
 
                 {/* Chips de telas liberadas */}
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-2">
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-2 dark:text-gray-500">
                     Telas
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -504,7 +504,7 @@ export default function AdminPage() {
                           className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all disabled:opacity-40 ${
                             active
                               ? 'bg-brand-navy text-white border-brand-navy'
-                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-800 dark:hover:border-gray-700'
                           }`}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-gray-300'}`} />
@@ -516,8 +516,8 @@ export default function AdminPage() {
                 </div>
 
                 {/* Chips de ferramentas */}
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-2">
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-2 dark:text-gray-500">
                     Ferramentas
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -531,7 +531,7 @@ export default function AdminPage() {
                           className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all disabled:opacity-40 ${
                             active
                               ? 'bg-brand-navy text-white border-brand-navy'
-                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-800 dark:hover:border-gray-700'
                           }`}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : 'bg-gray-300'}`} />
@@ -543,7 +543,7 @@ export default function AdminPage() {
                 </div>
 
                 {isSaving && (
-                  <p className="mt-2 text-[11px] text-gray-400 flex items-center gap-1.5">
+                  <p className="mt-2 text-[11px] text-gray-400 flex items-center gap-1.5 dark:text-gray-500">
                     <Spinner size="sm" />
                     Salvando...
                   </p>

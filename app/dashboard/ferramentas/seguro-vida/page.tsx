@@ -35,17 +35,17 @@ function getRowStyle(status: string): string {
   switch (status) {
     case 'ATIVO':
     case 'OK':
-      return 'bg-green-50 text-green-700';
+      return 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400';
     case 'SOMENTE_PDF':
-      return 'bg-orange-50 text-orange-700';
+      return 'bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400';
     case 'SOMENTE_XLSX':
-      return 'bg-blue-50 text-blue-700';
+      return 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400';
     case 'INCLUSAO':
-      return 'bg-yellow-50 text-yellow-700';
+      return 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400';
     case 'EXCLUSAO':
-      return 'bg-red-50 text-red-700';
+      return 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400';
     default:
-      return 'bg-gray-50 text-gray-700';
+      return 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300';
   }
 }
 
@@ -170,7 +170,7 @@ export default function SeguroVidaPage() {
       <div className="max-w-5xl mx-auto px-8 py-8 space-y-6">
 
         <Card padding="5" className="space-y-5">
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Arquivos</h2>
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Arquivos</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FileInput
@@ -191,7 +191,7 @@ export default function SeguroVidaPage() {
 
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                 Coluna dos nomes
               </label>
               <input
@@ -200,12 +200,12 @@ export default function SeguroVidaPage() {
                 maxLength={3}
                 onChange={(e) => setColuna(e.target.value.toUpperCase())}
                 placeholder="A"
-                className="w-20 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                className="w-20 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                 Linha inicial
               </label>
               <input
@@ -214,7 +214,7 @@ export default function SeguroVidaPage() {
                 maxLength={6}
                 onChange={(e) => setLinhaInicial(e.target.value.replace(/\D/g, ''))}
                 placeholder="1"
-                className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 tabular-nums"
+                className="w-24 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 tabular-nums"
               />
             </div>
 
@@ -242,14 +242,14 @@ export default function SeguroVidaPage() {
         {loading && (
           <div className="flex items-center justify-center gap-3 py-12">
             <Spinner size="lg" className="text-blue-600" />
-            <span className="text-sm text-gray-500">Processando arquivos…</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">Processando arquivos…</span>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 animate-fade-in-up">
-            <p className="text-sm font-medium text-red-800">Erro ao processar</p>
-            <p className="text-sm text-red-700 mt-0.5">{error}</p>
+          <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl p-4 animate-fade-in-up">
+            <p className="text-sm font-medium text-red-800 dark:text-red-400">Erro ao processar</p>
+            <p className="text-sm text-red-700 dark:text-red-400 mt-0.5">{error}</p>
           </div>
         )}
 
@@ -265,11 +265,11 @@ export default function SeguroVidaPage() {
             </div>
 
             <TableCard>
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-700">
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Resultados
                 </h2>
-                <span className="text-xs text-gray-400 tabular-nums">
+                <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
                   {data.results.length.toLocaleString('pt-BR')}{' '}
                   {data.results.length === 1 ? 'registro' : 'registros'}
                 </span>
@@ -277,7 +277,7 @@ export default function SeguroVidaPage() {
 
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-100">
+                  <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-800">
                     <tr>
                       <th className={TH_CLASS}>Nome</th>
                       <th className={TH_CLASS}>Status</th>
@@ -285,7 +285,7 @@ export default function SeguroVidaPage() {
                       <th className={TH_CLASS}>Origem</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {data.results.map((row, i) => (
                       <tr
                         key={i}
@@ -310,7 +310,7 @@ export default function SeguroVidaPage() {
                       <tr>
                         <td
                           colSpan={4}
-                          className="px-4 py-10 text-center text-sm text-gray-400"
+                          className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500"
                         >
                           Nenhum resultado encontrado.
                         </td>

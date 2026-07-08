@@ -49,7 +49,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const firstName = (profile?.full_name ?? user.email ?? 'Usuário').split(' ')[0]
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-950">
       <Sidebar isAdmin={isAdmin} accessibleScreens={accessibleScreens} greeting={getGreeting()} userFirstName={firstName} />
       <main className="flex-1 overflow-auto">
         {children}

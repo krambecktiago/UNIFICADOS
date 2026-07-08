@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Dark mode via classe (".dark" na <html>), controlada pelo botão de tema —
+   em vez do padrão do Tailwind que segue só a preferência do sistema. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-brand-navy: #0d1e45;
   --color-brand-navy-hover: #162b5e;
@@ -11,11 +15,9 @@
   --foreground: #171717;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 body {

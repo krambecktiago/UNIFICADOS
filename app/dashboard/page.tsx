@@ -106,7 +106,7 @@ export default async function DashboardPage() {
       <div className="px-8 py-8 max-w-4xl space-y-8">
 
         <section>
-          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-4">Acesso Rápido</p>
+          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-4">Acesso Rápido</p>
           <div className="grid grid-cols-1 gap-4">
             <QuickCard
               href="/dashboard/ferramentas"
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
         </section>
 
         <section>
-          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-4">Uso da Plataforma</p>
+          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-4">Uso da Plataforma</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <KpiCard
               label="Arquivos analisados"
@@ -137,18 +137,18 @@ export default async function DashboardPage() {
             />
 
             <Card padding="5" className="sm:col-span-2">
-              <p className="text-xs font-semibold text-gray-500 mb-4">Distribuição por ferramenta</p>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-4">Distribuição por ferramenta</p>
               {totalExecutions === 0 ? (
-                <p className="text-sm text-gray-400">Nenhum uso registrado ainda.</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum uso registrado ainda.</p>
               ) : (
                 <div className="space-y-3">
                   {toolDistribution.map(tool => (
                     <div key={tool.slug}>
                       <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="font-medium text-gray-700">{tool.label}</span>
-                        <span className="text-gray-400 text-xs">{tool.count}x · {tool.percent.toFixed(0)}%</span>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{tool.label}</span>
+                        <span className="text-gray-400 dark:text-gray-500 text-xs">{tool.count}x · {tool.percent.toFixed(0)}%</span>
                       </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-brand-navy rounded-full"
                           style={{ width: `${(tool.count / maxToolCount) * 100}%` }}
@@ -163,10 +163,10 @@ export default async function DashboardPage() {
         </section>
 
         <section>
-          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-4">Uso nos últimos 30 dias</p>
+          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-4">Uso nos últimos 30 dias</p>
           <Card padding="5">
             {totalExecutions === 0 ? (
-              <p className="text-sm text-gray-400">Nenhum uso registrado ainda.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum uso registrado ainda.</p>
             ) : (
               <div className="flex items-end gap-1 h-32">
                 {dailyUsage.map(day => (
@@ -180,7 +180,7 @@ export default async function DashboardPage() {
                 ))}
               </div>
             )}
-            <div className="flex justify-between mt-2 text-[10px] text-gray-400">
+            <div className="flex justify-between mt-2 text-[10px] text-gray-400 dark:text-gray-500">
               <span>{dailyUsage[0]?.label}</span>
               <span>{dailyUsage[dailyUsage.length - 1]?.label}</span>
             </div>
@@ -188,28 +188,28 @@ export default async function DashboardPage() {
         </section>
 
         <section>
-          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-4">Usuários mais ativos</p>
+          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-4">Usuários mais ativos</p>
           <Card padding="5">
             {topUsers.length === 0 ? (
-              <p className="text-sm text-gray-400">Nenhum uso registrado ainda.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum uso registrado ainda.</p>
             ) : (
               <div className="space-y-3">
                 {topUsers.map((topUser, index) => (
                   <div key={topUser.id} className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-gray-400 w-4 shrink-0">{index + 1}º</span>
+                    <span className="text-xs font-bold text-gray-400 dark:text-gray-500 w-4 shrink-0">{index + 1}º</span>
                     <div className="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center text-white text-xs font-bold shrink-0">
                       {topUser.name.charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-sm font-medium text-gray-700 flex-1 truncate">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex-1 truncate">
                       {topUser.name}{topUser.id === user!.id ? ' (você)' : ''}
                     </span>
-                    <div className="h-1.5 w-24 bg-gray-100 rounded-full overflow-hidden hidden sm:block">
+                    <div className="h-1.5 w-24 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden hidden sm:block">
                       <div
                         className="h-full bg-brand-navy rounded-full"
                         style={{ width: `${(topUser.count / maxUserCount) * 100}%` }}
                       />
                     </div>
-                    <span className="text-gray-400 text-xs w-10 text-right shrink-0">{topUser.count}x</span>
+                    <span className="text-gray-400 dark:text-gray-500 text-xs w-10 text-right shrink-0">{topUser.count}x</span>
                   </div>
                 ))}
               </div>
@@ -234,7 +234,7 @@ function QuickCard({
   return (
     <Link
       href={href}
-      className="group bg-white rounded-xl p-5 flex items-center gap-4 hover:shadow-xl hover:-translate-y-0.5 transition-all border border-gray-200 animate-fade-in-up"
+      className="group bg-white dark:bg-gray-900 rounded-xl p-5 flex items-center gap-4 hover:shadow-xl hover:-translate-y-0.5 transition-all border border-gray-200 dark:border-gray-800 animate-fade-in-up"
     >
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -243,10 +243,10 @@ function QuickCard({
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-gray-900 transition-colors">{label}</p>
-        <p className="text-xs text-gray-400 mt-0.5 truncate">{description}</p>
+        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 transition-colors">{label}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">{description}</p>
       </div>
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 ml-auto shrink-0 group-hover:text-brand-navy transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 dark:text-gray-600 ml-auto shrink-0 group-hover:text-brand-navy transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
       </svg>
     </Link>
