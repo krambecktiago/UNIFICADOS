@@ -113,14 +113,14 @@ export default function CompararExtratoPage() {
 
   const tabs: TabDef<Tab>[] = data
     ? [
-        { key: 'miss', label: 'Faltando no ERP',   count: data.summary.missCount, border: 'border-orange-500', text: 'text-orange-600' },
-        { key: 'ok',   label: 'Conciliados',        count: data.summary.okCount,   border: 'border-green-500',  text: 'text-green-600'  },
-        { key: 'pend', label: 'Faltando no Banco',  count: data.summary.pendCount, border: 'border-gray-400',   text: 'text-gray-600'   },
+        { key: 'miss', label: 'Faltando no ERP',   count: data.summary.missCount, border: 'border-orange-500 dark:border-orange-400', text: 'text-orange-600 dark:text-orange-400' },
+        { key: 'ok',   label: 'Conciliados',        count: data.summary.okCount,   border: 'border-green-500 dark:border-green-400',  text: 'text-green-600 dark:text-green-400'  },
+        { key: 'pend', label: 'Faltando no Banco',  count: data.summary.pendCount, border: 'border-gray-400 dark:border-gray-500',   text: 'text-gray-600 dark:text-gray-400'   },
       ]
     : []
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-800">
       <PageHeader
         title="Conciliação Bancária — Viacredi"
         subtitle="Cruza o extrato ERP (.txt) com o extrato Viacredi (.csv) e identifica divergências."
@@ -129,7 +129,7 @@ export default function CompararExtratoPage() {
       <div className="max-w-6xl mx-auto px-8 py-8 space-y-6">
 
         <Card padding="5" className="space-y-4">
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Arquivos</h2>
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Arquivos</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FileInput ref={erpRef} label="Extrato ERP (.txt)" accept=".txt" file={erpFile} onChange={setErpFile} />
             <FileInput ref={bankRef} label="Extrato Banco (.csv)" accept=".csv" file={bankFile} onChange={setBankFile} />
@@ -150,7 +150,7 @@ export default function CompararExtratoPage() {
         </Card>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 animate-fade-in-up">
+          <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-400 animate-fade-in-up">
             <span className="font-medium">Erro:</span> {error}
           </div>
         )}
@@ -158,11 +158,11 @@ export default function CompararExtratoPage() {
         {data && (
           <>
             {data.summary.missCount === 0 ? (
-              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 font-medium animate-fade-in-up">
+              <div className="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-900 rounded-xl px-4 py-3 text-sm text-green-700 dark:text-green-400 font-medium animate-fade-in-up">
                 Tudo conciliado — {data.summary.okCount} lançamento(s) conferem. Banco: {fmtBRL(data.summary.bankTotal)} · ERP: {fmtBRL(data.summary.okTotal)}
               </div>
             ) : (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 animate-fade-in-up">
+              <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl px-4 py-3 text-sm text-amber-800 dark:text-amber-400 animate-fade-in-up">
                 <span className="font-semibold">{data.summary.missCount} lançamento(s) faltando no ERP</span>
                 {' '}·{' '}{fmtBRL(data.summary.missTotal)}
                 {' '}·{' '}{data.summary.okCount} conciliados
@@ -185,7 +185,7 @@ export default function CompararExtratoPage() {
 
                 {activeTab === 'miss' && (
                   <table className="w-full text-sm min-w-[600px]">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-800">
                       <tr>
                         <th className={thClass} style={{ width: 96 }}>Data</th>
                         <th className={thRight} style={{ width: 130 }}>Valor</th>
@@ -194,14 +194,14 @@ export default function CompararExtratoPage() {
                         <th className={thClass} style={{ width: 90 }}>Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                       {data.missing.length === 0 ? (
-                        <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-gray-400">Nenhum lançamento faltando.</td></tr>
+                        <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">Nenhum lançamento faltando.</td></tr>
                       ) : data.missing.map((row, i) => (
-                        <tr key={i} className="bg-orange-50 hover:bg-orange-100 transition-colors">
+                        <tr key={i} className="bg-orange-50 dark:bg-orange-950/30 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors">
                           <td className={tdClass}>{row.date}</td>
                           <td className={tdRight + ' text-orange-800'}>{fmtBRL(row.valor)}</td>
-                          <td className="px-4 py-3 text-sm text-gray-800 max-w-xs truncate">{row.desc}</td>
+                          <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 max-w-xs truncate">{row.desc}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{row.ref}</td>
                           <td className="px-4 py-3">
                             <Badge tone="orange">LANÇAR</Badge>
@@ -223,7 +223,7 @@ export default function CompararExtratoPage() {
 
                 {activeTab === 'ok' && (
                   <table className="w-full text-sm min-w-[640px]">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-800">
                       <tr>
                         <th className={thClass} style={{ width: 96 }}>Data</th>
                         <th className={thRight} style={{ width: 130 }}>Valor</th>
@@ -232,15 +232,15 @@ export default function CompararExtratoPage() {
                         <th className={thClass} style={{ width: 110 }}>Lanç. ERP</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                       {data.matched.length === 0 ? (
-                        <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-gray-400">Nenhum item conciliado.</td></tr>
+                        <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">Nenhum item conciliado.</td></tr>
                       ) : data.matched.map((row, i) => (
                         row.type === '1:1' ? (
-                          <tr key={i} className="hover:bg-gray-50 transition-colors">
+                          <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                             <td className={tdClass}>{row.banks[0].date}</td>
                             <td className={tdRight + ' text-green-800'}>{fmtBRL(row.banks[0].valor)}</td>
-                            <td className="px-4 py-3 text-sm text-gray-800 max-w-xs truncate">{row.banks[0].desc}</td>
+                            <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 max-w-xs truncate">{row.banks[0].desc}</td>
                             <td className={tdClass + ' font-mono text-xs'}>{row.banks[0].ref}</td>
                             <td className={tdClass + ' font-mono text-xs'}>{row.erp.lanc}</td>
                           </tr>
@@ -250,10 +250,10 @@ export default function CompararExtratoPage() {
                               <table className="w-full text-sm">
                                 <tbody>
                                   {row.banks.map((b, j) => (
-                                    <tr key={j} className="bg-purple-50 border-l-2 border-purple-400 hover:bg-purple-100 transition-colors">
+                                    <tr key={j} className="bg-purple-50 dark:bg-purple-950/30 border-l-2 border-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors">
                                       <td className={tdClass} style={{ width: 96 }}>{b.date}</td>
                                       <td className={tdRight + ' text-purple-800'} style={{ width: 130 }}>{fmtBRL(b.valor)}</td>
-                                      <td className="px-4 py-3 text-sm text-gray-800 max-w-xs truncate">
+                                      <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 max-w-xs truncate">
                                         {b.desc}{' '}
                                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700 ml-1">agrupado</span>
                                       </td>
@@ -287,7 +287,7 @@ export default function CompararExtratoPage() {
 
                 {activeTab === 'pend' && (
                   <table className="w-full text-sm min-w-[480px]">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-800">
                       <tr>
                         <th className={thClass} style={{ width: 96 }}>Data</th>
                         <th className={thRight} style={{ width: 130 }}>Valor</th>
@@ -295,11 +295,11 @@ export default function CompararExtratoPage() {
                         <th className={thClass}>Observação</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                       {data.pending.length === 0 ? (
-                        <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-gray-400">Nenhum item pendente.</td></tr>
+                        <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">Nenhum item pendente.</td></tr>
                       ) : data.pending.map((row, i) => (
-                        <tr key={i} className="hover:bg-gray-50 transition-colors">
+                        <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                           <td className={tdClass}>{row.date}</td>
                           <td className={tdRight}>{fmtBRL(row.valor)}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{row.lanc}</td>

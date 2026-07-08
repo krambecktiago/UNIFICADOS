@@ -37,9 +37,9 @@ type TabKey = 'todos' | 'CONFIRMADO' | 'SUSPEITO' | 'EM_ABERTO'
 
 function getRowClass(status: CreditoResult['status']): string {
   switch (status) {
-    case 'CONFIRMADO': return 'bg-green-50 text-green-800'
-    case 'SUSPEITO':   return 'bg-yellow-50 text-yellow-800'
-    case 'EM_ABERTO':  return 'bg-red-50 text-red-800'
+    case 'CONFIRMADO': return 'bg-green-50 dark:bg-green-950/30 text-green-800 dark:text-green-400'
+    case 'SUSPEITO':   return 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-800 dark:text-yellow-400'
+    case 'EM_ABERTO':  return 'bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-400'
     default:           return ''
   }
 }
@@ -123,15 +123,15 @@ export default function CreditosAbertoPage() {
 
   const tabs: TabDef<TabKey>[] = data
     ? [
-        { key: 'todos',      label: 'Todos',       count: data.summary.total,       border: 'border-blue-500',   text: 'text-blue-600'  },
-        { key: 'CONFIRMADO', label: 'Confirmados', count: data.summary.confirmados, border: 'border-green-500',  text: 'text-green-600' },
-        { key: 'SUSPEITO',   label: 'Suspeitos',   count: data.summary.suspeitos,   border: 'border-yellow-500', text: 'text-yellow-600' },
-        { key: 'EM_ABERTO',  label: 'Em Aberto',   count: data.summary.emAberto,    border: 'border-red-500',    text: 'text-red-600'   },
+        { key: 'todos',      label: 'Todos',       count: data.summary.total,       border: 'border-blue-500 dark:border-blue-400',   text: 'text-blue-600 dark:text-blue-400'  },
+        { key: 'CONFIRMADO', label: 'Confirmados', count: data.summary.confirmados, border: 'border-green-500 dark:border-green-400',  text: 'text-green-600 dark:text-green-400' },
+        { key: 'SUSPEITO',   label: 'Suspeitos',   count: data.summary.suspeitos,   border: 'border-yellow-500 dark:border-yellow-400', text: 'text-yellow-600 dark:text-yellow-400' },
+        { key: 'EM_ABERTO',  label: 'Em Aberto',   count: data.summary.emAberto,    border: 'border-red-500 dark:border-red-400',    text: 'text-red-600 dark:text-red-400'   },
       ]
     : []
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-800">
       <PageHeader
         title="Créditos em Aberto"
         subtitle="Cruza créditos em aberto do fornecedor (TXT) com pagamentos do ERP (TXT) para identificar pendências."
@@ -140,7 +140,7 @@ export default function CreditosAbertoPage() {
       <div className="max-w-7xl mx-auto px-8 py-8">
 
         <Card padding="5" className="mb-6">
-          <h2 className="text-sm font-medium text-gray-700 mb-4">Arquivos de entrada</h2>
+          <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Arquivos de entrada</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FileInput
               ref={refAberto}
@@ -170,7 +170,7 @@ export default function CreditosAbertoPage() {
         </Card>
 
         {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 animate-fade-in-up">
+          <div className="mb-6 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-400 animate-fade-in-up">
             <span className="font-medium">Erro:</span> {error}
           </div>
         )}
@@ -183,9 +183,9 @@ export default function CreditosAbertoPage() {
               <KpiCard label="Suspeitos" value={data.summary.suspeitos} sub="a verificar" accent="#ca8a04" />
               <KpiCard label="Em Aberto" value={data.summary.emAberto} sub="sem baixa" accent="#dc2626" />
               <Card padding="5" className="col-span-2 sm:col-span-1">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Período</p>
-                <p className="mt-1.5 text-sm font-semibold text-gray-800 leading-snug">{data.summary.periodo || '—'}</p>
-                <p className="mt-0.5 text-xs text-gray-400">competência</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Período</p>
+                <p className="mt-1.5 text-sm font-semibold text-gray-800 dark:text-gray-200 leading-snug">{data.summary.periodo || '—'}</p>
+                <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">competência</p>
               </Card>
             </div>
 
@@ -193,8 +193,8 @@ export default function CreditosAbertoPage() {
               <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-100">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
                       <th className={TH_CLASS}>Emissão</th>
                       <th className={TH_CLASS}>Lançamento</th>
@@ -205,11 +205,11 @@ export default function CreditosAbertoPage() {
                       <th className={TH_CLASS}>Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {filteredResults.map((row, index) => (
                       <tr key={index} className={getRowClass(row.status) + ' transition-colors'}>
                         <td className="px-4 py-3 text-sm tabular-nums whitespace-nowrap">{row.emissao}</td>
-                        <td className="px-4 py-3 text-sm font-mono whitespace-nowrap text-gray-500">{row.lancamento || '—'}</td>
+                        <td className="px-4 py-3 text-sm font-mono whitespace-nowrap text-gray-500 dark:text-gray-400">{row.lancamento || '—'}</td>
                         <td className="px-4 py-3 text-sm font-mono whitespace-nowrap">{row.codigo}</td>
                         <td className="px-4 py-3 text-sm max-w-xs truncate">{row.fornecedor}</td>
                         <td className="px-4 py-3 text-sm tabular-nums text-right whitespace-nowrap">{row.valor}</td>
@@ -221,7 +221,7 @@ export default function CreditosAbertoPage() {
                     ))}
                     {filteredResults.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">
+                        <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
                           Nenhum registro nesta categoria.
                         </td>
                       </tr>
@@ -230,8 +230,8 @@ export default function CreditosAbertoPage() {
                 </table>
               </div>
 
-              <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-                <p className="text-xs text-gray-400">
+              <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                   Exibindo {filteredResults.length} de {data.results.length} {data.results.length === 1 ? 'registro' : 'registros'}
                 </p>
               </div>

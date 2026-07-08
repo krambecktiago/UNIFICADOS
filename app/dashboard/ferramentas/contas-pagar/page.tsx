@@ -184,12 +184,12 @@ export default function ContasPagarPage() {
   }
 
   const inputBase =
-    'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow'
+    'block w-full text-sm text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow'
   const currencyInput =
     inputBase + ' font-variant-numeric tabular-nums text-right'
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-800">
       <PageHeader title="Resumo Diário de Pagamentos" subtitle="Preencha os dados e envie o resumo ao canal Discord via webhook." />
 
       <div className="max-w-4xl mx-auto px-8 py-8 space-y-6 pb-32">
@@ -198,12 +198,12 @@ export default function ContasPagarPage() {
         <Card padding="6">
           <div className="flex items-center gap-3 mb-4">
             <span className="w-1 h-5 bg-blue-500 rounded-full flex-shrink-0" />
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
               Data de Referência
             </h2>
           </div>
           <div className="max-w-xs">
-            <label className="block text-xs text-gray-500 mb-1.5">Data (DD/MM/AAAA)</label>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Data (DD/MM/AAAA)</label>
             <input
               type="text"
               value={data}
@@ -218,27 +218,27 @@ export default function ContasPagarPage() {
         <Card padding="6">
           <div className="flex items-center gap-3 mb-4">
             <span className="w-1 h-5 bg-blue-500 rounded-full flex-shrink-0" />
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
               Pagamentos por Loja
             </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide w-32">
+                <tr className="border-b border-gray-100 dark:border-gray-800">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">
                     Loja
                   </th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     Valor Pago (R$)
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                 {LOJAS.map((loja) => (
-                  <tr key={loja} className="hover:bg-gray-50 transition-colors">
+                  <tr key={loja} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <td className="px-3 py-2.5">
-                      <span className="font-medium text-gray-700">{LOJAS_LABELS[loja]}</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{LOJAS_LABELS[loja]}</span>
                     </td>
                     <td className="px-3 py-2.5 w-56">
                       <CurrencyInput
@@ -258,32 +258,32 @@ export default function ContasPagarPage() {
         <Card padding="6">
           <div className="flex items-center gap-3 mb-4">
             <span className="w-1 h-5 bg-blue-500 rounded-full flex-shrink-0" />
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
               Saldos por Banco
             </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[640px]">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide w-28">
+                <tr className="border-b border-gray-100 dark:border-gray-800">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide w-28">
                     Loja
                   </th>
                   {BANCOS.map((banco) => (
                     <th
                       key={banco}
-                      className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wide"
+                      className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide"
                     >
                       {banco}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                 {LOJAS.map((loja) => (
-                  <tr key={loja} className="hover:bg-gray-50 transition-colors">
+                  <tr key={loja} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <td className="px-3 py-2.5">
-                      <span className="font-medium text-gray-700">{LOJAS_LABELS[loja]}</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{LOJAS_LABELS[loja]}</span>
                     </td>
                     {BANCOS.map((banco) => (
                       <td key={banco} className="px-3 py-2.5">
@@ -302,9 +302,9 @@ export default function ContasPagarPage() {
         </Card>
 
         {/* Section 4: Webhook Discord — gerenciado centralmente em Conexões */}
-        <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+        <div className="flex items-start gap-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 rounded-xl px-4 py-3">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>
-          <p className="text-sm text-blue-800">
+          <p className="text-sm text-blue-800 dark:text-blue-400">
             O webhook do Discord é configurado por um administrador em{' '}
             <span className="font-semibold">Administração → Conexões</span>. Se o envio falhar, verifique se a conexão está configurada lá.
           </p>
@@ -314,11 +314,11 @@ export default function ContasPagarPage() {
         <Card padding="6">
           <div className="flex items-center gap-3 mb-1">
             <span className="w-1 h-5 bg-blue-500 rounded-full flex-shrink-0" />
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
               Template da Mensagem
             </h2>
           </div>
-          <p className="text-xs text-gray-400 mb-3 ml-4">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-3 ml-4">
             Placeholders disponíveis:{' '}
             <span className="font-mono">
               {'{DATA}'}, {'{L01_PAG}'}, {'{L01_SALDO}'}, {'{L01_DIF}'}, {'{L01_VIACREDI}'},{' '}
@@ -340,7 +340,7 @@ export default function ContasPagarPage() {
       </div>
 
       {/* Sticky footer bar */}
-      <div className="fixed bottom-0 left-64 right-0 bg-white border-t border-gray-200 px-6 py-4 z-10">
+      <div className="fixed bottom-0 left-64 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-6 py-4 z-10">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           <div className="flex-1 text-sm">
             {success && <span className="font-medium text-green-700">Mensagem enviada ao Discord!</span>}
