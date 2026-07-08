@@ -24,9 +24,10 @@ interface ErpEntry {
 }
 
 interface MatchedEntry {
-  type: '1:1' | 'N:1'
+  type: '1:1' | 'N:1' | 'ajuste'
   banks: BankEntry[]
   erp: ErpEntry
+  devolvidos?: ErpEntry[]
 }
 
 interface Summary {
@@ -44,6 +45,7 @@ interface ApiResponse {
   missing: BankEntry[]
   matched: MatchedEntry[]
   pending: ErpEntry[]
+  unmatchedDevolvidos: ErpEntry[]
   summary: Summary
 }
 
@@ -170,6 +172,13 @@ export default function CompararExtratoPage() {
               </div>
             )}
 
+            {data.unmatchedDevolvidos.length > 0 && (
+              <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-400 animate-fade-in-up">
+                <span className="font-semibold">{data.unmatchedDevolvidos.length} cheque(s) devolvido(s) no ERP sem depósito correspondente encontrado</span> — confira manualmente:{' '}
+                {data.unmatchedDevolvidos.map(d => `${d.lanc} (${fmtBRL(d.valor)}, ${d.date})`).join('; ')}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <KpiCard label="Total Créditos Banco" value={data.summary.bankTotal} format={fmtBRL} sub={`${data.summary.bankCount} crédito(s)`} accent="#0369a1" />
               <KpiCard label="Conciliado" value={data.summary.okTotal} format={fmtBRL} sub={`${data.summary.okCount} lançamento(s)`} accent="#22c55e" />
@@ -243,6 +252,22 @@ export default function CompararExtratoPage() {
                             <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 max-w-xs truncate">{row.banks[0].desc}</td>
                             <td className={tdClass + ' font-mono text-xs'}>{row.banks[0].ref}</td>
                             <td className={tdClass + ' font-mono text-xs'}>{row.erp.lanc}</td>
+                          </tr>
+                        ) : row.type === 'ajuste' ? (
+                          <tr key={i} className="bg-sky-50 dark:bg-sky-950/30 border-l-2 border-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-colors">
+                            <td className={tdClass}>{row.banks[0].date}</td>
+                            <td className={tdRight + ' text-sky-800 dark:text-sky-300'}>{fmtBRL(row.banks[0].valor)}</td>
+                            <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 max-w-xs truncate">
+                              {row.banks[0].desc}{' '}
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 ml-1">cheque devolvido</span>
+                            </td>
+                            <td className={tdClass + ' font-mono text-xs'}>{row.banks[0].ref}</td>
+                            <td className={tdClass + ' font-mono text-xs'}>
+                              {row.erp.lanc}
+                              <div className="text-[11px] text-sky-700 dark:text-sky-400 font-sans mt-0.5">
+                                {fmtBRL(row.erp.valor)} − {row.devolvidos?.map(d => fmtBRL(d.valor)).join(' − ')} (dev. {row.devolvidos?.map(d => d.lanc).join(', ')})
+                              </div>
+                            </td>
                           </tr>
                         ) : (
                           <tr key={i}>
