@@ -94,7 +94,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen">
 
       <PageHeader
-        title={`Bom dia, ${firstName}`}
+        title="Dashboard"
         subtitle={`Último acesso: ${lastLogin}`}
         right={
           <div className="w-9 h-9 rounded-full bg-brand-red flex items-center justify-center text-white text-sm font-bold shrink-0">
