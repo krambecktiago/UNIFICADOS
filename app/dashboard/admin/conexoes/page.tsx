@@ -311,11 +311,9 @@ export default function ConexoesPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {integration.type === 'webhook' && (
-                      <Button type="button" variant="secondary" onClick={() => testIntegration(integration)} loading={testing === integration.id}>
-                        {testing === integration.id ? 'Testando…' : 'Testar'}
-                      </Button>
-                    )}
+                    <Button type="button" variant="secondary" onClick={() => testIntegration(integration)} loading={testing === integration.id}>
+                      {testing === integration.id ? 'Testando…' : 'Testar'}
+                    </Button>
                     {!isEditing && (
                       <button
                         onClick={() => startEdit(integration)}

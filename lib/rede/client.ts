@@ -35,6 +35,18 @@ export interface RedeTransaction {
   }
 }
 
+function parseRedeCredentials(value: string): RedeCredentials {
+  try {
+    const parsed = JSON.parse(value) as Partial<RedeCredentials>
+    if (!parsed.clientId || !parsed.clientSecret || !parsed.companyNumber) {
+      throw new Error('missing fields')
+    }
+    return parsed as RedeCredentials
+  } catch {
+    throw new Error('Credenciais da Rede mal formatadas — esperado JSON com clientId, clientSecret e companyNumber.')
+  }
+}
+
 async function getRedeCredentials(): Promise<RedeCredentials> {
   const adminClient = createAdminClient()
   const { data, error } = await adminClient
@@ -47,15 +59,14 @@ async function getRedeCredentials(): Promise<RedeCredentials> {
     throw new Error('Conexão "Rede — API Sandbox (Extrato)" não configurada em Administração → Conexões.')
   }
 
-  try {
-    const parsed = JSON.parse(data.value) as Partial<RedeCredentials>
-    if (!parsed.clientId || !parsed.clientSecret || !parsed.companyNumber) {
-      throw new Error('missing fields')
-    }
-    return parsed as RedeCredentials
-  } catch {
-    throw new Error('Credenciais da Rede mal formatadas — esperado JSON com clientId, clientSecret e companyNumber.')
-  }
+  return parseRedeCredentials(data.value)
+}
+
+// Usado pelo botão "Testar" em Administração → Conexões — só valida que o
+// client_id/client_secret geram um token, sem consultar vendas.
+export async function testRedeConnection(value: string): Promise<void> {
+  const credentials = parseRedeCredentials(value)
+  await getRedeToken(credentials)
 }
 
 async function getRedeToken(credentials: RedeCredentials): Promise<string> {
