@@ -8,6 +8,7 @@ interface ErpEntry {
   date: string
   lanc: string
   valor: number
+  desc: string
 }
 
 interface BankEntry {
@@ -33,79 +34,98 @@ function convFloat(s: string): number {
   return parseFloat(s.trim().replace(/\./g, '').replace(',', '.')) || 0
 }
 
-function parseErp(text: string): ErpEntry[] {
+// Débito fica alinhado à direita numa coluna mais à esquerda (~col 30-38);
+// Crédito numa coluna mais à direita (~col 42-53) — nunca os dois na mesma
+// linha. A posição do primeiro valor decide de qual lado o lançamento é.
+const CREDITO_COL_THRESHOLD = 40
+
+// Lê TODOS os lançamentos do ERP (crédito e débito), com descrição — usada
+// tanto pra conciliar Entradas quanto Saídas, e pra identificar cheques
+// devolvidos ("CHEQUES DEVOLVIDOS...") dentro do lado de débito.
+function parseErpLancamentos(text: string): { creditos: ErpEntry[]; debitos: ErpEntry[] } {
   const seen = new Set<string>()
-  const result: ErpEntry[] = []
+  const creditos: ErpEntry[] = []
+  const debitos: ErpEntry[] = []
+
   for (const line of text.split('\n')) {
     const m = line.match(/^ (\d{2}\/\d{2}\/\d{4})\s+(\d{7,})/)
     if (!m) continue
     const [, date, lanc] = m
     if (seen.has(lanc)) continue
-    seen.add(lanc)
-    if (line.length <= 42) continue
-    const zona = line.substring(42, Math.min(55, line.length))
-    const vm = zona.match(/([\d.]+,\d{2})/)
-    if (vm) {
-      const valor = convFloat(vm[1])
-      if (valor > 0) result.push({ date, lanc, valor })
-    }
-  }
-  return result
-}
 
-// "CHEQUES DEVOLVIDOS" fica na coluna de Débito do extrato ERP, que o
-// parseErp() acima ignora de propósito (só lê a coluna de Crédito). Quando
-// um cheque de um depósito volta, o ERP lança o depósito pelo valor cheio e
-// esse débito à parte — o banco só creditou o líquido. Sem isso, o depósito
-// nunca bate sozinho com o extrato (ver reconcile(), fase 3).
-function parseChequesDevolvidos(text: string): ErpEntry[] {
-  const result: ErpEntry[] = []
-  for (const line of text.split('\n')) {
-    if (!/CHEQUES DEVOLVIDOS/i.test(line)) continue
-    const m = line.match(/^ (\d{2}\/\d{2}\/\d{4})\s+(\d{7,})/)
-    if (!m) continue
-    const [, date, lanc] = m
     // Cada linha só tem um valor populado (Débito OU Crédito) antes do
-    // Saldo — pegar o primeiro número no formato "1.234,56" da linha
-    // sempre acerta esse valor, não o saldo (que vem depois).
-    const vm = line.match(/([\d.]+,\d{2})/)
-    if (vm) {
-      const valor = convFloat(vm[1])
-      if (valor > 0) result.push({ date, lanc, valor })
+    // Saldo — precisa de pelo menos 2 números (valor + saldo) pra ser uma
+    // linha de lançamento de verdade (não cabeçalho/rodapé).
+    const matches = [...line.matchAll(/([\d.]+,\d{2})/g)]
+    if (matches.length < 2) continue
+    const [valorMatch] = matches
+    const valor = convFloat(valorMatch[1])
+    if (valor <= 0) continue
+
+    seen.add(lanc)
+    const last = matches[matches.length - 1]
+    const desc = line.slice((last.index ?? 0) + last[0].length).trim()
+    const entry: ErpEntry = { date, lanc, valor, desc }
+
+    if ((valorMatch.index ?? 0) >= CREDITO_COL_THRESHOLD) creditos.push(entry)
+    else debitos.push(entry)
+  }
+
+  return { creditos, debitos }
+}
+
+function parseBankEntries(text: string): { creditos: BankEntry[]; debitos: BankEntry[] } {
+  const creditos: BankEntry[] = []
+  const debitos: BankEntry[] = []
+  for (const line of text.split('\n').slice(1)) {
+    if (!line.trim()) continue
+    const p = line.split(';')
+    if (p.length < 5) continue
+    const entry: BankEntry = { date: p[0].trim(), desc: p[1].trim(), ref: p[2].trim(), valor: convFloat(p[3]) }
+    if (p[4].trim() === 'C') creditos.push(entry)
+    else if (p[4].trim() === 'D') debitos.push(entry)
+  }
+  return { creditos, debitos }
+}
+
+// Resolve subset-sum determinístico (DP 0/1, cada item usado no máximo uma
+// vez): qual combinação de `candidates` soma exatamente `targetCents`? Sem
+// limite de quantidade — cobre desde 1 lançamento até um lote inteiro (ex:
+// um pagamento de fornecedores em lote no ERP contra dezenas de PIX/boletos
+// individuais no extrato do banco). Retorna null se não achar combinação.
+function findSubsetSum(candidates: BankEntry[], targetCents: number): BankEntry[] | null {
+  if (targetCents <= 0 || candidates.length === 0) return null
+  // Trava de segurança contra entradas patológicas (não deve ocorrer no
+  // movimento normal de um dia) — evita DP gigante travando a requisição.
+  if (targetCents > 50_000_000 || candidates.length > 300) return null
+
+  const reach = new Int32Array(targetCents + 1).fill(-1) // índice do item que completou a soma s
+  reach[0] = -2 // soma 0 alcançável sem nenhum item
+
+  for (let i = 0; i < candidates.length; i++) {
+    const v = Math.round(candidates[i].valor * 100)
+    if (v <= 0 || v > targetCents) continue
+    for (let s = targetCents; s >= v; s--) {
+      if (reach[s] === -1 && reach[s - v] !== -1) reach[s] = i
     }
   }
-  return result
-}
 
-function parseBank(text: string): BankEntry[] {
-  const result: BankEntry[] = []
-  for (const line of text.split('\n').slice(1)) {
-    if (!line.trim()) continue
-    const p = line.split(';')
-    if (p.length < 5) continue
-    if (p[4].trim() !== 'C') continue
-    result.push({ date: p[0].trim(), desc: p[1].trim(), ref: p[2].trim(), valor: convFloat(p[3]) })
+  if (reach[targetCents] === -1) return null
+
+  const used: BankEntry[] = []
+  let s = targetCents
+  while (s > 0) {
+    const i = reach[s]
+    if (i < 0) break
+    used.push(candidates[i])
+    s -= Math.round(candidates[i].valor * 100)
   }
-  return result
+  return used
 }
 
-// Débitos do banco (ex: "DEV.CH.DEP.11") — usados só pra confirmar cheques
-// devolvidos que o banco lançou como estorno separado, em vez de já ter
-// creditado o depósito líquido (ver reconcile(), fase 4). Não entram nos
-// totais de crédito da ferramenta.
-function parseBankDebits(text: string): BankEntry[] {
-  const result: BankEntry[] = []
-  for (const line of text.split('\n').slice(1)) {
-    if (!line.trim()) continue
-    const p = line.split(';')
-    if (p.length < 5) continue
-    if (p[4].trim() !== 'D') continue
-    result.push({ date: p[0].trim(), desc: p[1].trim(), ref: p[2].trim(), valor: convFloat(p[3]) })
-  }
-  return result
-}
-
-function reconcile(erp: ErpEntry[], bank: BankEntry[], devolvidos: ErpEntry[], bankDebits: BankEntry[]) {
+// Motor de conciliação genérico — usado tanto pra Entradas (crédito ERP x
+// crédito banco) quanto pra Saídas (débito ERP x débito banco).
+function matchSide(erp: ErpEntry[], bank: BankEntry[]) {
   const erpIdx: Record<string, ErpIndexed[]> = {}
   for (const t of erp) {
     const k = `${t.date}|${Math.round(t.valor * 100)}`
@@ -141,42 +161,37 @@ function reconcile(erp: ErpEntry[], bank: BankEntry[], devolvidos: ErpEntry[], b
   for (const erpE of erpFree) {
     const cands = (byDate[erpE.date] || []).filter(t => !usedInGroup.has(t))
     const target = Math.round(erpE.valor * 100)
-    let found = false
-
-    pairLoop: for (let i = 0; i < cands.length && !found; i++) {
-      for (let j = i + 1; j < cands.length; j++) {
-        if (Math.round(cands[i].valor * 100) + Math.round(cands[j].valor * 100) === target) {
-          erpE._used = true
-          usedInGroup.add(cands[i]); usedInGroup.add(cands[j])
-          matched.push({ type: 'N:1', banks: [cands[i], cands[j]], erp: erpE })
-          found = true; break pairLoop
-        }
-      }
-    }
-
-    if (!found) {
-      trioLoop: for (let i = 0; i < cands.length && !found; i++) {
-        for (let j = i + 1; j < cands.length; j++) {
-          for (let k2 = j + 1; k2 < cands.length; k2++) {
-            if (Math.round(cands[i].valor*100)+Math.round(cands[j].valor*100)+Math.round(cands[k2].valor*100) === target) {
-              erpE._used = true
-              usedInGroup.add(cands[i]); usedInGroup.add(cands[j]); usedInGroup.add(cands[k2])
-              matched.push({ type: 'N:1', banks: [cands[i], cands[j], cands[k2]], erp: erpE })
-              found = true; break trioLoop
-            }
-          }
-        }
-      }
+    const group = findSubsetSum(cands, target)
+    if (group) {
+      erpE._used = true
+      group.forEach(b => usedInGroup.add(b))
+      matched.push({ type: 'N:1', banks: group, erp: erpE })
     }
   }
 
-  let missing = phase1miss.filter(t => !usedInGroup.has(t))
-  let pending = Object.values(erpIdx).flat().filter(e => !e._used)
+  const missing = phase1miss.filter(t => !usedInGroup.has(t))
+  const pending = Object.values(erpIdx).flat().filter(e => !e._used)
 
-  // Fase 3: depósito de cheque que sobrou pendente pode ter vindo líquido de
-  // cheque(s) devolvido(s) do mesmo lote — desconta 1 ou 2 devolvidos da
-  // mesma data do depósito e vê se o resultado bate com algum crédito do
-  // banco que também sobrou sem par (ver parseChequesDevolvidos()).
+  missing.sort((a, b) => a.date.localeCompare(b.date))
+  matched.sort((a, b) => a.banks[0].date.localeCompare(b.banks[0].date))
+  pending.sort((a, b) => a.date.localeCompare(b.date))
+
+  return { matched, missing, pending }
+}
+
+// Ajustes específicos do lado de Entradas: depósito de cheque que sobrou
+// pendente pode ter vindo líquido de cheque(s) devolvido(s) do mesmo lote —
+// o ERP lança o valor cheio do depósito e, à parte, um débito "CHEQUES
+// DEVOLVIDOS"; o banco só creditou o líquido. Quando não dá pra descontar
+// de nenhum depósito, tenta confirmar o devolvido contra um débito do banco
+// (ex: "DEV.CH.DEP.11") — um estorno separado em vez de líquido na hora.
+function applyChequeDevolvidoAdjustments(
+  matched: MatchedEntry[],
+  missing: BankEntry[],
+  pending: ErpEntry[],
+  devolvidos: ErpEntry[],
+  bankDebits: BankEntry[]
+) {
   const bankUsedFase3 = new Set<BankEntry>()
   const pendingUsedFase3 = new Set<ErpEntry>()
   const devUsed = new Set<ErpEntry>()
@@ -215,33 +230,51 @@ function reconcile(erp: ErpEntry[], bank: BankEntry[], devolvidos: ErpEntry[], b
     }
   }
 
-  missing = missing.filter(b => !bankUsedFase3.has(b))
-  pending = pending.filter(e => !pendingUsedFase3.has(e))
+  const missingLeft = missing.filter(b => !bankUsedFase3.has(b))
+  const pendingLeft = pending.filter(e => !pendingUsedFase3.has(e))
   const leftoverDevolvidos = devolvidos.filter(d => !devUsed.has(d))
 
-  // Fase 4: cheque devolvido que não serviu pra descontar nenhum depósito
-  // pendente pode ter sido estornado pelo banco como lançamento próprio (ex:
-  // "DEV.CH.DEP.11") em vez de o banco já ter creditado o líquido — nesse
-  // caso o banco nunca creditou o valor cheio, então não haveria depósito
-  // pendente pra descontar (fase 3 não acha nada), mas dá pra confirmar
-  // batendo o devolvido do ERP 1:1 com esse débito do banco.
   const bankDebitUsed = new Set<BankEntry>()
   const confirmedDevolvidos: { erp: ErpEntry; bankDebit: BankEntry }[] = []
-  const unmatchedDevolvidos = leftoverDevolvidos.filter(dev => {
+  for (const dev of leftoverDevolvidos) {
     const hit = bankDebits.find(bd =>
       !bankDebitUsed.has(bd) && bd.date === dev.date && Math.round(bd.valor * 100) === Math.round(dev.valor * 100)
     )
-    if (!hit) return true
-    bankDebitUsed.add(hit)
-    confirmedDevolvidos.push({ erp: dev, bankDebit: hit })
-    return false
-  })
+    if (hit) {
+      bankDebitUsed.add(hit)
+      confirmedDevolvidos.push({ erp: dev, bankDebit: hit })
+    }
+  }
 
-  missing.sort((a, b) => a.date.localeCompare(b.date))
+  missingLeft.sort((a, b) => a.date.localeCompare(b.date))
   matched.sort((a, b) => a.banks[0].date.localeCompare(b.banks[0].date))
-  pending.sort((a, b) => a.date.localeCompare(b.date))
+  pendingLeft.sort((a, b) => a.date.localeCompare(b.date))
 
-  return { missing, matched, pending, unmatchedDevolvidos, confirmedDevolvidos }
+  return {
+    missing: missingLeft,
+    pending: pendingLeft,
+    confirmedDevolvidos,
+    // Cheque devolvido "resolvido" (descontado de um depósito ou confirmado
+    // por estorno do banco) sai do jogo geral de Saídas — já foi contabilizado
+    // aqui. Os que sobrarem seguem soltos e aparecem normalmente na
+    // conciliação de Saídas (como qualquer outro débito sem par).
+    usedDevolvidoLancs: new Set([...devUsed, ...confirmedDevolvidos.map(c => c.erp)].map(d => d.lanc)),
+    usedBankDebitRefs: new Set([...bankDebitUsed].map(b => b.ref)),
+  }
+}
+
+function buildSummary(bank: BankEntry[], matched: MatchedEntry[], missing: BankEntry[], pending: ErpEntry[]) {
+  const s = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
+  return {
+    bankTotal: s(bank.map(t => t.valor)),
+    bankCount: bank.length,
+    okTotal: s(matched.flatMap(r => r.banks.map(b => b.valor))),
+    okCount: matched.length,
+    missTotal: s(missing.map(t => t.valor)),
+    missCount: missing.length,
+    pendTotal: s(pending.map(t => t.valor)),
+    pendCount: pending.length,
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -261,31 +294,36 @@ export async function POST(request: NextRequest) {
     const erpText = Buffer.from(await erpFile.arrayBuffer()).toString('latin1')
     const bankText = Buffer.from(await bankFile.arrayBuffer()).toString('latin1')
 
-    const erp = parseErp(erpText)
-    const bank = parseBank(bankText)
-    const devolvidos = parseChequesDevolvidos(erpText)
-    const bankDebits = parseBankDebits(bankText)
-    const { missing, matched, pending, unmatchedDevolvidos, confirmedDevolvidos } = reconcile(erp, bank, devolvidos, bankDebits)
+    const { creditos: erpCreditos, debitos: erpDebitosAll } = parseErpLancamentos(erpText)
+    const { creditos: bankCreditos, debitos: bankDebitosAll } = parseBankEntries(bankText)
+    const devolvidos = erpDebitosAll.filter(d => /CHEQUES DEVOLVIDOS/i.test(d.desc))
 
-    const s = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
+    // Entradas (créditos)
+    const creditoMatch = matchSide(erpCreditos, bankCreditos)
+    const ajustes = applyChequeDevolvidoAdjustments(
+      creditoMatch.matched, creditoMatch.missing, creditoMatch.pending, devolvidos, bankDebitosAll
+    )
+
+    // Saídas (débitos) — exclui os cheques devolvidos já resolvidos acima
+    const erpDebitosRest = erpDebitosAll.filter(d => !ajustes.usedDevolvidoLancs.has(d.lanc))
+    const bankDebitosRest = bankDebitosAll.filter(b => !ajustes.usedBankDebitRefs.has(b.ref))
+    const saidaMatch = matchSide(erpDebitosRest, bankDebitosRest)
 
     await logToolUsage(supabase, user.id, 'comparar-extrato', 2)
 
     return NextResponse.json({
-      missing,
-      matched,
-      pending,
-      unmatchedDevolvidos,
-      confirmedDevolvidos,
-      summary: {
-        bankTotal:  s(bank.map(t => t.valor)),
-        bankCount:  bank.length,
-        okTotal:    s(matched.flatMap(r => r.banks.map(b => b.valor))),
-        okCount:    matched.length,
-        missTotal:  s(missing.map(t => t.valor)),
-        missCount:  missing.length,
-        pendTotal:  s(pending.map(t => t.valor)),
-        pendCount:  pending.length,
+      entradas: {
+        missing: ajustes.missing,
+        matched: creditoMatch.matched,
+        pending: ajustes.pending,
+        confirmedDevolvidos: ajustes.confirmedDevolvidos,
+        summary: buildSummary(bankCreditos, creditoMatch.matched, ajustes.missing, ajustes.pending),
+      },
+      saidas: {
+        missing: saidaMatch.missing,
+        matched: saidaMatch.matched,
+        pending: saidaMatch.pending,
+        summary: buildSummary(bankDebitosRest, saidaMatch.matched, saidaMatch.missing, saidaMatch.pending),
       },
     })
   } catch (err) {
