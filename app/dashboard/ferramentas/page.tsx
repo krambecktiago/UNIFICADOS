@@ -68,6 +68,19 @@ const ALL_TOOLS = [
     ),
     accent: '#ea580c',
   },
+  {
+    href: '/dashboard/ferramentas/rede-extrato',
+    slug: 'rede-extrato',
+    title: 'Extrato Rede',
+    description: 'Consulta o extrato de vendas do lojista direto na API da Rede (sandbox)',
+    inputs: 'API',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3M3.75 4.5h16.5a1.5 1.5 0 011.5 1.5v12a1.5 1.5 0 01-1.5 1.5H3.75a1.5 1.5 0 01-1.5-1.5V6a1.5 1.5 0 011.5-1.5z" />
+      </svg>
+    ),
+    accent: '#dc2626',
+  },
 ]
 
 export default async function FerramentasPage() {

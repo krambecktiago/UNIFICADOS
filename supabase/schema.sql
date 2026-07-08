@@ -291,3 +291,19 @@ from (
   limit 1
 ) sub
 where public.integrations.slug = 'discord-contas-pagar' and public.integrations.value = '';
+
+-- ============================================================
+-- Ferramenta "Extrato Rede" — puxa direto da API da Rede (sandbox) as
+-- vendas do lojista, sem passar por upload de planilha.
+-- ============================================================
+insert into public.tools (name, slug, description) values
+  ('Extrato Rede', 'rede-extrato', 'Consulta o extrato de vendas do lojista direto na API da Rede')
+on conflict (slug) do nothing;
+
+-- Credenciais OAuth2 client_credentials da API da Rede. "value" guarda um
+-- JSON (não cabe num único campo de texto como o webhook do Discord):
+-- {"clientId":"...","clientSecret":"...","companyNumber":"13381369"}
+-- Preencher em Administração → Conexões depois de rodar esta migração.
+insert into public.integrations (slug, name, type, description) values
+  ('rede-sandbox', 'Rede — API Sandbox (Extrato)', 'api_key', 'Credenciais OAuth2 (clientId/clientSecret) e companyNumber usados pela ferramenta Extrato Rede. Ambiente: sandbox.')
+on conflict (slug) do nothing;
