@@ -46,6 +46,7 @@ interface ApiResponse {
   matched: MatchedEntry[]
   pending: ErpEntry[]
   unmatchedDevolvidos: ErpEntry[]
+  confirmedDevolvidos: { erp: ErpEntry; bankDebit: BankEntry }[]
   summary: Summary
 }
 
@@ -172,9 +173,16 @@ export default function CompararExtratoPage() {
               </div>
             )}
 
+            {data.confirmedDevolvidos.length > 0 && (
+              <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900 rounded-xl px-4 py-3 text-sm text-sky-700 dark:text-sky-400 animate-fade-in-up">
+                <span className="font-semibold">{data.confirmedDevolvidos.length} cheque(s) devolvido(s) confirmado(s) no extrato do banco</span> — estornado(s) separadamente, não afeta nenhum depósito:{' '}
+                {data.confirmedDevolvidos.map(d => `${d.erp.lanc} (${fmtBRL(d.erp.valor)}, ${d.erp.date}) = ${d.bankDebit.desc}`).join('; ')}
+              </div>
+            )}
+
             {data.unmatchedDevolvidos.length > 0 && (
               <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-400 animate-fade-in-up">
-                <span className="font-semibold">{data.unmatchedDevolvidos.length} cheque(s) devolvido(s) no ERP sem depósito correspondente encontrado</span> — confira manualmente:{' '}
+                <span className="font-semibold">{data.unmatchedDevolvidos.length} cheque(s) devolvido(s) no ERP sem depósito ou estorno correspondente encontrado</span> — confira manualmente:{' '}
                 {data.unmatchedDevolvidos.map(d => `${d.lanc} (${fmtBRL(d.valor)}, ${d.date})`).join('; ')}
               </div>
             )}

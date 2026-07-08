@@ -89,7 +89,23 @@ function parseBank(text: string): BankEntry[] {
   return result
 }
 
-function reconcile(erp: ErpEntry[], bank: BankEntry[], devolvidos: ErpEntry[]) {
+// Débitos do banco (ex: "DEV.CH.DEP.11") — usados só pra confirmar cheques
+// devolvidos que o banco lançou como estorno separado, em vez de já ter
+// creditado o depósito líquido (ver reconcile(), fase 4). Não entram nos
+// totais de crédito da ferramenta.
+function parseBankDebits(text: string): BankEntry[] {
+  const result: BankEntry[] = []
+  for (const line of text.split('\n').slice(1)) {
+    if (!line.trim()) continue
+    const p = line.split(';')
+    if (p.length < 5) continue
+    if (p[4].trim() !== 'D') continue
+    result.push({ date: p[0].trim(), desc: p[1].trim(), ref: p[2].trim(), valor: convFloat(p[3]) })
+  }
+  return result
+}
+
+function reconcile(erp: ErpEntry[], bank: BankEntry[], devolvidos: ErpEntry[], bankDebits: BankEntry[]) {
   const erpIdx: Record<string, ErpIndexed[]> = {}
   for (const t of erp) {
     const k = `${t.date}|${Math.round(t.valor * 100)}`
@@ -201,15 +217,31 @@ function reconcile(erp: ErpEntry[], bank: BankEntry[], devolvidos: ErpEntry[]) {
 
   missing = missing.filter(b => !bankUsedFase3.has(b))
   pending = pending.filter(e => !pendingUsedFase3.has(e))
-  // Cheques devolvidos que não deram pra encaixar em nenhum depósito
-  // pendente — não é pra sumir silenciosamente, é dinheiro saindo de verdade.
-  const unmatchedDevolvidos = devolvidos.filter(d => !devUsed.has(d))
+  const leftoverDevolvidos = devolvidos.filter(d => !devUsed.has(d))
+
+  // Fase 4: cheque devolvido que não serviu pra descontar nenhum depósito
+  // pendente pode ter sido estornado pelo banco como lançamento próprio (ex:
+  // "DEV.CH.DEP.11") em vez de o banco já ter creditado o líquido — nesse
+  // caso o banco nunca creditou o valor cheio, então não haveria depósito
+  // pendente pra descontar (fase 3 não acha nada), mas dá pra confirmar
+  // batendo o devolvido do ERP 1:1 com esse débito do banco.
+  const bankDebitUsed = new Set<BankEntry>()
+  const confirmedDevolvidos: { erp: ErpEntry; bankDebit: BankEntry }[] = []
+  const unmatchedDevolvidos = leftoverDevolvidos.filter(dev => {
+    const hit = bankDebits.find(bd =>
+      !bankDebitUsed.has(bd) && bd.date === dev.date && Math.round(bd.valor * 100) === Math.round(dev.valor * 100)
+    )
+    if (!hit) return true
+    bankDebitUsed.add(hit)
+    confirmedDevolvidos.push({ erp: dev, bankDebit: hit })
+    return false
+  })
 
   missing.sort((a, b) => a.date.localeCompare(b.date))
   matched.sort((a, b) => a.banks[0].date.localeCompare(b.banks[0].date))
   pending.sort((a, b) => a.date.localeCompare(b.date))
 
-  return { missing, matched, pending, unmatchedDevolvidos }
+  return { missing, matched, pending, unmatchedDevolvidos, confirmedDevolvidos }
 }
 
 export async function POST(request: NextRequest) {
@@ -232,7 +264,8 @@ export async function POST(request: NextRequest) {
     const erp = parseErp(erpText)
     const bank = parseBank(bankText)
     const devolvidos = parseChequesDevolvidos(erpText)
-    const { missing, matched, pending, unmatchedDevolvidos } = reconcile(erp, bank, devolvidos)
+    const bankDebits = parseBankDebits(bankText)
+    const { missing, matched, pending, unmatchedDevolvidos, confirmedDevolvidos } = reconcile(erp, bank, devolvidos, bankDebits)
 
     const s = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
 
@@ -243,6 +276,7 @@ export async function POST(request: NextRequest) {
       matched,
       pending,
       unmatchedDevolvidos,
+      confirmedDevolvidos,
       summary: {
         bankTotal:  s(bank.map(t => t.valor)),
         bankCount:  bank.length,
