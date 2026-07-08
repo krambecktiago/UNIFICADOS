@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { AssistantWidget } from '@/components/ai-assistant-widget'
+import { getGreeting } from '@/lib/utils'
 
 const GATED_SCREEN_SLUGS = ['dashboard', 'configuracoes']
 
@@ -45,9 +46,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .map(t => t.slug)
   }
 
+  const firstName = (profile?.full_name ?? user.email ?? 'Usuário').split(' ')[0]
+
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <Sidebar isAdmin={isAdmin} accessibleScreens={accessibleScreens} />
+      <Sidebar isAdmin={isAdmin} accessibleScreens={accessibleScreens} greeting={getGreeting()} userFirstName={firstName} />
       <main className="flex-1 overflow-auto">
         {children}
       </main>

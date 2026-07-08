@@ -40,3 +40,14 @@ export function formatDayLabel(date: string | Date): string {
     timeZone: TIMEZONE_BR,
   }).format(new Date(date))
 }
+
+// Servidor roda em UTC (Vercel) — sempre calcular a hora no fuso de Brasília,
+// senão a saudação vira "Boa noite" de manhã.
+export function getGreeting(date: Date = new Date()): string {
+  const hour = Number(
+    new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: TIMEZONE_BR }).format(date)
+  )
+  if (hour >= 5 && hour < 12) return 'Bom dia'
+  if (hour >= 12 && hour < 18) return 'Boa tarde'
+  return 'Boa noite'
+}

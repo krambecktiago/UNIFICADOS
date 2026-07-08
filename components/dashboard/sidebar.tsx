@@ -70,7 +70,17 @@ const navItems = [
   },
 ]
 
-export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?: boolean; accessibleScreens?: string[] }) {
+export function Sidebar({
+  isAdmin = false,
+  accessibleScreens = [],
+  greeting,
+  userFirstName,
+}: {
+  isAdmin?: boolean
+  accessibleScreens?: string[]
+  greeting: string
+  userFirstName: string
+}) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -115,8 +125,15 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
         />
       </div>
 
+      {/* ── Saudação — visível para todo mundo, mesmo sem acesso à tela Dashboard ── */}
+      <div className="relative px-5 pt-5">
+        <p className="text-sm font-semibold text-gray-800 truncate">
+          {greeting}, {userFirstName}
+        </p>
+      </div>
+
       {/* ── Rótulo de seção ─────────────────────────────────────────────── */}
-      <div className="relative px-5 pt-6 pb-3">
+      <div className="relative px-5 pt-2 pb-3">
         <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
           Menu
         </span>

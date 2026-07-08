@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireToolAccess } from '@/lib/supabase/tool-access'
-import { formatDateTime, formatDayLabel, toDateKey } from '@/lib/utils'
+import { formatDateTime, formatDayLabel, getGreeting, toDateKey } from '@/lib/utils'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card } from '@/components/ui/card'
 import { KpiCard } from '@/components/ui/kpi-card'
@@ -94,7 +94,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen">
 
       <PageHeader
-        title={`Bom dia, ${firstName}`}
+        title={`${getGreeting()}, ${firstName}`}
         subtitle={`Último acesso: ${lastLogin}`}
         right={
           <div className="w-9 h-9 rounded-full bg-brand-red flex items-center justify-center text-white text-sm font-bold shrink-0">
