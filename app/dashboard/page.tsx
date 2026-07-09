@@ -249,8 +249,8 @@ export default async function DashboardPage() {
           <ul className="space-y-3">
             {VALUES.map(value => (
               <li key={value.title}>
-                <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">{value.title}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-0.5">{value.description}</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{value.title}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mt-0.5">{value.description}</p>
               </li>
             ))}
           </ul>
