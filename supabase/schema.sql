@@ -293,7 +293,7 @@ from (
 where public.integrations.slug = 'discord-contas-pagar' and public.integrations.value = '';
 
 -- ============================================================
--- Ferramenta "Extrato Rede" — puxa direto da API da Rede (sandbox) as
+-- Ferramenta "Extrato Rede" — puxa direto da API da Rede (produção) as
 -- vendas do lojista, sem passar por upload de planilha.
 -- ============================================================
 insert into public.tools (name, slug, description) values
@@ -305,5 +305,5 @@ on conflict (slug) do nothing;
 -- {"clientId":"...","clientSecret":"...","companyNumber":"13381369"}
 -- Preencher em Administração → Conexões depois de rodar esta migração.
 insert into public.integrations (slug, name, type, description) values
-  ('rede-sandbox', 'Rede — API Sandbox (Extrato)', 'api_key', 'Credenciais OAuth2 (clientId/clientSecret) e companyNumber usados pela ferramenta Extrato Rede. Ambiente: sandbox.')
+  ('rede-producao', 'Rede — API Produção (Extrato)', 'api_key', 'Credenciais OAuth2 (clientId/clientSecret) e companyNumber usados pela ferramenta Extrato Rede. Ambiente: produção.')
 on conflict (slug) do nothing;

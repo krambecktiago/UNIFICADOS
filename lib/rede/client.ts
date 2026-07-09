@@ -1,7 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// Sandbox da Rede — trocar quando a ferramenta for para produção.
-const REDE_BASE_URL = 'https://rl7-sandbox-api.useredecloud.com.br'
+const REDE_BASE_URL = 'https://api.userede.com.br/redelabs'
 
 interface RedeCredentials {
   clientId: string
@@ -52,11 +51,11 @@ async function getRedeCredentials(): Promise<RedeCredentials> {
   const { data, error } = await adminClient
     .from('integrations')
     .select('value')
-    .eq('slug', 'rede-sandbox')
+    .eq('slug', 'rede-producao')
     .maybeSingle()
 
   if (error || !data?.value) {
-    throw new Error('Conexão "Rede — API Sandbox (Extrato)" não configurada em Administração → Conexões.')
+    throw new Error('Conexão "Rede — API Produção (Extrato)" não configurada em Administração → Conexões.')
   }
 
   return parseRedeCredentials(data.value)

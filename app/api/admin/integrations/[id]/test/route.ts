@@ -61,7 +61,7 @@ export async function POST(
       return NextResponse.json({ ok: true })
     }
 
-    if (integration.slug === 'rede-sandbox') {
+    if (integration.slug === 'rede-producao') {
       await testRedeConnection(integration.value)
       return NextResponse.json({ ok: true })
     }
