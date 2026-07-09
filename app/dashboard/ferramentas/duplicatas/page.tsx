@@ -51,8 +51,8 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const ROW_STYLES: Record<string, string> = {
-  BAIXADA: 'bg-green-50',
-  NAO_BAIXADA: 'bg-red-50',
+  BAIXADA: 'bg-green-50 dark:bg-green-950/30',
+  NAO_BAIXADA: 'bg-red-50 dark:bg-red-950/30',
 }
 
 export default function DuplicatasPage() {
@@ -103,27 +103,27 @@ export default function DuplicatasPage() {
   const canProcess = xlsxFile !== null && txtFile !== null && !loading
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-800">
       <PageHeader title="Conferir Duplicatas" subtitle="Compara retorno bancário (XLSX) com fluxo de caixa do ERP (TXT)" />
 
       <div className="px-8 py-8 max-w-7xl">
 
       <Card padding="6" className="mb-6">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-4">
+        <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-4">
           Arquivos de entrada
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FileInput
             ref={xlsxRef}
-            label={<>Retorno Bancário <span className="ml-2 text-xs font-normal text-gray-400">XLSX</span></>}
+            label={<>Retorno Bancário <span className="ml-2 text-xs font-normal text-gray-400 dark:text-gray-500">XLSX</span></>}
             accept=".xlsx,.xls"
             file={xlsxFile}
             onChange={setXlsxFile}
           />
           <FileInput
             ref={txtRef}
-            label={<>Fluxo de Caixa ERP <span className="ml-2 text-xs font-normal text-gray-400">TXT</span></>}
+            label={<>Fluxo de Caixa ERP <span className="ml-2 text-xs font-normal text-gray-400 dark:text-gray-500">TXT</span></>}
             accept=".txt"
             file={txtFile}
             onChange={setTxtFile}
@@ -154,7 +154,7 @@ export default function DuplicatasPage() {
       </Card>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 animate-fade-in-up">
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl text-sm text-red-700 dark:text-red-400 animate-fade-in-up">
           {error}
         </div>
       )}
@@ -178,17 +178,17 @@ export default function DuplicatasPage() {
           </div>
 
           <TableCard>
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">
                 Resultado detalhado
               </p>
-              <p className="text-xs text-gray-400">{data.results.length} registros</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{data.results.length} registros</p>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-gray-100">
+                  <tr className="border-b border-gray-100 dark:border-gray-800">
                     <th className={TH_CLASS}>Duplicata</th>
                     <th className={TH_CLASS}>Pagador</th>
                     <th className={TH_CLASS}>Vencimento</th>
@@ -203,7 +203,7 @@ export default function DuplicatasPage() {
                   {data.results.map((row, i) => (
                     <tr
                       key={`${row.duplicata}-${i}`}
-                      className={`border-b border-gray-100 last:border-0 transition-colors ${ROW_STYLES[row.status] ?? ''}`}
+                      className={`border-b border-gray-100 dark:border-gray-800 last:border-0 transition-colors ${ROW_STYLES[row.status] ?? ''}`}
                     >
                       <td className={TD_CLASS + ' font-mono text-xs'}>{row.duplicata}</td>
                       <td className={TD_CLASS + ' max-w-[200px] truncate'} title={row.pagador}>{row.pagador}</td>
@@ -220,7 +220,7 @@ export default function DuplicatasPage() {
 
                   {data.results.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">
+                      <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
                         Nenhum resultado encontrado.
                       </td>
                     </tr>

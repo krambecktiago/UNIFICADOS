@@ -174,7 +174,7 @@ export default function ConexoesPage() {
     }
   }
 
-  const inputBase = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
+  const inputBase = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700'
 
   return (
     <div className="min-h-screen">
@@ -201,11 +201,11 @@ export default function ConexoesPage() {
 
       <div className="px-8 py-8">
         {showCreateForm && (
-          <form onSubmit={createIntegration} className="mb-6 bg-white rounded-xl p-6 border border-gray-200 animate-fade-in-up space-y-4">
-            <p className="text-sm font-semibold text-gray-900">Nova conexão</p>
+          <form onSubmit={createIntegration} className="mb-6 bg-white rounded-xl p-6 border border-gray-200 animate-fade-in-up space-y-4 dark:bg-gray-900 dark:border-gray-800">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nova conexão</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Identificador (slug)</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1 dark:text-gray-500">Identificador (slug)</label>
                 <input
                   type="text"
                   required
@@ -216,7 +216,7 @@ export default function ConexoesPage() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Nome</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1 dark:text-gray-500">Nome</label>
                 <input
                   type="text"
                   required
@@ -227,7 +227,7 @@ export default function ConexoesPage() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Tipo</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1 dark:text-gray-500">Tipo</label>
                 <select
                   value={newType}
                   onChange={e => setNewType(e.target.value as Integration['type'])}
@@ -239,7 +239,7 @@ export default function ConexoesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Valor</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1 dark:text-gray-500">Valor</label>
                 <input
                   type="text"
                   value={newValue}
@@ -249,7 +249,7 @@ export default function ConexoesPage() {
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Descrição (opcional)</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1 dark:text-gray-500">Descrição (opcional)</label>
                 <input
                   type="text"
                   value={newDescription}
@@ -261,7 +261,7 @@ export default function ConexoesPage() {
             </div>
 
             {createError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{createError}</p>
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 dark:text-red-400 dark:bg-red-950/40 dark:border-red-900">{createError}</p>
             )}
 
             <div className="flex items-center gap-2">
@@ -276,20 +276,20 @@ export default function ConexoesPage() {
         )}
 
         {loading && (
-          <div className="flex items-center gap-3 text-sm text-gray-400">
+          <div className="flex items-center gap-3 text-sm text-gray-400 dark:text-gray-500">
             <Spinner size="md" />
             Carregando conexões...
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg dark:bg-red-950/40 dark:border-red-900 dark:text-red-400">
             {error}
           </div>
         )}
 
         {!loading && !error && integrations.length === 0 && (
-          <p className="text-sm text-gray-400">Nenhuma conexão cadastrada.</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">Nenhuma conexão cadastrada.</p>
         )}
 
         <div className="space-y-4">
@@ -302,12 +302,12 @@ export default function ConexoesPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-900">{integration.name}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{integration.name}</p>
                       <Badge tone="gray">{TYPE_LABELS[integration.type]}</Badge>
                     </div>
-                    <p className="text-xs text-gray-400 font-mono mt-0.5">{integration.slug}</p>
+                    <p className="text-xs text-gray-400 font-mono mt-0.5 dark:text-gray-500">{integration.slug}</p>
                     {integration.description && (
-                      <p className="text-xs text-gray-500 mt-1">{integration.description}</p>
+                      <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">{integration.description}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -317,7 +317,7 @@ export default function ConexoesPage() {
                     {!isEditing && (
                       <button
                         onClick={() => startEdit(integration)}
-                        className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                        className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                       >
                         Editar
                       </button>
@@ -325,7 +325,7 @@ export default function ConexoesPage() {
                     <button
                       onClick={() => deleteIntegration(integration)}
                       disabled={isSaving}
-                      className="text-xs font-medium px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40"
                     >
                       Excluir
                     </button>
@@ -333,16 +333,16 @@ export default function ConexoesPage() {
                 </div>
 
                 {testMsg?.id === integration.id && (
-                  <p className={`mt-3 text-sm ${testMsg.type === 'success' ? 'text-green-700 font-medium' : 'text-red-600'}`}>
+                  <p className={`mt-3 text-sm ${testMsg.type === 'success' ? 'text-green-700 font-medium dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                     {testMsg.text}
                   </p>
                 )}
 
-                <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                   {isEditing ? (
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Nome</label>
+                        <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1 dark:text-gray-500">Nome</label>
                         <input
                           type="text"
                           value={draft.name}
@@ -351,7 +351,7 @@ export default function ConexoesPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Valor</label>
+                        <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1 dark:text-gray-500">Valor</label>
                         <input
                           type="text"
                           value={draft.value}
@@ -361,7 +361,7 @@ export default function ConexoesPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Descrição</label>
+                        <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1 dark:text-gray-500">Descrição</label>
                         <input
                           type="text"
                           value={draft.description}
@@ -380,13 +380,13 @@ export default function ConexoesPage() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-mono text-gray-700 truncate">
+                      <p className="text-sm font-mono text-gray-700 truncate dark:text-gray-300">
                         {isRevealed ? (integration.value || '— não configurado —') : mask(integration.value)}
                       </p>
                       {integration.value && (
                         <button
                           onClick={() => toggleReveal(integration.id)}
-                          className="text-gray-400 hover:text-gray-600 shrink-0"
+                          className="text-gray-400 hover:text-gray-600 shrink-0 dark:text-gray-500 dark:hover:text-gray-300"
                           title={isRevealed ? 'Ocultar' : 'Revelar'}
                         >
                           {isRevealed ? (

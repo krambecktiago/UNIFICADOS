@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { Gear, Wrench } from '@/components/decorative-icons'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 // Altura compartilhada entre o cabeçalho da sidebar e o cabeçalho do conteúdo
 // Garante que as duas áreas fiquem visualmente alinhadas na mesma linha horizontal
@@ -70,7 +71,17 @@ const navItems = [
   },
 ]
 
-export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?: boolean; accessibleScreens?: string[] }) {
+export function Sidebar({
+  isAdmin = false,
+  accessibleScreens = [],
+  greeting,
+  userFirstName,
+}: {
+  isAdmin?: boolean
+  accessibleScreens?: string[]
+  greeting: string
+  userFirstName: string
+}) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -82,7 +93,7 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
   }
 
   return (
-    <aside className="w-64 shrink-0 flex flex-col h-screen sticky top-0 bg-white relative overflow-hidden">
+    <aside className="w-64 shrink-0 flex flex-col h-screen sticky top-0 bg-white dark:bg-gray-900 relative overflow-hidden">
 
       {/* Fundo decorativo — peças automotivas, mesma identidade da tela de login */}
       <Gear className="absolute -top-10 -left-14 w-56 h-56 text-brand-navy opacity-[0.04] rotate-12 pointer-events-none" />
@@ -104,7 +115,7 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
       </div>
 
       {/* ── Badge Rede Ancora ────────────────────────────────────────────── */}
-      <div className="relative h-16 flex items-center justify-center bg-gray-50 border-b border-gray-100">
+      <div className="relative h-16 flex items-center justify-center bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-800">
         <Image
           src="/logo-ancora.png"
           alt="Rede Ancora"
@@ -115,9 +126,16 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
         />
       </div>
 
+      {/* ── Saudação — visível para todo mundo, mesmo sem acesso à tela Dashboard ── */}
+      <div className="relative px-5 pt-5">
+        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+          {greeting}, {userFirstName}
+        </p>
+      </div>
+
       {/* ── Rótulo de seção ─────────────────────────────────────────────── */}
-      <div className="relative px-5 pt-6 pb-3">
-        <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
+      <div className="relative px-5 pt-2 pb-3">
+        <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500">
           Menu
         </span>
       </div>
@@ -138,11 +156,11 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
               className={cn(
                 'flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors border-l-2',
                 active
-                  ? 'bg-brand-navy/5 border-brand-navy text-brand-navy'
-                  : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
+                  ? 'bg-brand-navy/5 dark:bg-brand-navy/20 border-brand-navy text-brand-navy dark:text-blue-300'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200'
               )}
             >
-              <span className={cn('flex items-center', active && 'text-brand-navy')}>
+              <span className={cn('flex items-center', active && 'text-brand-navy dark:text-blue-300')}>
                 {item.icon}
               </span>
               {item.label}
@@ -154,7 +172,7 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
         {isAdmin && (
           <>
             <div className="pt-3 pb-1">
-              <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
+              <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500">
                 Sistema
               </span>
             </div>
@@ -173,7 +191,7 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
                       : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                   )}
                 >
-                  <span className={cn('flex items-center', active && 'text-brand-navy')}>
+                  <span className={cn('flex items-center', active && 'text-brand-navy dark:text-blue-300')}>
                     {item.icon}
                   </span>
                   {item.label}
@@ -184,11 +202,12 @@ export function Sidebar({ isAdmin = false, accessibleScreens = [] }: { isAdmin?:
         )}
       </nav>
 
-      {/* ── Rodapé / Sair ───────────────────────────────────────────────── */}
-      <div className="relative px-3 py-3 border-t border-gray-100">
+      {/* ── Rodapé / Tema / Sair ────────────────────────────────────────── */}
+      <div className="relative px-3 py-3 border-t border-gray-100 dark:border-gray-800 space-y-0.5">
+        <ThemeToggle />
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium border-l-2 border-transparent text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+          className="w-full flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium border-l-2 border-transparent text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-[18px] h-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />

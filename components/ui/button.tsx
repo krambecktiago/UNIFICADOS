@@ -4,8 +4,8 @@ import { Spinner } from './spinner'
 
 const VARIANT_CLASS = {
   primary: 'bg-brand-navy text-white hover:bg-brand-navy-hover disabled:hover:bg-brand-navy',
-  secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50',
-  ghost: 'text-gray-500 hover:text-gray-800',
+  secondary: 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700',
+  ghost: 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200',
 } as const
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

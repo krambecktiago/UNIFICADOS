@@ -53,49 +53,49 @@ export function ChangePasswordForm({ email }: { email: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Alterar senha</p>
+      <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Alterar senha</p>
 
       <div className="space-y-3 max-w-sm">
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Senha atual</label>
+          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Senha atual</label>
           <input
             type="password"
             required
             autoComplete="current-password"
             value={currentPassword}
             onChange={e => setCurrentPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
+            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
           />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Nova senha</label>
+          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Nova senha</label>
           <input
             type="password"
             required
             autoComplete="new-password"
             value={newPassword}
             onChange={e => setNewPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
+            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
           />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Confirmar nova senha</label>
+          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Confirmar nova senha</label>
           <input
             type="password"
             required
             autoComplete="new-password"
             value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
+            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
           />
         </div>
       </div>
 
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 max-w-sm">{error}</p>
+        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2 max-w-sm">{error}</p>
       )}
       {success && (
-        <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 max-w-sm">Senha alterada com sucesso.</p>
+        <p className="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-900 rounded-lg px-3 py-2 max-w-sm">Senha alterada com sucesso.</p>
       )}
 
       <Button type="submit" loading={loading}>

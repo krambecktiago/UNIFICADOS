@@ -60,7 +60,7 @@ export function AssistantWidget() {
   return (
     <div className="fixed bottom-5 right-5 z-50">
       {open && (
-        <div className="mb-3 w-80 sm:w-96 h-[28rem] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-scale-in">
+        <div className="mb-3 w-80 sm:w-96 h-[28rem] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden animate-scale-in">
           <div className="bg-brand-navy px-4 py-3 flex items-center justify-between shrink-0">
             <div>
               <p className="text-sm font-semibold text-white leading-tight">Assistente da Plataforma</p>
@@ -84,7 +84,7 @@ export function AssistantWidget() {
                   className={`max-w-[85%] text-sm rounded-xl px-3 py-2 whitespace-pre-wrap leading-relaxed ${
                     m.role === 'user'
                       ? 'bg-brand-navy text-white'
-                      : 'bg-gray-100 text-gray-800'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
                   }`}
                 >
                   {m.content}
@@ -93,7 +93,7 @@ export function AssistantWidget() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 text-gray-400 text-sm rounded-xl px-3 py-2 flex items-center gap-1.5">
+                <div className="bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 text-sm rounded-xl px-3 py-2 flex items-center gap-1.5">
                   <Spinner size="sm" />
                   Digitando...
                 </div>
@@ -102,16 +102,16 @@ export function AssistantWidget() {
           </div>
 
           {error && (
-            <p className="px-4 pb-1 text-xs text-red-600">{error}</p>
+            <p className="px-4 pb-1 text-xs text-red-600 dark:text-red-400">{error}</p>
           )}
 
-          <form onSubmit={handleSend} className="p-3 border-t border-gray-100 flex items-center gap-2 shrink-0">
+          <form onSubmit={handleSend} className="p-3 border-t border-gray-100 dark:border-gray-800 flex items-center gap-2 shrink-0">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Digite sua dúvida..."
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-transparent transition-all"
+              className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-transparent transition-all"
             />
             <button
               type="submit"
