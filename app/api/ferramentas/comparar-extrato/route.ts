@@ -99,27 +99,37 @@ function parseBankEntries(text: string): { creditos: BankEntry[]; debitos: BankE
 function findSubsetSum<T extends { valor: number }>(candidates: T[], targetCents: number): T[] | null {
   if (targetCents <= 0 || candidates.length === 0) return null
   // Trava de segurança contra entradas patológicas (não deve ocorrer no
-  // movimento normal de um dia) — evita DP gigante travando a requisição.
-  if (targetCents > 50_000_000 || candidates.length > 300) return null
+  // movimento normal de um dia) — evita explosão combinatória travando a
+  // requisição. Sem limite pelo valor-alvo: um lote de fornecedores pode
+  // somar bem mais que R$ 500 mil sem que isso seja um problema em si.
+  if (candidates.length > 300) return null
 
-  const reach = new Int32Array(targetCents + 1).fill(-1) // índice do item que completou a soma s
-  reach[0] = -2 // soma 0 alcançável sem nenhum item
+  // soma alcançável (em centavos) -> índice do item que completou essa soma.
+  // Map em vez de array indexado por centavo: o array explodiria de tamanho
+  // pra lotes de valor alto (ex: R$ 537 mil = ~54 milhões de posições),
+  // enquanto o Map só guarda as somas de fato alcançáveis.
+  const reach = new Map<number, number>()
+  reach.set(0, -2) // soma 0 alcançável sem nenhum item
 
   for (let i = 0; i < candidates.length; i++) {
     const v = Math.round(candidates[i].valor * 100)
     if (v <= 0 || v > targetCents) continue
-    for (let s = targetCents; s >= v; s--) {
-      if (reach[s] === -1 && reach[s - v] !== -1) reach[s] = i
+    // Snapshot das somas já alcançáveis antes de somar o item i — evita usar
+    // o mesmo item duas vezes na mesma iteração (regra do 0/1 knapsack).
+    for (const s of [...reach.keys()]) {
+      const next = s + v
+      if (next <= targetCents && !reach.has(next)) reach.set(next, i)
     }
+    if (reach.size > 2_000_000) return null // trava contra explosão combinatória
   }
 
-  if (reach[targetCents] === -1) return null
+  if (!reach.has(targetCents)) return null
 
   const used: T[] = []
   let s = targetCents
   while (s > 0) {
-    const i = reach[s]
-    if (i < 0) break
+    const i = reach.get(s)
+    if (i === undefined || i < 0) break
     used.push(candidates[i])
     s -= Math.round(candidates[i].valor * 100)
   }
