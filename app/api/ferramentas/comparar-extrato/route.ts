@@ -19,9 +19,12 @@ interface BankEntry {
 }
 
 interface MatchedEntry {
-  type: '1:1' | 'N:1' | 'ajuste'
+  type: '1:1' | 'N:1' | '1:N' | 'ajuste'
   banks: BankEntry[]
   erp: ErpEntry
+  // Só em type '1:N': os demais lançamentos do ERP que, somados a `erp`,
+  // batem com o único lançamento do banco.
+  erpGroup?: ErpEntry[]
   // Só em type 'ajuste': cheque(s) devolvido(s) descontado(s) do depósito
   // original do ERP até o valor bater com o crédito líquido do banco.
   devolvidos?: ErpEntry[]
@@ -93,7 +96,7 @@ function parseBankEntries(text: string): { creditos: BankEntry[]; debitos: BankE
 // limite de quantidade — cobre desde 1 lançamento até um lote inteiro (ex:
 // um pagamento de fornecedores em lote no ERP contra dezenas de PIX/boletos
 // individuais no extrato do banco). Retorna null se não achar combinação.
-function findSubsetSum(candidates: BankEntry[], targetCents: number): BankEntry[] | null {
+function findSubsetSum<T extends { valor: number }>(candidates: T[], targetCents: number): T[] | null {
   if (targetCents <= 0 || candidates.length === 0) return null
   // Trava de segurança contra entradas patológicas (não deve ocorrer no
   // movimento normal de um dia) — evita DP gigante travando a requisição.
@@ -112,7 +115,7 @@ function findSubsetSum(candidates: BankEntry[], targetCents: number): BankEntry[
 
   if (reach[targetCents] === -1) return null
 
-  const used: BankEntry[] = []
+  const used: T[] = []
   let s = targetCents
   while (s > 0) {
     const i = reach[s]
@@ -169,8 +172,34 @@ function matchSide(erp: ErpEntry[], bank: BankEntry[]) {
     }
   }
 
-  const missing = phase1miss.filter(t => !usedInGroup.has(t))
-  const pending = Object.values(erpIdx).flat().filter(e => !e._used)
+  const afterPhase2Missing = phase1miss.filter(t => !usedInGroup.has(t))
+  const afterPhase2Pending = Object.values(erpIdx).flat().filter(e => !e._used)
+
+  // Fase 3: matching 1:N (soma de lançamentos ERP = 1 banco) — caso inverso
+  // da Fase 2: quando o banco lança em uma única linha o que o ERP separou
+  // em vários (ex: mais de um pagamento de saída no mesmo dia agrupado
+  // numa só transferência bancária).
+  const pendingByDate: Record<string, ErpIndexed[]> = {}
+  for (const e of afterPhase2Pending) {
+    if (!pendingByDate[e.date]) pendingByDate[e.date] = []
+    pendingByDate[e.date].push(e)
+  }
+  const erpUsedInGroup = new Set<ErpIndexed>()
+  const bankUsedInErpGroup = new Set<BankEntry>()
+
+  for (const bt of afterPhase2Missing) {
+    const cands = (pendingByDate[bt.date] || []).filter(e => !erpUsedInGroup.has(e))
+    const target = Math.round(bt.valor * 100)
+    const group = findSubsetSum(cands, target)
+    if (group) {
+      group.forEach(e => erpUsedInGroup.add(e))
+      bankUsedInErpGroup.add(bt)
+      matched.push({ type: '1:N', banks: [bt], erp: group[0], erpGroup: group })
+    }
+  }
+
+  const missing = afterPhase2Missing.filter(t => !bankUsedInErpGroup.has(t))
+  const pending = afterPhase2Pending.filter(e => !erpUsedInGroup.has(e))
 
   missing.sort((a, b) => a.date.localeCompare(b.date))
   matched.sort((a, b) => a.banks[0].date.localeCompare(b.banks[0].date))

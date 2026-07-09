@@ -25,9 +25,10 @@ interface ErpEntry {
 }
 
 interface MatchedEntry {
-  type: '1:1' | 'N:1' | 'ajuste'
+  type: '1:1' | 'N:1' | '1:N' | 'ajuste'
   banks: BankEntry[]
   erp: ErpEntry
+  erpGroup?: ErpEntry[]
   devolvidos?: ErpEntry[]
 }
 
@@ -207,7 +208,7 @@ function ReconciliationSide({
                         </div>
                       </td>
                     </tr>
-                  ) : (
+                  ) : row.type === 'N:1' ? (
                     <tr key={i}>
                       <td colSpan={5} className="p-0">
                         <table className="w-full text-sm">
@@ -227,6 +228,32 @@ function ReconciliationSide({
                             <tr className="bg-purple-100 border-l-2 border-purple-400 font-semibold">
                               <td className="px-4 py-2 text-xs text-purple-700" colSpan={5}>
                                 Soma de {row.banks.length} lançamentos = ERP {row.erp.lanc} ({fmtBRL(row.erp.valor)})
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={i}>
+                      <td colSpan={5} className="p-0">
+                        <table className="w-full text-sm">
+                          <tbody>
+                            {(row.erpGroup ?? [row.erp]).map((e, j) => (
+                              <tr key={j} className="bg-teal-50 dark:bg-teal-950/30 border-l-2 border-teal-400 hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors">
+                                <td className={tdClass} style={{ width: 96 }}>{e.date}</td>
+                                <td className={tdRight + ' text-teal-800'} style={{ width: 130 }}>{fmtBRL(e.valor)}</td>
+                                <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 max-w-xs truncate">
+                                  {e.desc}{' '}
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-teal-100 text-teal-700 ml-1">agrupado</span>
+                                </td>
+                                <td className={tdClass + ' font-mono text-xs'} style={{ width: 120 }}>{row.banks[0].ref}</td>
+                                <td className={tdClass + ' font-mono text-xs'} style={{ width: 110 }}>{e.lanc}</td>
+                              </tr>
+                            ))}
+                            <tr className="bg-teal-100 border-l-2 border-teal-400 font-semibold">
+                              <td className="px-4 py-2 text-xs text-teal-700" colSpan={5}>
+                                Soma de {(row.erpGroup ?? [row.erp]).length} lançamentos ERP = Banco {row.banks[0].ref} ({fmtBRL(row.banks[0].valor)})
                               </td>
                             </tr>
                           </tbody>
