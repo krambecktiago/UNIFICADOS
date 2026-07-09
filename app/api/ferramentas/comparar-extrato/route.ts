@@ -19,11 +19,11 @@ interface BankEntry {
 }
 
 interface MatchedEntry {
-  type: '1:1' | 'N:1' | '1:N' | 'ajuste'
+  type: '1:1' | 'N:1' | '1:N' | 'M:N' | 'ajuste'
   banks: BankEntry[]
   erp: ErpEntry
-  // Só em type '1:N': os demais lançamentos do ERP que, somados a `erp`,
-  // batem com o único lançamento do banco.
+  // Em type '1:N' e 'M:N': os demais lançamentos do ERP que, somados a
+  // `erp`, batem com o(s) lançamento(s) do banco.
   erpGroup?: ErpEntry[]
   // Só em type 'ajuste': cheque(s) devolvido(s) descontado(s) do depósito
   // original do ERP até o valor bater com o crédito líquido do banco.
@@ -143,6 +143,65 @@ function findSubsetSum<T extends { valor: number }>(candidates: T[], targetCents
   return null
 }
 
+// Caso mais geral que findSubsetSum: quando nem um único lançamento (de
+// nenhum lado) fecha isolado, mas um lote de vários débitos ERP soma
+// exatamente ao lote de vários débitos do banco (ex: DDA + PIX + taxas do
+// mesmo lote batidos contra dezenas de lançamentos individuais do banco).
+// Mistura ERP (valor positivo) e banco (valor negativo) num só pool e busca
+// um subconjunto não-vazio somando zero — mesma técnica meet-in-the-middle.
+// Um subconjunto não-vazio só soma zero se tiver pelo menos um item de cada
+// lado (valores são sempre > 0, então só-ERP ou só-banco nunca zera).
+function findZeroSumMix(
+  erpItems: ErpIndexed[],
+  bankItems: BankEntry[]
+): { erp: ErpIndexed[]; bank: BankEntry[] } | null {
+  const items = [
+    ...erpItems.map((e, idx) => ({ side: 'erp' as const, idx, v: Math.round(e.valor * 100) })),
+    ...bankItems.map((b, idx) => ({ side: 'bank' as const, idx, v: -Math.round(b.valor * 100) })),
+  ]
+  if (items.length < 2 || items.length > 40) return null
+
+  const mid = Math.ceil(items.length / 2)
+  const left = items.slice(0, mid)
+  const right = items.slice(mid)
+
+  function subsetSums(part: typeof left): Map<number, number> {
+    const sums = new Map<number, number>([[0, 0]])
+    for (let k = 0; k < part.length; k++) {
+      const v = part[k].v
+      for (const [s, mask] of [...sums]) {
+        const next = s + v
+        if (!sums.has(next)) sums.set(next, mask | (1 << k))
+      }
+    }
+    return sums
+  }
+
+  const leftSums = subsetSums(left)
+  const rightSums = subsetSums(right)
+
+  for (const [lSum, lMask] of leftSums) {
+    if (lSum === 0 && lMask === 0) continue // ignora o subconjunto vazio
+    const rMask = rightSums.get(-lSum)
+    if (rMask === undefined) continue
+
+    const erpOut: ErpIndexed[] = []
+    const bankOut: BankEntry[] = []
+    for (let k = 0; k < left.length; k++) {
+      if (!(lMask & (1 << k))) continue
+      if (left[k].side === 'erp') erpOut.push(erpItems[left[k].idx])
+      else bankOut.push(bankItems[left[k].idx])
+    }
+    for (let k = 0; k < right.length; k++) {
+      if (!(rMask & (1 << k))) continue
+      if (right[k].side === 'erp') erpOut.push(erpItems[right[k].idx])
+      else bankOut.push(bankItems[right[k].idx])
+    }
+    if (erpOut.length > 0 && bankOut.length > 0) return { erp: erpOut, bank: bankOut }
+  }
+  return null
+}
+
 // Motor de conciliação genérico — usado tanto pra Entradas (crédito ERP x
 // crédito banco) quanto pra Saídas (débito ERP x débito banco).
 function matchSide(erp: ErpEntry[], bank: BankEntry[]) {
@@ -215,8 +274,41 @@ function matchSide(erp: ErpEntry[], bank: BankEntry[]) {
     }
   }
 
-  const missing = afterPhase2Missing.filter(t => !bankUsedInErpGroup.has(t))
-  const pending = afterPhase2Pending.filter(e => !erpUsedInGroup.has(e))
+  const afterPhase3Missing = afterPhase2Missing.filter(t => !bankUsedInErpGroup.has(t))
+  const afterPhase3Pending = afterPhase2Pending.filter(e => !erpUsedInGroup.has(e))
+
+  // Fase 4: matching M:N — quando nem um único lançamento (de nenhum lado)
+  // fecha isolado, mas um lote de vários débitos ERP soma exatamente ao
+  // lote de vários débitos do banco que restaram no dia (ex: DDA + PIX +
+  // taxas do mesmo lote batidos contra dezenas de lançamentos individuais
+  // do banco). Repete por data até não achar mais nenhum grupo.
+  const missingByDate: Record<string, BankEntry[]> = {}
+  for (const b of afterPhase3Missing) {
+    if (!missingByDate[b.date]) missingByDate[b.date] = []
+    missingByDate[b.date].push(b)
+  }
+  const pendingByDate2: Record<string, ErpIndexed[]> = {}
+  for (const e of afterPhase3Pending) {
+    if (!pendingByDate2[e.date]) pendingByDate2[e.date] = []
+    pendingByDate2[e.date].push(e)
+  }
+  const bankUsedPhase4 = new Set<BankEntry>()
+  const erpUsedPhase4 = new Set<ErpIndexed>()
+
+  for (const date of Object.keys(pendingByDate2)) {
+    for (let guard = 0; guard < 20; guard++) {
+      const erpCands = pendingByDate2[date].filter(e => !erpUsedPhase4.has(e))
+      const bankCands = (missingByDate[date] || []).filter(b => !bankUsedPhase4.has(b))
+      const found = findZeroSumMix(erpCands, bankCands)
+      if (!found) break
+      found.erp.forEach(e => erpUsedPhase4.add(e))
+      found.bank.forEach(b => bankUsedPhase4.add(b))
+      matched.push({ type: 'M:N', banks: found.bank, erp: found.erp[0], erpGroup: found.erp })
+    }
+  }
+
+  const missing = afterPhase3Missing.filter(t => !bankUsedPhase4.has(t))
+  const pending = afterPhase3Pending.filter(e => !erpUsedPhase4.has(e))
 
   missing.sort((a, b) => a.date.localeCompare(b.date))
   matched.sort((a, b) => a.banks[0].date.localeCompare(b.banks[0].date))

@@ -234,7 +234,7 @@ function ReconciliationSide({
                         </table>
                       </td>
                     </tr>
-                  ) : (
+                  ) : row.type === '1:N' ? (
                     <tr key={i}>
                       <td colSpan={5} className="p-0">
                         <table className="w-full text-sm">
@@ -254,6 +254,44 @@ function ReconciliationSide({
                             <tr className="bg-teal-100 border-l-2 border-teal-400 font-semibold">
                               <td className="px-4 py-2 text-xs text-teal-700" colSpan={5}>
                                 Soma de {(row.erpGroup ?? [row.erp]).length} lançamentos ERP = Banco {row.banks[0].ref} ({fmtBRL(row.banks[0].valor)})
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={i}>
+                      <td colSpan={5} className="p-0">
+                        <table className="w-full text-sm">
+                          <tbody>
+                            {row.banks.map((b, j) => (
+                              <tr key={`b${j}`} className="bg-amber-50 dark:bg-amber-950/30 border-l-2 border-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors">
+                                <td className={tdClass} style={{ width: 96 }}>{b.date}</td>
+                                <td className={tdRight + ' text-amber-800'} style={{ width: 130 }}>{fmtBRL(b.valor)}</td>
+                                <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 max-w-xs truncate">
+                                  {b.desc}{' '}
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 ml-1">banco</span>
+                                </td>
+                                <td className={tdClass + ' font-mono text-xs'} style={{ width: 120 }}>{b.ref}</td>
+                                <td className={tdClass + ' font-mono text-xs'} style={{ width: 110 }}>—</td>
+                              </tr>
+                            ))}
+                            {(row.erpGroup ?? [row.erp]).map((e, j) => (
+                              <tr key={`e${j}`} className="bg-amber-50 dark:bg-amber-950/30 border-l-2 border-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors">
+                                <td className={tdClass} style={{ width: 96 }}>{e.date}</td>
+                                <td className={tdRight + ' text-amber-800'} style={{ width: 130 }}>{fmtBRL(e.valor)}</td>
+                                <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 max-w-xs truncate">
+                                  {e.desc}{' '}
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 ml-1">ERP</span>
+                                </td>
+                                <td className={tdClass + ' font-mono text-xs'} style={{ width: 120 }}>—</td>
+                                <td className={tdClass + ' font-mono text-xs'} style={{ width: 110 }}>{e.lanc}</td>
+                              </tr>
+                            ))}
+                            <tr className="bg-amber-100 border-l-2 border-amber-400 font-semibold">
+                              <td className="px-4 py-2 text-xs text-amber-700" colSpan={5}>
+                                Grupo M:N — {(row.erpGroup ?? [row.erp]).length} lançamento(s) ERP = {row.banks.length} lançamento(s) banco ({fmtBRL(row.banks.reduce((a, b) => a + b.valor, 0))})
                               </td>
                             </tr>
                           </tbody>
