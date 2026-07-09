@@ -91,49 +91,56 @@ function parseBankEntries(text: string): { creditos: BankEntry[]; debitos: BankE
   return { creditos, debitos }
 }
 
-// Resolve subset-sum determinístico (DP 0/1, cada item usado no máximo uma
-// vez): qual combinação de `candidates` soma exatamente `targetCents`? Sem
-// limite de quantidade — cobre desde 1 lançamento até um lote inteiro (ex:
-// um pagamento de fornecedores em lote no ERP contra dezenas de PIX/boletos
-// individuais no extrato do banco). Retorna null se não achar combinação.
+// Resolve subset-sum determinístico (cada item usado no máximo uma vez): qual
+// combinação de `candidates` soma exatamente `targetCents`? Usa "meet in the
+// middle" — divide os candidatos em duas metades, calcula todas as somas
+// possíveis de cada metade (O(2^(n/2)) cada) e combina — em vez de um DP que
+// escala com o VALOR-alvo (explode pra lotes de R$ 500 mil+) ou que aborta
+// por excesso de somas alcançáveis mesmo quando a resposta existe. Cobre
+// desde 1 lançamento até um lote inteiro (ex: pagamento de fornecedores em
+// lote no ERP contra dezenas de PIX/boletos individuais no banco). Retorna
+// null se não achar combinação.
 function findSubsetSum<T extends { valor: number }>(candidates: T[], targetCents: number): T[] | null {
   if (targetCents <= 0 || candidates.length === 0) return null
-  // Trava de segurança contra entradas patológicas (não deve ocorrer no
-  // movimento normal de um dia) — evita explosão combinatória travando a
-  // requisição. Sem limite pelo valor-alvo: um lote de fornecedores pode
-  // somar bem mais que R$ 500 mil sem que isso seja um problema em si.
-  if (candidates.length > 300) return null
+  // Cada metade tem no máximo ~20 itens (2^20 somas — rápido e leve). Um
+  // único dia com mais de 40 lançamentos sem par não é um cenário real de
+  // conciliação bancária.
+  if (candidates.length > 40) return null
 
-  // soma alcançável (em centavos) -> índice do item que completou essa soma.
-  // Map em vez de array indexado por centavo: o array explodiria de tamanho
-  // pra lotes de valor alto (ex: R$ 537 mil = ~54 milhões de posições),
-  // enquanto o Map só guarda as somas de fato alcançáveis.
-  const reach = new Map<number, number>()
-  reach.set(0, -2) // soma 0 alcançável sem nenhum item
+  const withCents = candidates
+    .map((c, i) => ({ i, v: Math.round(c.valor * 100) }))
+    .filter(x => x.v > 0 && x.v <= targetCents)
 
-  for (let i = 0; i < candidates.length; i++) {
-    const v = Math.round(candidates[i].valor * 100)
-    if (v <= 0 || v > targetCents) continue
-    // Snapshot das somas já alcançáveis antes de somar o item i — evita usar
-    // o mesmo item duas vezes na mesma iteração (regra do 0/1 knapsack).
-    for (const s of [...reach.keys()]) {
-      const next = s + v
-      if (next <= targetCents && !reach.has(next)) reach.set(next, i)
+  const mid = Math.ceil(withCents.length / 2)
+  const left = withCents.slice(0, mid)
+  const right = withCents.slice(mid)
+
+  // soma alcançável (centavos) -> bitmask local (bit k = k-ésimo item de `items`)
+  function subsetSums(items: { i: number; v: number }[]): Map<number, number> {
+    const sums = new Map<number, number>([[0, 0]])
+    for (let k = 0; k < items.length; k++) {
+      const v = items[k].v
+      for (const [s, mask] of [...sums]) {
+        const next = s + v
+        if (next <= targetCents && !sums.has(next)) sums.set(next, mask | (1 << k))
+      }
     }
-    if (reach.size > 2_000_000) return null // trava contra explosão combinatória
+    return sums
   }
 
-  if (!reach.has(targetCents)) return null
+  const leftSums = subsetSums(left)
+  const rightSums = subsetSums(right)
 
-  const used: T[] = []
-  let s = targetCents
-  while (s > 0) {
-    const i = reach.get(s)
-    if (i === undefined || i < 0) break
-    used.push(candidates[i])
-    s -= Math.round(candidates[i].valor * 100)
+  for (const [lSum, lMask] of leftSums) {
+    const rMask = rightSums.get(targetCents - lSum)
+    if (rMask === undefined) continue
+
+    const used: T[] = []
+    for (let k = 0; k < left.length; k++) if (lMask & (1 << k)) used.push(candidates[left[k].i])
+    for (let k = 0; k < right.length; k++) if (rMask & (1 << k)) used.push(candidates[right[k].i])
+    if (used.length > 0) return used
   }
-  return used
+  return null
 }
 
 // Motor de conciliação genérico — usado tanto pra Entradas (crédito ERP x
