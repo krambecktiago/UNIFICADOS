@@ -94,22 +94,38 @@ export async function fetchRedeSales(startDate: string, endDate: string): Promis
   const credentials = await getRedeCredentials()
   const token = await getRedeToken(credentials)
 
-  const params = new URLSearchParams({
-    parentCompanyNumber: credentials.companyNumber,
-    subsidiaries: credentials.companyNumber,
-    startDate,
-    endDate,
-  })
+  const transactions: RedeTransaction[] = []
+  let pageKey: string | undefined
+  // Trava de segurança — 100 páginas de 100 registros cobre 10 mil vendas
+  // no período, bem além do volume real de qualquer consulta.
+  for (let page = 0; page < 100; page++) {
+    const params = new URLSearchParams({
+      parentCompanyNumber: credentials.companyNumber,
+      subsidiaries: credentials.companyNumber,
+      startDate,
+      endDate,
+      size: '100',
+    })
+    if (pageKey) params.set('pageKey', pageKey)
 
-  const res = await fetch(`${REDE_BASE_URL}/merchant-statement/v1/sales?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  })
+    const res = await fetch(`${REDE_BASE_URL}/merchant-statement/v1/sales?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    })
 
-  if (!res.ok) {
-    throw new Error(`Falha ao consultar extrato da Rede (status ${res.status}).`)
+    if (!res.ok) {
+      throw new Error(`Falha ao consultar extrato da Rede (status ${res.status}).`)
+    }
+
+    const data = await res.json() as {
+      content?: { transactions?: RedeTransaction[] }
+      cursor?: { hasNextKey?: boolean; nextKey?: string }
+    }
+    transactions.push(...(data.content?.transactions ?? []))
+
+    if (!data.cursor?.hasNextKey || !data.cursor.nextKey) break
+    pageKey = data.cursor.nextKey
   }
 
-  const data = await res.json() as { content?: { transactions?: RedeTransaction[] } }
-  return data.content?.transactions ?? []
+  return transactions
 }
