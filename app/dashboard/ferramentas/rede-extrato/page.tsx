@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PageHeader } from '@/components/ui/page-header'
 import { TableCard } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -37,8 +37,8 @@ function statusTone(status: string): 'green' | 'red' | 'gray' {
 }
 
 export default function RedeExtratoPage() {
-  const [startDate, setStartDate] = useState(todayISO(-7))
-  const [endDate, setEndDate] = useState(todayISO())
+  const [startDate, setStartDate] = useState(todayISO(-1))
+  const [endDate, setEndDate] = useState(todayISO(-1))
   const [transactions, setTransactions] = useState<RedeTransaction[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -63,6 +63,13 @@ export default function RedeExtratoPage() {
     }
   }
 
+  // Ao abrir a ferramenta, já carrega as vendas do dia anterior (padrão),
+  // sem precisar clicar em "Buscar".
+  useEffect(() => {
+    buscar()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const totalBruto = transactions?.reduce((acc, t) => acc + t.amount, 0) ?? 0
   const totalLiquido = transactions?.reduce((acc, t) => acc + t.netAmount, 0) ?? 0
   // Não soma `feeTotal` — nessa rota da Rede esse campo vem como taxa
@@ -76,7 +83,7 @@ export default function RedeExtratoPage() {
     <div className="min-h-screen">
       <PageHeader
         title="Extrato Rede"
-        subtitle="Consulta direta na API da Rede (sandbox) — sem upload de planilha"
+        subtitle="Consulta direta na API da Rede — sem upload de planilha"
       />
 
       <div className="px-8 py-8">
