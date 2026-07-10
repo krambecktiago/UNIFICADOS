@@ -5,7 +5,7 @@ export const fetchCache = 'force-no-store'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
-import { fetchRedeSales } from '@/lib/rede/client'
+import { fetchRedeSales, getRedeEstablishments } from '@/lib/rede/client'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -17,11 +17,15 @@ export async function GET(request: NextRequest) {
   if (!startDate || !endDate) {
     return NextResponse.json({ error: 'Informe startDate e endDate (yyyy-mm-dd).' }, { status: 400 })
   }
+  const companyNumber = request.nextUrl.searchParams.get('companyNumber') || undefined
 
   try {
-    const transactions = await fetchRedeSales(startDate, endDate)
+    const [transactions, establishments] = await Promise.all([
+      fetchRedeSales(startDate, endDate, companyNumber),
+      getRedeEstablishments(),
+    ])
     await logToolUsage(supabase, user.id, 'rede-extrato', 0)
-    return NextResponse.json({ transactions }, { headers: { 'Cache-Control': 'no-store' } })
+    return NextResponse.json({ transactions, establishments }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (err) {
     console.error(err)
     const message = err instanceof Error ? err.message : 'Erro ao consultar a API da Rede.'

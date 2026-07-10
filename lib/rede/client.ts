@@ -2,10 +2,19 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 const REDE_BASE_URL = 'https://api.userede.com.br/redelabs'
 
+export interface RedeEstablishment {
+  companyNumber: string
+  name?: string
+}
+
 interface RedeCredentials {
   clientId: string
   clientSecret: string
   companyNumber: string
+  // Opcional: outros pontos de venda (filiais) além de `companyNumber`
+  // (matriz). Preencher em Administração → Conexões, no valor da conexão
+  // "rede-producao", quando houver mais de um PV a consultar.
+  establishments?: RedeEstablishment[]
 }
 
 export interface RedeTransaction {
@@ -32,6 +41,11 @@ export interface RedeTransaction {
     type: string
     product: string
   }
+  merchant?: {
+    companyNumber: string
+    companyName?: string
+    tradeName?: string
+  }
 }
 
 function parseRedeCredentials(value: string): RedeCredentials {
@@ -44,6 +58,19 @@ function parseRedeCredentials(value: string): RedeCredentials {
   } catch {
     throw new Error('Credenciais da Rede mal formatadas — esperado JSON com clientId, clientSecret e companyNumber.')
   }
+}
+
+// Lista de PVs configurados — a matriz (`companyNumber`) sempre entra,
+// mesmo se `establishments` também a repetir.
+function listEstablishments(credentials: RedeCredentials): RedeEstablishment[] {
+  const list = credentials.establishments ?? []
+  if (list.some(e => e.companyNumber === credentials.companyNumber)) return list
+  return [{ companyNumber: credentials.companyNumber, name: 'Matriz' }, ...list]
+}
+
+export async function getRedeEstablishments(): Promise<RedeEstablishment[]> {
+  const credentials = await getRedeCredentials()
+  return listEstablishments(credentials)
 }
 
 async function getRedeCredentials(): Promise<RedeCredentials> {
@@ -89,19 +116,23 @@ async function getRedeToken(credentials: RedeCredentials): Promise<string> {
   return data.access_token
 }
 
-// startDate/endDate no formato "yyyy-mm-dd".
-export async function fetchRedeSales(startDate: string, endDate: string): Promise<RedeTransaction[]> {
-  const credentials = await getRedeCredentials()
-  const token = await getRedeToken(credentials)
-
+// A API só aceita um PV por chamada — `subsidiaries` é obrigatoriamente
+// igual a `parentCompanyNumber` (limitação documentada da própria Rede).
+// Pra consultar outro PV, chama de novo com esse PV nos dois campos.
+async function fetchRedeSalesForPv(
+  token: string,
+  pvCompanyNumber: string,
+  startDate: string,
+  endDate: string
+): Promise<RedeTransaction[]> {
   const transactions: RedeTransaction[] = []
   let pageKey: string | undefined
   // Trava de segurança — 100 páginas de 100 registros cobre 10 mil vendas
   // no período, bem além do volume real de qualquer consulta.
   for (let page = 0; page < 100; page++) {
     const params = new URLSearchParams({
-      parentCompanyNumber: credentials.companyNumber,
-      subsidiaries: credentials.companyNumber,
+      parentCompanyNumber: pvCompanyNumber,
+      subsidiaries: pvCompanyNumber,
       startDate,
       endDate,
       size: '100',
@@ -114,7 +145,7 @@ export async function fetchRedeSales(startDate: string, endDate: string): Promis
     })
 
     if (!res.ok) {
-      throw new Error(`Falha ao consultar extrato da Rede (status ${res.status}).`)
+      throw new Error(`Falha ao consultar extrato da Rede (PV ${pvCompanyNumber}, status ${res.status}).`)
     }
 
     const data = await res.json() as {
@@ -128,4 +159,25 @@ export async function fetchRedeSales(startDate: string, endDate: string): Promis
   }
 
   return transactions
+}
+
+// startDate/endDate no formato "yyyy-mm-dd". Sem `companyNumber`, consulta
+// todos os PVs cadastrados e mescla o resultado.
+export async function fetchRedeSales(
+  startDate: string,
+  endDate: string,
+  companyNumber?: string
+): Promise<RedeTransaction[]> {
+  const credentials = await getRedeCredentials()
+  const token = await getRedeToken(credentials)
+
+  if (companyNumber) {
+    return fetchRedeSalesForPv(token, companyNumber, startDate, endDate)
+  }
+
+  const establishments = listEstablishments(credentials)
+  const perPv = await Promise.all(
+    establishments.map(e => fetchRedeSalesForPv(token, e.companyNumber, startDate, endDate))
+  )
+  return perPv.flat()
 }

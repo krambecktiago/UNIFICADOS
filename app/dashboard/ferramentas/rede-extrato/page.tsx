@@ -22,6 +22,16 @@ interface RedeTransaction {
   movementDate: string
   saleHour?: string
   modality: { type: string; product: string }
+  merchant?: { companyNumber: string; companyName?: string; tradeName?: string }
+}
+
+interface RedeEstablishment {
+  companyNumber: string
+  name?: string
+}
+
+function establishmentLabel(e: RedeEstablishment): string {
+  return e.name ? `${e.name} (${e.companyNumber})` : e.companyNumber
 }
 
 function todayISO(offsetDays = 0): string {
@@ -39,6 +49,8 @@ function statusTone(status: string): 'green' | 'red' | 'gray' {
 export default function RedeExtratoPage() {
   const [startDate, setStartDate] = useState(todayISO(-1))
   const [endDate, setEndDate] = useState(todayISO(-1))
+  const [companyNumber, setCompanyNumber] = useState('') // '' = todos os estabelecimentos
+  const [establishments, setEstablishments] = useState<RedeEstablishment[]>([])
   const [transactions, setTransactions] = useState<RedeTransaction[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -49,6 +61,7 @@ export default function RedeExtratoPage() {
     setTransactions(null)
     try {
       const params = new URLSearchParams({ startDate, endDate })
+      if (companyNumber) params.set('companyNumber', companyNumber)
       const res = await fetch(`/api/ferramentas/rede-extrato?${params}`)
       const data = await res.json()
       if (!res.ok) {
@@ -56,6 +69,7 @@ export default function RedeExtratoPage() {
         return
       }
       setTransactions(data.transactions)
+      if (Array.isArray(data.establishments)) setEstablishments(data.establishments)
     } catch {
       setError('Erro de rede')
     } finally {
@@ -95,6 +109,15 @@ export default function RedeExtratoPage() {
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Data final</label>
             <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputBase} />
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Estabelecimento</label>
+            <select value={companyNumber} onChange={e => setCompanyNumber(e.target.value)} className={inputBase}>
+              <option value="">Todos os estabelecimentos</option>
+              {establishments.map(e => (
+                <option key={e.companyNumber} value={e.companyNumber}>{establishmentLabel(e)}</option>
+              ))}
+            </select>
           </div>
           <Button type="button" onClick={buscar} loading={loading}>
             {loading ? 'Buscando…' : 'Buscar'}
@@ -139,6 +162,9 @@ export default function RedeExtratoPage() {
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
                       <tr>
+                        {!companyNumber && (
+                          <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Estabelecimento</th>
+                        )}
                         <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Data</th>
                         <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Status</th>
                         <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Modalidade</th>
@@ -154,6 +180,11 @@ export default function RedeExtratoPage() {
                     <tbody>
                       {transactions.map((t, i) => (
                         <tr key={`${t.nsu}-${t.authorizationCode}-${i}`} className="border-b border-gray-100 last:border-0">
+                          {!companyNumber && (
+                            <td className="px-4 py-2.5 text-gray-700">
+                              {t.merchant?.companyName ?? t.merchant?.companyNumber ?? '—'}
+                            </td>
+                          )}
                           <td className="px-4 py-2.5 text-gray-700">
                             {t.movementDate}{t.saleHour ? ` ${t.saleHour}` : ''}
                           </td>
