@@ -19,16 +19,17 @@ export async function GET(request: NextRequest) {
   }
   const companyNumber = request.nextUrl.searchParams.get('companyNumber') || undefined
 
+  // Não depende do token de vendas — busca separado pra preencher o filtro
+  // de estabelecimento mesmo quando a consulta de vendas abaixo falhar.
+  const establishments = await getRedeEstablishments().catch(() => [])
+
   try {
-    const [transactions, establishments] = await Promise.all([
-      fetchRedeSales(startDate, endDate, companyNumber),
-      getRedeEstablishments(),
-    ])
+    const transactions = await fetchRedeSales(startDate, endDate, companyNumber)
     await logToolUsage(supabase, user.id, 'rede-extrato', 0)
     return NextResponse.json({ transactions, establishments }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (err) {
     console.error(err)
     const message = err instanceof Error ? err.message : 'Erro ao consultar a API da Rede.'
-    return NextResponse.json({ error: message }, { status: 502 })
+    return NextResponse.json({ error: message, establishments }, { status: 502 })
   }
 }

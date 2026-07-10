@@ -64,12 +64,12 @@ export default function RedeExtratoPage() {
       if (companyNumber) params.set('companyNumber', companyNumber)
       const res = await fetch(`/api/ferramentas/rede-extrato?${params}`)
       const data = await res.json()
+      if (Array.isArray(data.establishments)) setEstablishments(data.establishments)
       if (!res.ok) {
         setError(data.error ?? 'Erro ao consultar extrato')
         return
       }
       setTransactions(data.transactions)
-      if (Array.isArray(data.establishments)) setEstablishments(data.establishments)
     } catch {
       setError('Erro de rede')
     } finally {
