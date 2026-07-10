@@ -65,7 +65,10 @@ export default function RedeExtratoPage() {
 
   const totalBruto = transactions?.reduce((acc, t) => acc + t.amount, 0) ?? 0
   const totalLiquido = transactions?.reduce((acc, t) => acc + t.netAmount, 0) ?? 0
-  const totalTaxa = transactions?.reduce((acc, t) => acc + t.feeTotal, 0) ?? 0
+  // Não soma `feeTotal` — nessa rota da Rede esse campo vem como taxa
+  // percentual (mesmo formato de `mdrFee`), não como valor em R$. O valor
+  // real descontado é bruto − líquido de cada transação.
+  const totalTaxa = totalBruto - totalLiquido
 
   const inputBase = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
 
@@ -154,7 +157,7 @@ export default function RedeExtratoPage() {
                           <td className="px-4 py-2.5 text-gray-700 font-mono">{t.authorizationCode}</td>
                           <td className="px-4 py-2.5 text-gray-700">{t.installmentQuantity}x</td>
                           <td className="px-4 py-2.5 text-right text-gray-900">{formatBRL(t.amount)}</td>
-                          <td className="px-4 py-2.5 text-right text-gray-500">{formatBRL(t.feeTotal)}</td>
+                          <td className="px-4 py-2.5 text-right text-gray-500">{formatBRL(t.amount - t.netAmount)}</td>
                           <td className="px-4 py-2.5 text-right font-semibold text-gray-900">{formatBRL(t.netAmount)}</td>
                         </tr>
                       ))}
