@@ -103,6 +103,7 @@ export async function fetchRedeSales(startDate: string, endDate: string): Promis
 
   const res = await fetch(`${REDE_BASE_URL}/merchant-statement/v1/sales?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
   })
 
   if (!res.ok) {
