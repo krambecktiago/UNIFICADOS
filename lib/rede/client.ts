@@ -161,23 +161,22 @@ async function fetchRedeSalesForPv(
   return transactions
 }
 
-// startDate/endDate no formato "yyyy-mm-dd". Sem `companyNumber`, consulta
-// todos os PVs cadastrados e mescla o resultado.
+// startDate/endDate no formato "yyyy-mm-dd". Sem `companyNumbers` (ou vazio),
+// consulta todos os PVs cadastrados e mescla o resultado.
 export async function fetchRedeSales(
   startDate: string,
   endDate: string,
-  companyNumber?: string
+  companyNumbers?: string[]
 ): Promise<RedeTransaction[]> {
   const credentials = await getRedeCredentials()
   const token = await getRedeToken(credentials)
 
-  if (companyNumber) {
-    return fetchRedeSalesForPv(token, companyNumber, startDate, endDate)
-  }
+  const pvsToFetch = companyNumbers?.length
+    ? companyNumbers
+    : listEstablishments(credentials).map(e => e.companyNumber)
 
-  const establishments = listEstablishments(credentials)
   const perPv = await Promise.all(
-    establishments.map(e => fetchRedeSalesForPv(token, e.companyNumber, startDate, endDate))
+    pvsToFetch.map(pv => fetchRedeSalesForPv(token, pv, startDate, endDate))
   )
   return perPv.flat()
 }

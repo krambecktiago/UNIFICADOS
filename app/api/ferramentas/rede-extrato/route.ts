@@ -17,14 +17,14 @@ export async function GET(request: NextRequest) {
   if (!startDate || !endDate) {
     return NextResponse.json({ error: 'Informe startDate e endDate (yyyy-mm-dd).' }, { status: 400 })
   }
-  const companyNumber = request.nextUrl.searchParams.get('companyNumber') || undefined
+  const companyNumbers = request.nextUrl.searchParams.getAll('companyNumber')
 
   // Não depende do token de vendas — busca separado pra preencher o filtro
   // de estabelecimento mesmo quando a consulta de vendas abaixo falhar.
   const establishments = await getRedeEstablishments().catch(() => [])
 
   try {
-    const transactions = await fetchRedeSales(startDate, endDate, companyNumber)
+    const transactions = await fetchRedeSales(startDate, endDate, companyNumbers)
     await logToolUsage(supabase, user.id, 'rede-extrato', 0)
     return NextResponse.json({ transactions, establishments }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (err) {
