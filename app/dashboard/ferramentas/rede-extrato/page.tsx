@@ -153,6 +153,12 @@ export default function RedeExtratoPage() {
       />
 
       <div className="px-8 py-8">
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 rounded-lg mb-6">
+          Esse extrato cobre só vendas em cartão (POS, PDV, ECOMMERCE) — a API de gestão de vendas da Rede
+          usada aqui não inclui vendas via Pix ou Link de Pagamento. Esses dois exigiriam integrar uma API
+          separada da Rede, que essa conexão hoje não tem acesso.
+        </div>
+
         <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6 flex flex-wrap items-end gap-4">
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Data inicial</label>
