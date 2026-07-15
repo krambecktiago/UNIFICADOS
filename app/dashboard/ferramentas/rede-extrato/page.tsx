@@ -52,6 +52,9 @@ export default function RedeExtratoPage() {
   const [selectedPvs, setSelectedPvs] = useState<string[]>([]) // [] = todos os estabelecimentos
   const [showPvMenu, setShowPvMenu] = useState(false)
   const pvMenuRef = useRef<HTMLDivElement>(null)
+  const [selectedCaptureTypes, setSelectedCaptureTypes] = useState<string[]>([]) // [] = todos os tipos (PDV, POS, etc)
+  const [showCaptureMenu, setShowCaptureMenu] = useState(false)
+  const captureMenuRef = useRef<HTMLDivElement>(null)
   const [establishments, setEstablishments] = useState<RedeEstablishment[]>([])
   const [transactions, setTransactions] = useState<RedeTransaction[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -61,6 +64,9 @@ export default function RedeExtratoPage() {
     function handleClickOutside(e: MouseEvent) {
       if (pvMenuRef.current && !pvMenuRef.current.contains(e.target as Node)) {
         setShowPvMenu(false)
+      }
+      if (captureMenuRef.current && !captureMenuRef.current.contains(e.target as Node)) {
+        setShowCaptureMenu(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -80,6 +86,18 @@ export default function RedeExtratoPage() {
       return found ? establishmentLabel(found) : selectedPvs[0]
     }
     return `${selectedPvs.length} estabelecimentos selecionados`
+  }
+
+  function toggleCaptureType(captureType: string) {
+    setSelectedCaptureTypes(prev =>
+      prev.includes(captureType) ? prev.filter(c => c !== captureType) : [...prev, captureType]
+    )
+  }
+
+  function captureMenuLabel(): string {
+    if (selectedCaptureTypes.length === 0) return 'Todos os tipos'
+    if (selectedCaptureTypes.length === 1) return selectedCaptureTypes[0]
+    return `${selectedCaptureTypes.length} tipos selecionados`
   }
 
   async function buscar() {
@@ -111,8 +129,15 @@ export default function RedeExtratoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const totalBruto = transactions?.reduce((acc, t) => acc + t.amount, 0) ?? 0
-  const totalLiquido = transactions?.reduce((acc, t) => acc + t.netAmount, 0) ?? 0
+  // Filtro de tipo de captura (PDV, POS, ECOMMERCE...) é aplicado em cima do
+  // que já veio da API — não precisa de nova consulta pra trocar o filtro.
+  const captureTypes = Array.from(new Set((transactions ?? []).map(t => t.captureType))).sort()
+  const filteredTransactions = (transactions ?? []).filter(
+    t => selectedCaptureTypes.length === 0 || selectedCaptureTypes.includes(t.captureType)
+  )
+
+  const totalBruto = filteredTransactions.reduce((acc, t) => acc + t.amount, 0)
+  const totalLiquido = filteredTransactions.reduce((acc, t) => acc + t.netAmount, 0)
   // Não soma `feeTotal` — nessa rota da Rede esse campo vem como taxa
   // percentual (mesmo formato de `mdrFee`), não como valor em R$. O valor
   // real descontado é bruto − líquido de cada transação.
@@ -173,6 +198,46 @@ export default function RedeExtratoPage() {
               </div>
             )}
           </div>
+          <div className="relative" ref={captureMenuRef}>
+            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Tipo de venda</label>
+            <button
+              type="button"
+              onClick={() => setShowCaptureMenu(v => !v)}
+              className={inputBase + ' text-left flex items-center justify-between gap-2 min-w-[180px]'}
+            >
+              <span className="truncate">{captureMenuLabel()}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+            </button>
+            {showCaptureMenu && (
+              <div className="absolute z-10 mt-1 w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg py-1 max-h-64 overflow-y-auto">
+                <label className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedCaptureTypes.length === 0}
+                    onChange={() => setSelectedCaptureTypes([])}
+                    className="rounded border-gray-300"
+                  />
+                  Todos os tipos
+                </label>
+                <div className="border-t border-gray-100 my-1" />
+                {captureTypes.length === 0 ? (
+                  <p className="px-3 py-1.5 text-sm text-gray-400">Busque um período pra ver os tipos</p>
+                ) : (
+                  captureTypes.map(c => (
+                    <label key={c} className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedCaptureTypes.includes(c)}
+                        onChange={() => toggleCaptureType(c)}
+                        className="rounded border-gray-300"
+                      />
+                      {c}
+                    </label>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           <Button type="button" onClick={buscar} loading={loading}>
             {loading ? 'Buscando…' : 'Buscar'}
           </Button>
@@ -208,7 +273,7 @@ export default function RedeExtratoPage() {
               </div>
             </div>
 
-            {transactions.length === 0 ? (
+            {filteredTransactions.length === 0 ? (
               <p className="text-sm text-gray-400">Nenhuma transação encontrada no período.</p>
             ) : (
               <TableCard>
@@ -232,7 +297,7 @@ export default function RedeExtratoPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {transactions.map((t, i) => (
+                      {filteredTransactions.map((t, i) => (
                         <tr key={`${t.nsu}-${t.authorizationCode}-${i}`} className="border-b border-gray-100 last:border-0">
                           {selectedPvs.length !== 1 && (
                             <td className="px-4 py-2.5 text-gray-700">
