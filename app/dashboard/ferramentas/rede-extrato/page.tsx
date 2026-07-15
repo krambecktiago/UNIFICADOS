@@ -34,6 +34,13 @@ function establishmentLabel(e: RedeEstablishment): string {
   return e.name ? `${e.name} (${e.companyNumber})` : e.companyNumber
 }
 
+// Na API da Rede, vendas via Link de Pagamento vêm com captureType "ECOMMERCE"
+// (não existe um valor próprio pra Link de Pagamento) — só troca o rótulo exibido.
+function captureTypeLabel(captureType: string): string {
+  if (captureType === 'ECOMMERCE') return 'Link de Pagamento'
+  return captureType
+}
+
 function todayISO(offsetDays = 0): string {
   const d = new Date()
   d.setDate(d.getDate() + offsetDays)
@@ -96,7 +103,7 @@ export default function RedeExtratoPage() {
 
   function captureMenuLabel(): string {
     if (selectedCaptureTypes.length === 0) return 'Todos os tipos'
-    if (selectedCaptureTypes.length === 1) return selectedCaptureTypes[0]
+    if (selectedCaptureTypes.length === 1) return captureTypeLabel(selectedCaptureTypes[0])
     return `${selectedCaptureTypes.length} tipos selecionados`
   }
 
@@ -154,9 +161,9 @@ export default function RedeExtratoPage() {
 
       <div className="px-8 py-8">
         <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 rounded-lg mb-6">
-          Esse extrato cobre só vendas em cartão (POS, PDV, ECOMMERCE) — a API de gestão de vendas da Rede
-          usada aqui não inclui vendas via Pix ou Link de Pagamento. Esses dois exigiriam integrar uma API
-          separada da Rede, que essa conexão hoje não tem acesso.
+          Esse extrato cobre vendas em cartão — PDV, POS e Link de Pagamento (identificado pela Rede como
+          "ECOMMERCE"). Vendas via Pix não aparecem aqui: a API de gestão de vendas da Rede usada nessa
+          ferramenta não inclui Pix, que exigiria integrar uma API separada da Rede.
         </div>
 
         <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6 flex flex-wrap items-end gap-4">
@@ -237,7 +244,7 @@ export default function RedeExtratoPage() {
                         onChange={() => toggleCaptureType(c)}
                         className="rounded border-gray-300"
                       />
-                      {c}
+                      {captureTypeLabel(c)}
                     </label>
                   ))
                 )}
@@ -314,7 +321,7 @@ export default function RedeExtratoPage() {
                             {t.movementDate}{t.saleHour ? ` ${t.saleHour}` : ''}
                           </td>
                           <td className="px-4 py-2.5"><Badge tone={statusTone(t.status)}>{t.status}</Badge></td>
-                          <td className="px-4 py-2.5 text-gray-700">{t.modality?.type} · {t.captureType}</td>
+                          <td className="px-4 py-2.5 text-gray-700">{t.modality?.type} · {captureTypeLabel(t.captureType)}</td>
                           <td className="px-4 py-2.5 text-gray-700 font-mono">{t.cardNumber}</td>
                           <td className="px-4 py-2.5 text-gray-700 font-mono">{t.nsu}</td>
                           <td className="px-4 py-2.5 text-gray-700 font-mono">{t.authorizationCode}</td>
