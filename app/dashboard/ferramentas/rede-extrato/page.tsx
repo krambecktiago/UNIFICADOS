@@ -140,13 +140,6 @@ export default function RedeExtratoPage() {
     }
   }
 
-  // Ao abrir a ferramenta, já carrega as vendas do dia anterior (padrão),
-  // sem precisar clicar em "Buscar".
-  useEffect(() => {
-    buscar()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   // Filtro de tipo de captura (PDV, POS, ECOMMERCE...) é aplicado em cima do
   // que já veio da API — não precisa de nova consulta pra trocar o filtro.
   const captureTypes = Array.from(new Set((transactions ?? []).map(t => t.captureType))).sort()

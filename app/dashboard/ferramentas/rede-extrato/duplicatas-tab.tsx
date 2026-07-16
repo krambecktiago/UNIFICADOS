@@ -215,12 +215,6 @@ export function DuplicatasTab() {
     }
   }
 
-  useEffect(() => {
-    buscarVendas()
-    buscarDuplicatas()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   // Cada coluna mostra o que já tem assim que chega — a conciliação (que
   // precisa dos dois lados) só entra depois, sem travar quem carregou primeiro.
   const conciliacao = vendas && duplicatas ? conciliarDuplicatas(duplicatas, vendas) : null
