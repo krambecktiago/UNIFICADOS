@@ -5,6 +5,7 @@ import { TableCard } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { cn } from '@/lib/utils'
 import { formatBRL } from '@/lib/utils/br-format'
 import { conciliarDuplicatas, type DuplicataStatus, type VendaStatus } from '@/lib/jjw/conciliacao'
@@ -137,8 +138,8 @@ export function DuplicatasTab() {
   const [endDateVendas, setEndDateVendas] = useState(todayISO(-1))
   const [establishmentsVendas, setEstablishmentsVendas] = useState<RedeEstablishment[]>([])
   const [selectedPvsVendas, setSelectedPvsVendas] = useState<string[]>([])
-  const [minValorVendas, setMinValorVendas] = useState('')
-  const [maxValorVendas, setMaxValorVendas] = useState('')
+  const [minValorVendas, setMinValorVendas] = useState<number | null>(null)
+  const [maxValorVendas, setMaxValorVendas] = useState<number | null>(null)
   const [vendas, setVendas] = useState<RedeTransaction[] | null>(null)
   const [loadingVendas, setLoadingVendas] = useState(false)
   const [errorVendas, setErrorVendas] = useState('')
@@ -235,12 +236,10 @@ export function DuplicatasTab() {
 
   // Filtro de valor bruto é aplicado em cima do que já veio da API — não
   // precisa de nova consulta pra trocar a faixa de valor.
-  const minBrutoVendas = minValorVendas.trim() !== '' ? parseFloat(minValorVendas) : null
-  const maxBrutoVendas = maxValorVendas.trim() !== '' ? parseFloat(maxValorVendas) : null
   const vendasFiltradasPorValor: RedeTransaction[] | null = vendas
     ? vendas.filter(t => {
-        if (minBrutoVendas !== null && !isNaN(minBrutoVendas) && t.amount < minBrutoVendas) return false
-        if (maxBrutoVendas !== null && !isNaN(maxBrutoVendas) && t.amount > maxBrutoVendas) return false
+        if (minValorVendas !== null && t.amount < minValorVendas) return false
+        if (maxValorVendas !== null && t.amount > maxValorVendas) return false
         return true
       })
     : null
@@ -423,25 +422,17 @@ export function DuplicatasTab() {
             />
             <div>
               <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Valor bruto mínimo</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="R$ 0,00"
+              <CurrencyInput
                 value={minValorVendas}
-                onChange={e => { setMinValorVendas(e.target.value); limparSelecao() }}
+                onChange={v => { setMinValorVendas(v); limparSelecao() }}
                 className={inputBase + ' w-32'}
               />
             </div>
             <div>
               <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Valor bruto máximo</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="R$ 0,00"
+              <CurrencyInput
                 value={maxValorVendas}
-                onChange={e => { setMaxValorVendas(e.target.value); limparSelecao() }}
+                onChange={v => { setMaxValorVendas(v); limparSelecao() }}
                 className={inputBase + ' w-32'}
               />
             </div>

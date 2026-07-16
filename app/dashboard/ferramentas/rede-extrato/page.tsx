@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
 import { TabPanel } from '@/components/ui/tabs'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { cn } from '@/lib/utils'
 import { formatBRL } from '@/lib/utils/br-format'
 import { DuplicatasTab } from './duplicatas-tab'
@@ -77,8 +78,8 @@ export default function RedeExtratoPage() {
   const [selectedCaptureTypes, setSelectedCaptureTypes] = useState<string[]>([]) // [] = todos os tipos (PDV, POS, etc)
   const [showCaptureMenu, setShowCaptureMenu] = useState(false)
   const captureMenuRef = useRef<HTMLDivElement>(null)
-  const [minValorBruto, setMinValorBruto] = useState('')
-  const [maxValorBruto, setMaxValorBruto] = useState('')
+  const [minValorBruto, setMinValorBruto] = useState<number | null>(null)
+  const [maxValorBruto, setMaxValorBruto] = useState<number | null>(null)
   const [establishments, setEstablishments] = useState<RedeEstablishment[]>([])
   const [transactions, setTransactions] = useState<RedeTransaction[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -159,12 +160,10 @@ export default function RedeExtratoPage() {
 
   // Filtros de tipo de captura e valor bruto são aplicados em cima do que já
   // veio da API — não precisa de nova consulta pra trocar o filtro.
-  const minBruto = minValorBruto.trim() !== '' ? parseFloat(minValorBruto) : null
-  const maxBruto = maxValorBruto.trim() !== '' ? parseFloat(maxValorBruto) : null
   const filteredTransactions = (transactions ?? []).filter(t => {
     if (selectedCaptureTypes.length > 0 && !selectedCaptureTypes.includes(t.captureType)) return false
-    if (minBruto !== null && !isNaN(minBruto) && t.amount < minBruto) return false
-    if (maxBruto !== null && !isNaN(maxBruto) && t.amount > maxBruto) return false
+    if (minValorBruto !== null && t.amount < minValorBruto) return false
+    if (maxValorBruto !== null && t.amount > maxValorBruto) return false
     return true
   })
 
@@ -295,27 +294,11 @@ export default function RedeExtratoPage() {
           </div>
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Valor bruto mínimo</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="R$ 0,00"
-              value={minValorBruto}
-              onChange={e => setMinValorBruto(e.target.value)}
-              className={inputBase + ' w-32'}
-            />
+            <CurrencyInput value={minValorBruto} onChange={setMinValorBruto} className={inputBase + ' w-32'} />
           </div>
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Valor bruto máximo</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="R$ 0,00"
-              value={maxValorBruto}
-              onChange={e => setMaxValorBruto(e.target.value)}
-              className={inputBase + ' w-32'}
-            />
+            <CurrencyInput value={maxValorBruto} onChange={setMaxValorBruto} className={inputBase + ' w-32'} />
           </div>
           <Button type="button" onClick={buscar} loading={loading}>
             {loading ? 'Buscando…' : 'Buscar'}
