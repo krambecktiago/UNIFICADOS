@@ -44,6 +44,10 @@ function captureTypeLabel(captureType: string): string {
   return captureType
 }
 
+// Tipos fixos que essa rota da Rede cobre — não depende do resultado da
+// busca, pra já aparecer selecionável antes de qualquer consulta.
+const CAPTURE_TYPES = ['PDV', 'POS', 'ECOMMERCE']
+
 function todayISO(offsetDays = 0): string {
   const d = new Date()
   d.setDate(d.getDate() + offsetDays)
@@ -151,9 +155,8 @@ export default function RedeExtratoPage() {
     }
   }
 
-  // Filtro de tipo de captura (PDV, POS, ECOMMERCE...) é aplicado em cima do
-  // que já veio da API — não precisa de nova consulta pra trocar o filtro.
-  const captureTypes = Array.from(new Set((transactions ?? []).map(t => t.captureType))).sort()
+  // Filtro de tipo de captura é aplicado em cima do que já veio da API —
+  // não precisa de nova consulta pra trocar o filtro.
   const filteredTransactions = (transactions ?? []).filter(
     t => selectedCaptureTypes.length === 0 || selectedCaptureTypes.includes(t.captureType)
   )
@@ -269,21 +272,17 @@ export default function RedeExtratoPage() {
                   Todos os tipos
                 </label>
                 <div className="border-t border-gray-100 my-1" />
-                {captureTypes.length === 0 ? (
-                  <p className="px-3 py-1.5 text-sm text-gray-400">Busque um período pra ver os tipos</p>
-                ) : (
-                  captureTypes.map(c => (
-                    <label key={c} className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedCaptureTypes.includes(c)}
-                        onChange={() => toggleCaptureType(c)}
-                        className="rounded border-gray-300"
-                      />
-                      {captureTypeLabel(c)}
-                    </label>
-                  ))
-                )}
+                {CAPTURE_TYPES.map(c => (
+                  <label key={c} className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedCaptureTypes.includes(c)}
+                      onChange={() => toggleCaptureType(c)}
+                      className="rounded border-gray-300"
+                    />
+                    {captureTypeLabel(c)}
+                  </label>
+                ))}
               </div>
             )}
           </div>
