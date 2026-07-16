@@ -187,8 +187,8 @@ export function Sidebar({
                   className={cn(
                     'flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors border-l-2',
                     active
-                      ? 'bg-brand-navy/5 border-brand-navy text-brand-navy'
-                      : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-800'
+                      ? 'bg-brand-navy/5 dark:bg-brand-navy/20 border-brand-navy text-brand-navy dark:text-blue-300'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200'
                   )}
                 >
                   <span className={cn('flex items-center', active && 'text-brand-navy dark:text-blue-300')}>

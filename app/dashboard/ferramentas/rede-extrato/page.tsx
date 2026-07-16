@@ -168,7 +168,7 @@ export default function RedeExtratoPage() {
   // real descontado é bruto − líquido de cada transação.
   const totalTaxa = totalBruto - totalLiquido
 
-  const inputBase = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
+  const inputBase = 'w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
 
   return (
     <div className="min-h-screen">
@@ -178,7 +178,7 @@ export default function RedeExtratoPage() {
       />
 
       <div className="px-8 pt-4">
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-gray-200 dark:border-gray-800">
           {TAB_DEFS.map(tab => (
             <button
               key={tab.key}
@@ -186,8 +186,8 @@ export default function RedeExtratoPage() {
               className={cn(
                 'px-5 py-3 text-sm font-medium border-b-2 transition-colors',
                 activeTab === tab.key
-                  ? 'border-brand-navy text-brand-navy'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  ? 'border-brand-navy text-brand-navy dark:text-blue-300'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               )}
             >
               {tab.label}
@@ -199,50 +199,50 @@ export default function RedeExtratoPage() {
       {activeTab === 'extrato' && (
       <div className="px-8 py-8">
         <TabPanel tabKey="extrato">
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 rounded-lg mb-6">
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 text-sm px-4 py-3 rounded-lg mb-6">
           Esse extrato cobre vendas em cartão — PDV, POS e Link de Pagamento (identificado pela Rede como
           "ECOMMERCE"). Vendas via Pix não aparecem aqui: a API de gestão de vendas da Rede usada nessa
           ferramenta não inclui Pix, que exigiria integrar uma API separada da Rede.
         </div>
 
-        <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6 flex flex-wrap items-end gap-4">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 mb-6 flex flex-wrap items-end gap-4">
           <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Data inicial</label>
+            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data inicial</label>
             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputBase} />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Data final</label>
+            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data final</label>
             <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputBase} />
           </div>
           <div className="relative" ref={pvMenuRef}>
-            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Estabelecimento</label>
+            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Estabelecimento</label>
             <button
               type="button"
               onClick={() => setShowPvMenu(v => !v)}
               className={inputBase + ' text-left flex items-center justify-between gap-2 min-w-[220px]'}
             >
               <span className="truncate">{pvMenuLabel()}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
             </button>
             {showPvMenu && (
-              <div className="absolute z-10 mt-1 w-full min-w-[240px] bg-white border border-gray-200 rounded-lg shadow-lg py-1 max-h-64 overflow-y-auto">
-                <label className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+              <div className="absolute z-10 mt-1 w-full min-w-[240px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 max-h-64 overflow-y-auto">
+                <label className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={selectedPvs.length === 0}
                     onChange={() => setSelectedPvs([])}
-                    className="rounded border-gray-300"
+                    className="rounded border-gray-300 dark:border-gray-600"
                   />
                   Todos os estabelecimentos
                 </label>
-                <div className="border-t border-gray-100 my-1" />
+                <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
                 {establishments.map(e => (
-                  <label key={e.companyNumber} className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                  <label key={e.companyNumber} className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={selectedPvs.includes(e.companyNumber)}
                       onChange={() => togglePv(e.companyNumber)}
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-300 dark:border-gray-600"
                     />
                     {establishmentLabel(e)}
                   </label>
@@ -251,34 +251,34 @@ export default function RedeExtratoPage() {
             )}
           </div>
           <div className="relative" ref={captureMenuRef}>
-            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Tipo de venda</label>
+            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Tipo de venda</label>
             <button
               type="button"
               onClick={() => setShowCaptureMenu(v => !v)}
               className={inputBase + ' text-left flex items-center justify-between gap-2 min-w-[180px]'}
             >
               <span className="truncate">{captureMenuLabel()}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
             </button>
             {showCaptureMenu && (
-              <div className="absolute z-10 mt-1 w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg py-1 max-h-64 overflow-y-auto">
-                <label className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+              <div className="absolute z-10 mt-1 w-full min-w-[200px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 max-h-64 overflow-y-auto">
+                <label className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={selectedCaptureTypes.length === 0}
                     onChange={() => setSelectedCaptureTypes([])}
-                    className="rounded border-gray-300"
+                    className="rounded border-gray-300 dark:border-gray-600"
                   />
                   Todos os tipos
                 </label>
-                <div className="border-t border-gray-100 my-1" />
+                <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
                 {CAPTURE_TYPES.map(c => (
-                  <label key={c} className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                  <label key={c} className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={selectedCaptureTypes.includes(c)}
                       onChange={() => toggleCaptureType(c)}
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-300 dark:border-gray-600"
                     />
                     {captureTypeLabel(c)}
                   </label>
@@ -292,13 +292,13 @@ export default function RedeExtratoPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
 
         {loading && (
-          <div className="flex items-center gap-3 text-sm text-gray-400">
+          <div className="flex items-center gap-3 text-sm text-gray-400 dark:text-gray-500">
             <Spinner size="md" />
             Consultando API da Rede...
           </div>
@@ -307,63 +307,63 @@ export default function RedeExtratoPage() {
         {transactions && !loading && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="bg-white rounded-xl p-5 border border-gray-200">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Valor bruto</p>
-                <p className="text-lg font-bold text-gray-900 mt-1">{formatBRL(totalBruto)}</p>
+              <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Valor bruto</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{formatBRL(totalBruto)}</p>
               </div>
-              <div className="bg-white rounded-xl p-5 border border-gray-200">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Taxas</p>
-                <p className="text-lg font-bold text-gray-900 mt-1">{formatBRL(totalTaxa)}</p>
+              <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Taxas</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{formatBRL(totalTaxa)}</p>
               </div>
-              <div className="bg-white rounded-xl p-5 border border-gray-200">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">Valor líquido</p>
-                <p className="text-lg font-bold text-gray-900 mt-1">{formatBRL(totalLiquido)}</p>
+              <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Valor líquido</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{formatBRL(totalLiquido)}</p>
               </div>
             </div>
 
             {filteredTransactions.length === 0 ? (
-              <p className="text-sm text-gray-400">Nenhuma transação encontrada no período.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">Nenhuma transação encontrada no período.</p>
             ) : (
               <TableCard>
                 <div className="overflow-x-auto max-h-[65vh] overflow-y-auto">
                   <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
+                    <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                       <tr>
                         {selectedPvs.length !== 1 && (
-                          <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Estabelecimento</th>
+                          <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Estabelecimento</th>
                         )}
-                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Data</th>
-                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Status</th>
-                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Modalidade</th>
-                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Cartão</th>
-                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">NSU</th>
-                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Autorização</th>
-                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Parcelas</th>
-                        <th className="text-right px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Bruto</th>
-                        <th className="text-right px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Taxa</th>
-                        <th className="text-right px-4 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Líquido</th>
+                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Data</th>
+                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Status</th>
+                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Modalidade</th>
+                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Cartão</th>
+                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">NSU</th>
+                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Autorização</th>
+                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Parcelas</th>
+                        <th className="text-right px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Bruto</th>
+                        <th className="text-right px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Taxa</th>
+                        <th className="text-right px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Líquido</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredTransactions.map((t, i) => (
-                        <tr key={`${t.nsu}-${t.authorizationCode}-${i}`} className="border-b border-gray-100 last:border-0">
+                        <tr key={`${t.nsu}-${t.authorizationCode}-${i}`} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
                           {selectedPvs.length !== 1 && (
-                            <td className="px-4 py-2.5 text-gray-700">
+                            <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">
                               {t.merchant?.companyName ?? t.merchant?.companyNumber ?? '—'}
                             </td>
                           )}
-                          <td className="px-4 py-2.5 text-gray-700">
+                          <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">
                             {t.movementDate}{t.saleHour ? ` ${t.saleHour}` : ''}
                           </td>
                           <td className="px-4 py-2.5"><Badge tone={statusTone(t.status)}>{t.status}</Badge></td>
-                          <td className="px-4 py-2.5 text-gray-700">{t.modality?.type} · {captureTypeLabel(t.captureType)}</td>
-                          <td className="px-4 py-2.5 text-gray-700 font-mono">{t.cardNumber}</td>
-                          <td className="px-4 py-2.5 text-gray-700 font-mono">{t.nsu}</td>
-                          <td className="px-4 py-2.5 text-gray-700 font-mono">{t.authorizationCode}</td>
-                          <td className="px-4 py-2.5 text-gray-700">{t.installmentQuantity}x</td>
-                          <td className="px-4 py-2.5 text-right text-gray-900">{formatBRL(t.amount)}</td>
-                          <td className="px-4 py-2.5 text-right text-gray-500">{formatBRL(t.amount - t.netAmount)}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold text-gray-900">{formatBRL(t.netAmount)}</td>
+                          <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{t.modality?.type} · {captureTypeLabel(t.captureType)}</td>
+                          <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{t.cardNumber}</td>
+                          <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{t.nsu}</td>
+                          <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{t.authorizationCode}</td>
+                          <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{t.installmentQuantity}x</td>
+                          <td className="px-4 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(t.amount)}</td>
+                          <td className="px-4 py-2.5 text-right text-gray-500 dark:text-gray-400">{formatBRL(t.amount - t.netAmount)}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-gray-900 dark:text-gray-100">{formatBRL(t.netAmount)}</td>
                         </tr>
                       ))}
                     </tbody>

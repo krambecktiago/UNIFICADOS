@@ -68,7 +68,7 @@ const VENDA_STATUS_TONE: Record<VendaStatus, 'green' | 'amber' | 'gray'> = {
   sem_duplicata: 'gray',
 }
 
-const inputBase = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
+const inputBase = 'w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
 
 function EstablishmentPicker({
   establishments,
@@ -103,25 +103,25 @@ function EstablishmentPicker({
 
   return (
     <div className="relative" ref={ref}>
-      <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Estabelecimento</label>
+      <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Estabelecimento</label>
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
         className={inputBase + ' text-left flex items-center justify-between gap-2 min-w-[200px]'}
       >
         <span className="truncate">{label()}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
       </button>
       {open && (
-        <div className="absolute z-10 mt-1 w-full min-w-[240px] bg-white border border-gray-200 rounded-lg shadow-lg py-1 max-h-64 overflow-y-auto">
-          <label className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
-            <input type="checkbox" checked={selected.length === 0} onChange={onClear} className="rounded border-gray-300" />
+        <div className="absolute z-10 mt-1 w-full min-w-[240px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 max-h-64 overflow-y-auto">
+          <label className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+            <input type="checkbox" checked={selected.length === 0} onChange={onClear} className="rounded border-gray-300 dark:border-gray-600" />
             Todos os estabelecimentos
           </label>
-          <div className="border-t border-gray-100 my-1" />
+          <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
           {establishments.map(e => (
-            <label key={e.companyNumber} className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
-              <input type="checkbox" checked={selected.includes(e.companyNumber)} onChange={() => onToggle(e.companyNumber)} className="rounded border-gray-300" />
+            <label key={e.companyNumber} className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+              <input type="checkbox" checked={selected.includes(e.companyNumber)} onChange={() => onToggle(e.companyNumber)} className="rounded border-gray-300 dark:border-gray-600" />
               {establishmentLabel(e)}
             </label>
           ))}
@@ -309,7 +309,7 @@ export function DuplicatasTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 rounded-lg">
+      <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 text-sm px-4 py-3 rounded-lg">
         Integração com a API do JJW (Besser Core) ainda não está configurada — as duplicatas abaixo são dados de
         exemplo só pra validar o layout. A conciliação por valor + data é uma heurística: hoje não existe um
         identificador comum (NSU/TID) entre a venda no cartão e a duplicata do JJW.
@@ -323,46 +323,46 @@ export function DuplicatasTab() {
         </div>
       )}
 
-      <p className="text-sm text-gray-400">
+      <p className="text-sm text-gray-400 dark:text-gray-500">
         Clique numa venda e em uma ou mais duplicatas pra selecionar o par e puxar os dados da baixa.
       </p>
 
       {(vendaSelecionada || duplicatasSelecionadas.length > 0) && (
-        <div className="bg-sky-50 border border-sky-200 rounded-xl p-5">
+        <div className="bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-900 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-sky-800">Dados para baixa</h3>
-            <button type="button" onClick={limparSelecao} className="text-xs text-sky-700 hover:underline">Limpar seleção</button>
+            <h3 className="text-sm font-semibold text-sky-800 dark:text-sky-300">Dados para baixa</h3>
+            <button type="button" onClick={limparSelecao} className="text-xs text-sky-700 dark:text-sky-400 hover:underline">Limpar seleção</button>
           </div>
           {vendaSelecionada && duplicatasSelecionadas.length > 0 ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">NSU</p>
-                  <p className="text-sm font-semibold text-sky-900 font-mono">{vendaSelecionada.nsu}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">NSU</p>
+                  <p className="text-sm font-semibold text-sky-900 dark:text-sky-200 font-mono">{vendaSelecionada.nsu}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">Autorização</p>
-                  <p className="text-sm font-semibold text-sky-900 font-mono">{vendaSelecionada.authorizationCode}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">Autorização</p>
+                  <p className="text-sm font-semibold text-sky-900 dark:text-sky-200 font-mono">{vendaSelecionada.authorizationCode}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">Parcelas</p>
-                  <p className="text-sm font-semibold text-sky-900">{vendaSelecionada.installmentQuantity}x</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">Parcelas</p>
+                  <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">{vendaSelecionada.installmentQuantity}x</p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">Modalidade</p>
-                  <p className="text-sm font-semibold text-sky-900">{modalidadeLabel(vendaSelecionada.modality?.type)}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">Modalidade</p>
+                  <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">{modalidadeLabel(vendaSelecionada.modality?.type)}</p>
                 </div>
               </div>
 
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 mb-1">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400 mb-1">
                   Duplicata(s) selecionada(s) — {duplicatasSelecionadas.length}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {duplicatasSelecionadas.map(d => (
-                    <span key={d.numero} className="inline-flex items-center gap-1.5 bg-white border border-sky-200 rounded-lg px-2.5 py-1 text-xs text-sky-900">
+                    <span key={d.numero} className="inline-flex items-center gap-1.5 bg-white dark:bg-gray-800 border border-sky-200 dark:border-sky-800 rounded-lg px-2.5 py-1 text-xs text-sky-900 dark:text-sky-200">
                       <span className="font-mono">{d.numero}</span>
-                      <span className="text-sky-500">·</span>
+                      <span className="text-sky-500 dark:text-sky-400">·</span>
                       <span>{formatBRL(d.valor)}</span>
                     </span>
                   ))}
@@ -370,18 +370,18 @@ export function DuplicatasTab() {
               </div>
 
               <div className="flex items-center justify-between text-sm">
-                <span className="text-sky-700">
-                  Total das duplicatas: <span className="font-semibold text-sky-900">{formatBRL(totalDuplicatasSelecionadas)}</span>
-                  {' '}· Valor da venda: <span className="font-semibold text-sky-900">{formatBRL(vendaSelecionada.amount)}</span>
+                <span className="text-sky-700 dark:text-sky-400">
+                  Total das duplicatas: <span className="font-semibold text-sky-900 dark:text-sky-200">{formatBRL(totalDuplicatasSelecionadas)}</span>
+                  {' '}· Valor da venda: <span className="font-semibold text-sky-900 dark:text-sky-200">{formatBRL(vendaSelecionada.amount)}</span>
                   {Math.abs(totalDuplicatasSelecionadas - vendaSelecionada.amount) > 0.05 && (
-                    <span className="text-amber-700 font-medium"> (valores não coincidem)</span>
+                    <span className="text-amber-700 dark:text-amber-400 font-medium"> (valores não coincidem)</span>
                   )}
                 </span>
                 <Button type="button" onClick={confirmarPar}>Confirmar par</Button>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-sky-700">
+            <p className="text-sm text-sky-700 dark:text-sky-400">
               {vendaSelecionada ? 'Agora selecione uma ou mais duplicatas correspondentes.' : 'Agora selecione a venda correspondente.'}
             </p>
           )}
@@ -390,15 +390,15 @@ export function DuplicatasTab() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Vendas no cartão (Rede)</h3>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Vendas no cartão (Rede)</h3>
 
-          <div className="bg-white rounded-xl p-5 border border-gray-200 flex flex-wrap items-end gap-3 mb-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 flex flex-wrap items-end gap-3 mb-4">
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Data inicial</label>
+              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data inicial</label>
               <input type="date" value={startDateVendas} onChange={e => setStartDateVendas(e.target.value)} className={inputBase} />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Data final</label>
+              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data final</label>
               <input type="date" value={endDateVendas} onChange={e => setEndDateVendas(e.target.value)} className={inputBase} />
             </div>
             <EstablishmentPicker
@@ -413,26 +413,26 @@ export function DuplicatasTab() {
           </div>
 
           {errorVendas && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">{errorVendas}</div>
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-lg mb-4">{errorVendas}</div>
           )}
 
           {loadingVendas ? (
-            <div className="flex items-center gap-3 text-sm text-gray-400">
+            <div className="flex items-center gap-3 text-sm text-gray-400 dark:text-gray-500">
               <Spinner size="md" />
               Consultando Rede...
             </div>
           ) : vendas && vendasResult.length === 0 ? (
-            <p className="text-sm text-gray-400">Nenhuma venda encontrada no período.</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Nenhuma venda encontrada no período.</p>
           ) : vendas && (
             <TableCard>
               <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
+                  <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                     <tr>
-                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Data</th>
-                      <th className="text-right px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Bruto</th>
-                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">NSU</th>
-                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Status</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Data</th>
+                      <th className="text-right px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Bruto</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">NSU</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -441,18 +441,18 @@ export function DuplicatasTab() {
                         key={`${v.venda.nsu}-${i}`}
                         onClick={() => selecionarVenda(i)}
                         className={cn(
-                          'border-b border-gray-100 last:border-0 cursor-pointer hover:bg-sky-50',
-                          selectedVendaIdx === i && 'bg-sky-100 ring-1 ring-inset ring-sky-300'
+                          'border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-950/30',
+                          selectedVendaIdx === i && 'bg-sky-100 dark:bg-sky-900/40 ring-1 ring-inset ring-sky-300 dark:ring-sky-700'
                         )}
                       >
-                        <td className="px-3 py-2.5 text-gray-700">{v.venda.movementDate}</td>
-                        <td className="px-3 py-2.5 text-right text-gray-900">{formatBRL(v.venda.amount)}</td>
-                        <td className="px-3 py-2.5 text-gray-700 font-mono">{v.venda.nsu}</td>
+                        <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{v.venda.movementDate}</td>
+                        <td className="px-3 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(v.venda.amount)}</td>
+                        <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{v.venda.nsu}</td>
                         <td className="px-3 py-2.5">
                           {v.status ? (
                             <Badge tone={VENDA_STATUS_TONE[v.status]}>{VENDA_STATUS_LABEL[v.status]}</Badge>
                           ) : (
-                            <span className="text-xs text-gray-400">Aguardando duplicatas…</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">Aguardando duplicatas…</span>
                           )}
                         </td>
                       </tr>
@@ -460,24 +460,24 @@ export function DuplicatasTab() {
                   </tbody>
                 </table>
               </div>
-              <div className="flex items-center justify-between px-3 py-2.5 border-t-2 border-gray-200 bg-gray-50 text-sm font-semibold">
-                <span className="text-gray-700">Total ({vendas.length})</span>
-                <span className="text-gray-900">{formatBRL(totalVendas)}</span>
+              <div className="flex items-center justify-between px-3 py-2.5 border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-semibold">
+                <span className="text-gray-700 dark:text-gray-300">Total ({vendas.length})</span>
+                <span className="text-gray-900 dark:text-gray-100">{formatBRL(totalVendas)}</span>
               </div>
             </TableCard>
           )}
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Duplicatas em aberto (JJW)</h3>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Duplicatas em aberto (JJW)</h3>
 
-          <div className="bg-white rounded-xl p-5 border border-gray-200 flex flex-wrap items-end gap-3 mb-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 flex flex-wrap items-end gap-3 mb-4">
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Vencimento inicial</label>
+              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Vencimento inicial</label>
               <input type="date" value={startDateDuplicatas} onChange={e => setStartDateDuplicatas(e.target.value)} className={inputBase} />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Vencimento final</label>
+              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Vencimento final</label>
               <input type="date" value={endDateDuplicatas} onChange={e => setEndDateDuplicatas(e.target.value)} className={inputBase} />
             </div>
             <EstablishmentPicker
@@ -492,27 +492,27 @@ export function DuplicatasTab() {
           </div>
 
           {errorDuplicatas && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">{errorDuplicatas}</div>
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-lg mb-4">{errorDuplicatas}</div>
           )}
 
           {loadingDuplicatas ? (
-            <div className="flex items-center gap-3 text-sm text-gray-400">
+            <div className="flex items-center gap-3 text-sm text-gray-400 dark:text-gray-500">
               <Spinner size="md" />
               Consultando JJW...
             </div>
           ) : duplicatas && duplicatasResult.length === 0 ? (
-            <p className="text-sm text-gray-400">Nenhuma duplicata em aberto no período.</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Nenhuma duplicata em aberto no período.</p>
           ) : duplicatas && (
             <TableCard>
               <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
+                  <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                     <tr>
-                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Nº</th>
-                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Vencimento</th>
-                      <th className="text-right px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Valor</th>
-                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Cliente</th>
-                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Status</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Nº</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Vencimento</th>
+                      <th className="text-right px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Valor</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Cliente</th>
+                      <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -521,19 +521,19 @@ export function DuplicatasTab() {
                         key={`${d.duplicata.numero}-${i}`}
                         onClick={() => selecionarDuplicata(i)}
                         className={cn(
-                          'border-b border-gray-100 last:border-0 cursor-pointer hover:bg-sky-50',
-                          selectedDuplicataIdxs.includes(i) && 'bg-sky-100 ring-1 ring-inset ring-sky-300'
+                          'border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-950/30',
+                          selectedDuplicataIdxs.includes(i) && 'bg-sky-100 dark:bg-sky-900/40 ring-1 ring-inset ring-sky-300 dark:ring-sky-700'
                         )}
                       >
-                        <td className="px-3 py-2.5 text-gray-700 font-mono">{d.duplicata.numero}</td>
-                        <td className="px-3 py-2.5 text-gray-700">{d.duplicata.dataVencimento}</td>
-                        <td className="px-3 py-2.5 text-right text-gray-900">{formatBRL(d.duplicata.valor)}</td>
-                        <td className="px-3 py-2.5 text-gray-700 truncate max-w-[160px]">{d.duplicata.cliente}</td>
+                        <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{d.duplicata.numero}</td>
+                        <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{d.duplicata.dataVencimento}</td>
+                        <td className="px-3 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(d.duplicata.valor)}</td>
+                        <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 truncate max-w-[160px]">{d.duplicata.cliente}</td>
                         <td className="px-3 py-2.5">
                           {d.status ? (
                             <Badge tone={DUPLICATA_STATUS_TONE[d.status]}>{DUPLICATA_STATUS_LABEL[d.status]}</Badge>
                           ) : (
-                            <span className="text-xs text-gray-400">Aguardando vendas…</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">Aguardando vendas…</span>
                           )}
                         </td>
                       </tr>
@@ -541,9 +541,9 @@ export function DuplicatasTab() {
                   </tbody>
                 </table>
               </div>
-              <div className="flex items-center justify-between px-3 py-2.5 border-t-2 border-gray-200 bg-gray-50 text-sm font-semibold">
-                <span className="text-gray-700">Total ({duplicatas.length})</span>
-                <span className="text-gray-900">{formatBRL(totalDuplicatas)}</span>
+              <div className="flex items-center justify-between px-3 py-2.5 border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-semibold">
+                <span className="text-gray-700 dark:text-gray-300">Total ({duplicatas.length})</span>
+                <span className="text-gray-900 dark:text-gray-100">{formatBRL(totalDuplicatas)}</span>
               </div>
             </TableCard>
           )}
@@ -552,37 +552,37 @@ export function DuplicatasTab() {
 
       {paresConfirmados.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Pares prontos para baixa ({paresConfirmados.length})</h3>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Pares prontos para baixa ({paresConfirmados.length})</h3>
           <TableCard>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                   <tr>
-                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Duplicata</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Cliente</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">NSU</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Autorização</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Parcelas</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Modalidade</th>
-                    <th className="text-right px-3 py-2.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">Valor</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Duplicata</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Cliente</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">NSU</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Autorização</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Parcelas</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Modalidade</th>
+                    <th className="text-right px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Valor</th>
                     <th className="px-3 py-2.5"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {paresConfirmados.map((p, i) => (
-                    <tr key={p.duplicataNumero} className="border-b border-gray-100 last:border-0">
-                      <td className="px-3 py-2.5 text-gray-700 font-mono">{p.duplicataNumero}</td>
-                      <td className="px-3 py-2.5 text-gray-700 truncate max-w-[160px]">{p.cliente}</td>
-                      <td className="px-3 py-2.5 text-gray-700 font-mono">{p.nsu}</td>
-                      <td className="px-3 py-2.5 text-gray-700 font-mono">{p.autorizacao}</td>
-                      <td className="px-3 py-2.5 text-gray-700">{p.parcelas}x</td>
-                      <td className="px-3 py-2.5 text-gray-700">{p.modalidade}</td>
-                      <td className="px-3 py-2.5 text-right text-gray-900">{formatBRL(p.valor)}</td>
+                    <tr key={p.duplicataNumero} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                      <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{p.duplicataNumero}</td>
+                      <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 truncate max-w-[160px]">{p.cliente}</td>
+                      <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{p.nsu}</td>
+                      <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{p.autorizacao}</td>
+                      <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{p.parcelas}x</td>
+                      <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{p.modalidade}</td>
+                      <td className="px-3 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(p.valor)}</td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                        <button type="button" onClick={() => copiarPar(p, i)} className="text-xs text-brand-navy hover:underline mr-3">
+                        <button type="button" onClick={() => copiarPar(p, i)} className="text-xs text-brand-navy dark:text-blue-300 hover:underline mr-3">
                           {copiedIdx === i ? 'Copiado!' : 'Copiar'}
                         </button>
-                        <button type="button" onClick={() => removerPar(p.duplicataNumero)} className="text-xs text-red-600 hover:underline">
+                        <button type="button" onClick={() => removerPar(p.duplicataNumero)} className="text-xs text-red-600 dark:text-red-400 hover:underline">
                           Remover
                         </button>
                       </td>

@@ -443,7 +443,7 @@ export default function AdminPage() {
                         />
                         <button
                           onClick={() => saveName(user)}
-                          className="text-brand-navy hover:opacity-70 shrink-0"
+                          className="text-brand-navy dark:text-blue-300 hover:opacity-70 shrink-0"
                           title="Salvar"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 12l5 5L20 7" /></svg>
@@ -480,7 +480,7 @@ export default function AdminPage() {
                       className={`text-xs font-medium px-3 py-1 rounded-lg border transition-colors disabled:opacity-40 ${
                         user.role === 'admin'
                           ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40'
-                          : 'border-brand-navy/20 text-brand-navy hover:bg-brand-navy/5'
+                          : 'border-brand-navy/20 text-brand-navy hover:bg-brand-navy/5 dark:border-blue-300/30 dark:text-blue-300 dark:hover:bg-blue-300/10'
                       }`}
                     >
                       {user.role === 'admin' ? 'Rebaixar' : 'Promover'}
