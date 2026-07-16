@@ -77,6 +77,8 @@ export default function RedeExtratoPage() {
   const [selectedCaptureTypes, setSelectedCaptureTypes] = useState<string[]>([]) // [] = todos os tipos (PDV, POS, etc)
   const [showCaptureMenu, setShowCaptureMenu] = useState(false)
   const captureMenuRef = useRef<HTMLDivElement>(null)
+  const [minValorBruto, setMinValorBruto] = useState('')
+  const [maxValorBruto, setMaxValorBruto] = useState('')
   const [establishments, setEstablishments] = useState<RedeEstablishment[]>([])
   const [transactions, setTransactions] = useState<RedeTransaction[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -155,11 +157,16 @@ export default function RedeExtratoPage() {
     }
   }
 
-  // Filtro de tipo de captura é aplicado em cima do que já veio da API —
-  // não precisa de nova consulta pra trocar o filtro.
-  const filteredTransactions = (transactions ?? []).filter(
-    t => selectedCaptureTypes.length === 0 || selectedCaptureTypes.includes(t.captureType)
-  )
+  // Filtros de tipo de captura e valor bruto são aplicados em cima do que já
+  // veio da API — não precisa de nova consulta pra trocar o filtro.
+  const minBruto = minValorBruto.trim() !== '' ? parseFloat(minValorBruto) : null
+  const maxBruto = maxValorBruto.trim() !== '' ? parseFloat(maxValorBruto) : null
+  const filteredTransactions = (transactions ?? []).filter(t => {
+    if (selectedCaptureTypes.length > 0 && !selectedCaptureTypes.includes(t.captureType)) return false
+    if (minBruto !== null && !isNaN(minBruto) && t.amount < minBruto) return false
+    if (maxBruto !== null && !isNaN(maxBruto) && t.amount > maxBruto) return false
+    return true
+  })
 
   const totalBruto = filteredTransactions.reduce((acc, t) => acc + t.amount, 0)
   const totalLiquido = filteredTransactions.reduce((acc, t) => acc + t.netAmount, 0)
@@ -285,6 +292,30 @@ export default function RedeExtratoPage() {
                 ))}
               </div>
             )}
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Valor bruto mínimo</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="R$ 0,00"
+              value={minValorBruto}
+              onChange={e => setMinValorBruto(e.target.value)}
+              className={inputBase + ' w-32'}
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Valor bruto máximo</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="R$ 0,00"
+              value={maxValorBruto}
+              onChange={e => setMaxValorBruto(e.target.value)}
+              className={inputBase + ' w-32'}
+            />
           </div>
           <Button type="button" onClick={buscar} loading={loading}>
             {loading ? 'Buscando…' : 'Buscar'}
