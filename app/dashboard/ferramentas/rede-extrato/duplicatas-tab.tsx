@@ -228,6 +228,9 @@ export function DuplicatasTab() {
   const divergenteCount = duplicatasResult.filter(d => d.status === 'divergente').length
   const semVendaCount = duplicatasResult.filter(d => d.status === 'sem_venda').length
 
+  const totalVendas = (vendas ?? []).reduce((acc, t) => acc + t.amount, 0)
+  const totalDuplicatas = (duplicatas ?? []).reduce((acc, d) => acc + d.valor, 0)
+
   function selecionarVenda(i: number) {
     setSelectedVendaIdx(i)
   }
@@ -404,6 +407,13 @@ export function DuplicatasTab() {
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-gray-200 bg-gray-50 font-semibold">
+                      <td className="px-3 py-2.5 text-gray-700">Total ({vendas.length})</td>
+                      <td className="px-3 py-2.5 text-right text-gray-900">{formatBRL(totalVendas)}</td>
+                      <td className="px-3 py-2.5" colSpan={2}></td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </TableCard>
@@ -475,6 +485,13 @@ export function DuplicatasTab() {
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-gray-200 bg-gray-50 font-semibold">
+                      <td className="px-3 py-2.5 text-gray-700" colSpan={2}>Total ({duplicatas.length})</td>
+                      <td className="px-3 py-2.5 text-right text-gray-900">{formatBRL(totalDuplicatas)}</td>
+                      <td className="px-3 py-2.5" colSpan={2}></td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </TableCard>
