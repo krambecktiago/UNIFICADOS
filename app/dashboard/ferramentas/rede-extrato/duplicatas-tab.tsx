@@ -150,11 +150,27 @@ export function DuplicatasTab() {
   const [loadingDuplicatas, setLoadingDuplicatas] = useState(false)
   const [errorDuplicatas, setErrorDuplicatas] = useState('')
 
-  // Seleção manual do par venda + duplicata pra puxar os dados da baixa
+  // Seleção manual do par venda + duplicata(s) pra puxar os dados da baixa —
+  // uma venda pode cobrir várias duplicatas (ex: valor dividido), por isso
+  // a venda é seleção única e a duplicata é múltipla.
   const [selectedVendaIdx, setSelectedVendaIdx] = useState<number | null>(null)
-  const [selectedDuplicataIdx, setSelectedDuplicataIdx] = useState<number | null>(null)
+  const [selectedDuplicataIdxs, setSelectedDuplicataIdxs] = useState<number[]>([])
   const [paresConfirmados, setParesConfirmados] = useState<ParConfirmado[]>([])
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
+
+  // Lista de PVs (matriz + filiais) já disponível antes de qualquer busca,
+  // pra poder filtrar por estabelecimento desde a primeira consulta.
+  useEffect(() => {
+    fetch('/api/ferramentas/rede-extrato/establishments')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data.establishments)) {
+          setEstablishmentsVendas(data.establishments)
+          setEstablishmentsDuplicatas(data.establishments)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   function togglePvVendas(companyNumber: string) {
     setSelectedPvsVendas(prev => (prev.includes(companyNumber) ? prev.filter(p => p !== companyNumber) : [...prev, companyNumber]))
@@ -196,7 +212,7 @@ export function DuplicatasTab() {
     setLoadingDuplicatas(true)
     setErrorDuplicatas('')
     setDuplicatas(null)
-    setSelectedDuplicataIdx(null)
+    setSelectedDuplicataIdxs([])
     try {
       const params = new URLSearchParams({ startDate: startDateDuplicatas, endDate: endDateDuplicatas })
       selectedPvsDuplicatas.forEach(pv => params.append('companyNumber', pv))
@@ -233,37 +249,45 @@ export function DuplicatasTab() {
   const totalDuplicatas = (duplicatas ?? []).reduce((acc, d) => acc + d.valor, 0)
 
   function selecionarVenda(i: number) {
-    setSelectedVendaIdx(i)
+    setSelectedVendaIdx(prev => (prev === i ? null : i))
   }
 
-  // Clicar numa duplicata já pré-seleciona a venda casada pela heurística
-  // (quando existe) — o usuário ainda pode clicar em outra venda pra trocar.
+  // Duplicata é seleção múltipla (várias duplicatas podem cair numa mesma
+  // venda). A primeira duplicata clicada, se já tiver a venda casada pela
+  // heurística e nenhuma venda estiver selecionada ainda, pré-seleciona essa
+  // venda — o usuário pode clicar em outra pra trocar.
   function selecionarDuplicata(i: number) {
-    setSelectedDuplicataIdx(i)
-    const d = duplicatasResult[i]
-    const idx = d.venda ? vendasResult.findIndex(v => v.venda === d.venda) : -1
-    setSelectedVendaIdx(idx !== -1 ? idx : null)
+    const jaSelecionada = selectedDuplicataIdxs.includes(i)
+    setSelectedDuplicataIdxs(prev => (jaSelecionada ? prev.filter(x => x !== i) : [...prev, i]))
+    if (!jaSelecionada && selectedVendaIdx === null) {
+      const d = duplicatasResult[i]
+      const idx = d.venda ? vendasResult.findIndex(v => v.venda === d.venda) : -1
+      if (idx !== -1) setSelectedVendaIdx(idx)
+    }
   }
 
   function limparSelecao() {
     setSelectedVendaIdx(null)
-    setSelectedDuplicataIdx(null)
+    setSelectedDuplicataIdxs([])
   }
 
   function confirmarPar() {
-    if (selectedVendaIdx === null || selectedDuplicataIdx === null) return
+    if (selectedVendaIdx === null || selectedDuplicataIdxs.length === 0) return
     const venda = vendasResult[selectedVendaIdx].venda
-    const duplicata = duplicatasResult[selectedDuplicataIdx].duplicata
-    const par: ParConfirmado = {
-      duplicataNumero: duplicata.numero,
-      cliente: duplicata.cliente,
-      nsu: venda.nsu,
-      autorizacao: venda.authorizationCode,
-      parcelas: venda.installmentQuantity,
-      modalidade: modalidadeLabel(venda.modality?.type),
-      valor: venda.amount,
-    }
-    setParesConfirmados(prev => [...prev.filter(p => p.duplicataNumero !== par.duplicataNumero), par])
+    const novosPares: ParConfirmado[] = selectedDuplicataIdxs.map(idx => {
+      const duplicata = duplicatasResult[idx].duplicata
+      return {
+        duplicataNumero: duplicata.numero,
+        cliente: duplicata.cliente,
+        nsu: venda.nsu,
+        autorizacao: venda.authorizationCode,
+        parcelas: venda.installmentQuantity,
+        modalidade: modalidadeLabel(venda.modality?.type),
+        valor: duplicata.valor,
+      }
+    })
+    const numeros = new Set(novosPares.map(p => p.duplicataNumero))
+    setParesConfirmados(prev => [...prev.filter(p => !numeros.has(p.duplicataNumero)), ...novosPares])
     limparSelecao()
   }
 
@@ -278,7 +302,10 @@ export function DuplicatasTab() {
   }
 
   const vendaSelecionada = selectedVendaIdx !== null ? vendasResult[selectedVendaIdx]?.venda : null
-  const duplicataSelecionada = selectedDuplicataIdx !== null ? duplicatasResult[selectedDuplicataIdx]?.duplicata : null
+  const duplicatasSelecionadas = selectedDuplicataIdxs
+    .map(i => duplicatasResult[i]?.duplicata)
+    .filter((d): d is JjwDuplicata => !!d)
+  const totalDuplicatasSelecionadas = duplicatasSelecionadas.reduce((acc, d) => acc + d.valor, 0)
 
   return (
     <div className="space-y-6">
@@ -297,48 +324,65 @@ export function DuplicatasTab() {
       )}
 
       <p className="text-sm text-gray-400">
-        Clique numa venda e numa duplicata pra selecionar o par e puxar os dados da baixa.
+        Clique numa venda e em uma ou mais duplicatas pra selecionar o par e puxar os dados da baixa.
       </p>
 
-      {(vendaSelecionada || duplicataSelecionada) && (
+      {(vendaSelecionada || duplicatasSelecionadas.length > 0) && (
         <div className="bg-sky-50 border border-sky-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-sky-800">Dados para baixa</h3>
             <button type="button" onClick={limparSelecao} className="text-xs text-sky-700 hover:underline">Limpar seleção</button>
           </div>
-          {vendaSelecionada && duplicataSelecionada ? (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">Duplicata</p>
-                <p className="text-sm font-semibold text-sky-900">{duplicataSelecionada.numero}</p>
+          {vendaSelecionada && duplicatasSelecionadas.length > 0 ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">NSU</p>
+                  <p className="text-sm font-semibold text-sky-900 font-mono">{vendaSelecionada.nsu}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">Autorização</p>
+                  <p className="text-sm font-semibold text-sky-900 font-mono">{vendaSelecionada.authorizationCode}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">Parcelas</p>
+                  <p className="text-sm font-semibold text-sky-900">{vendaSelecionada.installmentQuantity}x</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">Modalidade</p>
+                  <p className="text-sm font-semibold text-sky-900">{modalidadeLabel(vendaSelecionada.modality?.type)}</p>
+                </div>
               </div>
+
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">NSU</p>
-                <p className="text-sm font-semibold text-sky-900 font-mono">{vendaSelecionada.nsu}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 mb-1">
+                  Duplicata(s) selecionada(s) — {duplicatasSelecionadas.length}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {duplicatasSelecionadas.map(d => (
+                    <span key={d.numero} className="inline-flex items-center gap-1.5 bg-white border border-sky-200 rounded-lg px-2.5 py-1 text-xs text-sky-900">
+                      <span className="font-mono">{d.numero}</span>
+                      <span className="text-sky-500">·</span>
+                      <span>{formatBRL(d.valor)}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">Autorização</p>
-                <p className="text-sm font-semibold text-sky-900 font-mono">{vendaSelecionada.authorizationCode}</p>
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">Parcelas</p>
-                <p className="text-sm font-semibold text-sky-900">{vendaSelecionada.installmentQuantity}x</p>
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">Modalidade</p>
-                <p className="text-sm font-semibold text-sky-900">{modalidadeLabel(vendaSelecionada.modality?.type)}</p>
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500">Valor</p>
-                <p className="text-sm font-semibold text-sky-900">{formatBRL(vendaSelecionada.amount)}</p>
-              </div>
-              <div className="col-span-2 sm:col-span-5">
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-sky-700">
+                  Total das duplicatas: <span className="font-semibold text-sky-900">{formatBRL(totalDuplicatasSelecionadas)}</span>
+                  {' '}· Valor da venda: <span className="font-semibold text-sky-900">{formatBRL(vendaSelecionada.amount)}</span>
+                  {Math.abs(totalDuplicatasSelecionadas - vendaSelecionada.amount) > 0.05 && (
+                    <span className="text-amber-700 font-medium"> (valores não coincidem)</span>
+                  )}
+                </span>
                 <Button type="button" onClick={confirmarPar}>Confirmar par</Button>
               </div>
             </div>
           ) : (
             <p className="text-sm text-sky-700">
-              {vendaSelecionada ? 'Agora selecione a duplicata correspondente.' : 'Agora selecione a venda correspondente.'}
+              {vendaSelecionada ? 'Agora selecione uma ou mais duplicatas correspondentes.' : 'Agora selecione a venda correspondente.'}
             </p>
           )}
         </div>
@@ -478,7 +522,7 @@ export function DuplicatasTab() {
                         onClick={() => selecionarDuplicata(i)}
                         className={cn(
                           'border-b border-gray-100 last:border-0 cursor-pointer hover:bg-sky-50',
-                          selectedDuplicataIdx === i && 'bg-sky-100 ring-1 ring-inset ring-sky-300'
+                          selectedDuplicataIdxs.includes(i) && 'bg-sky-100 ring-1 ring-inset ring-sky-300'
                         )}
                       >
                         <td className="px-3 py-2.5 text-gray-700 font-mono">{d.duplicata.numero}</td>

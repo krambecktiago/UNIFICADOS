@@ -91,6 +91,17 @@ export default function RedeExtratoPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Lista de PVs (matriz + filiais) já disponível antes de qualquer busca,
+  // pra poder filtrar por estabelecimento desde a primeira consulta.
+  useEffect(() => {
+    fetch('/api/ferramentas/rede-extrato/establishments')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data.establishments)) setEstablishments(data.establishments)
+      })
+      .catch(() => {})
+  }, [])
+
   function togglePv(companyNumber: string) {
     setSelectedPvs(prev =>
       prev.includes(companyNumber) ? prev.filter(p => p !== companyNumber) : [...prev, companyNumber]
