@@ -221,8 +221,15 @@ export function DuplicatasTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const { duplicatasResult, vendasResult } =
-    vendas && duplicatas ? conciliarDuplicatas(duplicatas, vendas) : { duplicatasResult: [], vendasResult: [] }
+  // Cada coluna mostra o que já tem assim que chega — a conciliação (que
+  // precisa dos dois lados) só entra depois, sem travar quem carregou primeiro.
+  const conciliacao = vendas && duplicatas ? conciliarDuplicatas(duplicatas, vendas) : null
+
+  const vendasResult: { venda: RedeTransaction; duplicata: JjwDuplicata | null; status: VendaStatus | null }[] =
+    conciliacao ? conciliacao.vendasResult : (vendas ?? []).map(v => ({ venda: v, duplicata: null, status: null }))
+
+  const duplicatasResult: { duplicata: JjwDuplicata; venda: RedeTransaction | null; status: DuplicataStatus | null }[] =
+    conciliacao ? conciliacao.duplicatasResult : (duplicatas ?? []).map(d => ({ duplicata: d, venda: null, status: null }))
 
   const conciliadoCount = duplicatasResult.filter(d => d.status === 'conciliado').length
   const divergenteCount = duplicatasResult.filter(d => d.status === 'divergente').length
@@ -403,18 +410,21 @@ export function DuplicatasTab() {
                         <td className="px-3 py-2.5 text-gray-700">{v.venda.movementDate}</td>
                         <td className="px-3 py-2.5 text-right text-gray-900">{formatBRL(v.venda.amount)}</td>
                         <td className="px-3 py-2.5 text-gray-700 font-mono">{v.venda.nsu}</td>
-                        <td className="px-3 py-2.5"><Badge tone={VENDA_STATUS_TONE[v.status]}>{VENDA_STATUS_LABEL[v.status]}</Badge></td>
+                        <td className="px-3 py-2.5">
+                          {v.status ? (
+                            <Badge tone={VENDA_STATUS_TONE[v.status]}>{VENDA_STATUS_LABEL[v.status]}</Badge>
+                          ) : (
+                            <span className="text-xs text-gray-400">Aguardando duplicatas…</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 border-gray-200 bg-gray-50 font-semibold">
-                      <td className="px-3 py-2.5 text-gray-700">Total ({vendas.length})</td>
-                      <td className="px-3 py-2.5 text-right text-gray-900">{formatBRL(totalVendas)}</td>
-                      <td className="px-3 py-2.5" colSpan={2}></td>
-                    </tr>
-                  </tfoot>
                 </table>
+              </div>
+              <div className="flex items-center justify-between px-3 py-2.5 border-t-2 border-gray-200 bg-gray-50 text-sm font-semibold">
+                <span className="text-gray-700">Total ({vendas.length})</span>
+                <span className="text-gray-900">{formatBRL(totalVendas)}</span>
               </div>
             </TableCard>
           )}
@@ -481,18 +491,21 @@ export function DuplicatasTab() {
                         <td className="px-3 py-2.5 text-gray-700">{d.duplicata.dataVencimento}</td>
                         <td className="px-3 py-2.5 text-right text-gray-900">{formatBRL(d.duplicata.valor)}</td>
                         <td className="px-3 py-2.5 text-gray-700 truncate max-w-[160px]">{d.duplicata.cliente}</td>
-                        <td className="px-3 py-2.5"><Badge tone={DUPLICATA_STATUS_TONE[d.status]}>{DUPLICATA_STATUS_LABEL[d.status]}</Badge></td>
+                        <td className="px-3 py-2.5">
+                          {d.status ? (
+                            <Badge tone={DUPLICATA_STATUS_TONE[d.status]}>{DUPLICATA_STATUS_LABEL[d.status]}</Badge>
+                          ) : (
+                            <span className="text-xs text-gray-400">Aguardando vendas…</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 border-gray-200 bg-gray-50 font-semibold">
-                      <td className="px-3 py-2.5 text-gray-700" colSpan={2}>Total ({duplicatas.length})</td>
-                      <td className="px-3 py-2.5 text-right text-gray-900">{formatBRL(totalDuplicatas)}</td>
-                      <td className="px-3 py-2.5" colSpan={2}></td>
-                    </tr>
-                  </tfoot>
                 </table>
+              </div>
+              <div className="flex items-center justify-between px-3 py-2.5 border-t-2 border-gray-200 bg-gray-50 text-sm font-semibold">
+                <span className="text-gray-700">Total ({duplicatas.length})</span>
+                <span className="text-gray-900">{formatBRL(totalDuplicatas)}</span>
               </div>
             </TableCard>
           )}
