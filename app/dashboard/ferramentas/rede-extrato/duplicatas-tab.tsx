@@ -386,7 +386,10 @@ export function DuplicatasTab() {
                   Total das duplicatas: <span className="font-semibold text-sky-900 dark:text-sky-200">{formatBRL(totalDuplicatasSelecionadas)}</span>
                   {' '}· Valor da venda: <span className="font-semibold text-sky-900 dark:text-sky-200">{formatBRL(vendaSelecionada.amount)}</span>
                   {Math.abs(totalDuplicatasSelecionadas - vendaSelecionada.amount) > 0.05 && (
-                    <span className="text-amber-700 dark:text-amber-400 font-medium"> (valores não coincidem)</span>
+                    <span className="text-amber-700 dark:text-amber-400 font-medium">
+                      {' '}· Diferença: {formatBRL(Math.abs(totalDuplicatasSelecionadas - vendaSelecionada.amount))}
+                      {' '}({totalDuplicatasSelecionadas > vendaSelecionada.amount ? 'duplicatas maior que a venda' : 'venda maior que as duplicatas'})
+                    </span>
                   )}
                 </span>
                 <Button type="button" onClick={confirmarPar}>Confirmar par</Button>
