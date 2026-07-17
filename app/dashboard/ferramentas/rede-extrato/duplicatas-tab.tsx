@@ -244,6 +244,9 @@ export function DuplicatasTab() {
   const totalDuplicatas = (duplicatas ?? []).reduce((acc, d) => acc + d.valor, 0)
 
   function selecionarVenda(i: number) {
+    // Venda já vinculada a um par confirmado fica bloqueada — só permite um
+    // lançamento, igual a duplicata.
+    if (vendaNsusConfirmados.has(vendasResult[i].venda.nsu)) return
     setSelectedVendaIdx(prev => (prev === i ? null : i))
   }
 
@@ -449,29 +452,36 @@ export function DuplicatasTab() {
                     </tr>
                   </thead>
                   <tbody>
-                    {vendasResult.map((v, i) => (
-                      <tr
-                        key={`${v.venda.nsu}-${i}`}
-                        onClick={() => selecionarVenda(i)}
-                        className={cn(
-                          'border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-950/30',
-                          selectedVendaIdx === i && 'bg-sky-100 dark:bg-sky-900/40 ring-1 ring-inset ring-sky-300 dark:ring-sky-700'
-                        )}
-                      >
-                        <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{v.venda.movementDate}</td>
-                        <td className="px-3 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(v.venda.amount)}</td>
-                        <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{v.venda.nsu}</td>
-                        <td className="px-3 py-2.5">
-                          {vendaNsusConfirmados.has(v.venda.nsu) ? (
-                            <Badge tone="green">Vinculada</Badge>
-                          ) : v.status === null ? (
-                            <span className="text-xs text-gray-400 dark:text-gray-500">Aguardando duplicatas…</span>
-                          ) : (
-                            <Badge tone="red">Não vinculada</Badge>
+                    {vendasResult.map((v, i) => {
+                      const vinculada = vendaNsusConfirmados.has(v.venda.nsu)
+                      return (
+                        <tr
+                          key={`${v.venda.nsu}-${i}`}
+                          onClick={() => selecionarVenda(i)}
+                          title={vinculada ? 'Já vinculada a uma duplicata — remova o par pra liberar' : undefined}
+                          className={cn(
+                            'border-b border-gray-100 dark:border-gray-800 last:border-0',
+                            vinculada
+                              ? 'cursor-not-allowed opacity-60'
+                              : 'cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-950/30',
+                            !vinculada && selectedVendaIdx === i && 'bg-sky-100 dark:bg-sky-900/40 ring-1 ring-inset ring-sky-300 dark:ring-sky-700'
                           )}
-                        </td>
-                      </tr>
-                    ))}
+                        >
+                          <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{v.venda.movementDate}</td>
+                          <td className="px-3 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(v.venda.amount)}</td>
+                          <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{v.venda.nsu}</td>
+                          <td className="px-3 py-2.5">
+                            {vinculada ? (
+                              <Badge tone="green">Vinculada</Badge>
+                            ) : v.status === null ? (
+                              <span className="text-xs text-gray-400 dark:text-gray-500">Aguardando duplicatas…</span>
+                            ) : (
+                              <Badge tone="red">Não vinculada</Badge>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
