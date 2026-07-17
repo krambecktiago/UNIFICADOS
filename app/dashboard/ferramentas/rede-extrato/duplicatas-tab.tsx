@@ -127,6 +127,8 @@ export function DuplicatasTab() {
   const [endDateDuplicatas, setEndDateDuplicatas] = useState(todayISO(-1))
   const [establishmentsDuplicatas, setEstablishmentsDuplicatas] = useState<RedeEstablishment[]>([])
   const [selectedPvsDuplicatas, setSelectedPvsDuplicatas] = useState<string[]>([])
+  const [minValorDuplicatas, setMinValorDuplicatas] = useState<number | null>(null)
+  const [maxValorDuplicatas, setMaxValorDuplicatas] = useState<number | null>(null)
   const [duplicatas, setDuplicatas] = useState<JjwDuplicata[] | null>(null)
   const [loadingDuplicatas, setLoadingDuplicatas] = useState(false)
   const [errorDuplicatas, setErrorDuplicatas] = useState('')
@@ -222,15 +224,25 @@ export function DuplicatasTab() {
       })
     : null
 
+  const duplicatasFiltradasPorValor: JjwDuplicata[] | null = duplicatas
+    ? duplicatas.filter(d => {
+        if (minValorDuplicatas !== null && d.valor < minValorDuplicatas) return false
+        if (maxValorDuplicatas !== null && d.valor > maxValorDuplicatas) return false
+        return true
+      })
+    : null
+
   // Cada coluna mostra o que já tem assim que chega — a conciliação (que
   // precisa dos dois lados) só entra depois, sem travar quem carregou primeiro.
-  const conciliacao = vendasFiltradasPorValor && duplicatas ? conciliarDuplicatas(duplicatas, vendasFiltradasPorValor) : null
+  const conciliacao = vendasFiltradasPorValor && duplicatasFiltradasPorValor
+    ? conciliarDuplicatas(duplicatasFiltradasPorValor, vendasFiltradasPorValor)
+    : null
 
   const vendasResult: { venda: RedeTransaction; duplicata: JjwDuplicata | null; status: VendaStatus | null }[] =
     conciliacao ? conciliacao.vendasResult : (vendasFiltradasPorValor ?? []).map(v => ({ venda: v, duplicata: null, status: null }))
 
   const duplicatasResult: { duplicata: JjwDuplicata; venda: RedeTransaction | null; status: DuplicataStatus | null }[] =
-    conciliacao ? conciliacao.duplicatasResult : (duplicatas ?? []).map(d => ({ duplicata: d, venda: null, status: null }))
+    conciliacao ? conciliacao.duplicatasResult : (duplicatasFiltradasPorValor ?? []).map(d => ({ duplicata: d, venda: null, status: null }))
 
   // Uma duplicata (ou venda) só é considerada vinculada quando entra de fato
   // num par confirmado — o status da heurística (conciliado/divergente/
@@ -241,7 +253,7 @@ export function DuplicatasTab() {
   const naoVinculadasCount = duplicatasResult.length - vinculadasCount
 
   const totalVendas = (vendasFiltradasPorValor ?? []).reduce((acc, t) => acc + t.amount, 0)
-  const totalDuplicatas = (duplicatas ?? []).reduce((acc, d) => acc + d.valor, 0)
+  const totalDuplicatas = (duplicatasFiltradasPorValor ?? []).reduce((acc, d) => acc + d.valor, 0)
 
   function selecionarVenda(i: number) {
     // Venda já vinculada a um par confirmado fica bloqueada — só permite um
@@ -316,7 +328,7 @@ export function DuplicatasTab() {
         identificador comum (NSU/TID) entre a venda no cartão e a duplicata do JJW.
       </div>
 
-      {duplicatas && !loadingDuplicatas && (
+      {duplicatasFiltradasPorValor && !loadingDuplicatas && (
         <div className="flex flex-wrap gap-4 text-sm">
           <Badge tone="green">{vinculadasCount} vinculada(s)</Badge>
           <Badge tone="red">{naoVinculadasCount} não vinculada(s)</Badge>
@@ -511,6 +523,22 @@ export function DuplicatasTab() {
               onToggle={togglePvDuplicatas}
               onClear={() => setSelectedPvsDuplicatas([])}
             />
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Valor mínimo</label>
+              <CurrencyInput
+                value={minValorDuplicatas}
+                onChange={v => { setMinValorDuplicatas(v); limparSelecao() }}
+                className={inputBase + ' w-32'}
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Valor máximo</label>
+              <CurrencyInput
+                value={maxValorDuplicatas}
+                onChange={v => { setMaxValorDuplicatas(v); limparSelecao() }}
+                className={inputBase + ' w-32'}
+              />
+            </div>
             <Button type="button" onClick={buscarDuplicatas} loading={loadingDuplicatas}>
               {loadingDuplicatas ? 'Buscando…' : 'Buscar'}
             </Button>
@@ -525,9 +553,9 @@ export function DuplicatasTab() {
               <Spinner size="md" />
               Consultando JJW...
             </div>
-          ) : duplicatas && duplicatasResult.length === 0 ? (
+          ) : duplicatasFiltradasPorValor && duplicatasResult.length === 0 ? (
             <p className="text-sm text-gray-400 dark:text-gray-500">Nenhuma duplicata em aberto no período.</p>
-          ) : duplicatas && (
+          ) : duplicatasFiltradasPorValor && (
             <TableCard>
               <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
                 <table className="w-full text-sm">
@@ -576,7 +604,7 @@ export function DuplicatasTab() {
                 </table>
               </div>
               <div className="flex items-center justify-between px-3 py-2.5 border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-semibold">
-                <span className="text-gray-700 dark:text-gray-300">Total ({duplicatas.length})</span>
+                <span className="text-gray-700 dark:text-gray-300">Total ({duplicatasFiltradasPorValor.length})</span>
                 <span className="text-gray-900 dark:text-gray-100">{formatBRL(totalDuplicatas)}</span>
               </div>
             </TableCard>
