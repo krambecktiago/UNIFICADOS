@@ -20,6 +20,8 @@ interface ParConfirmado {
   parcelas: number
   modalidade: string
   valor: number
+  estabelecimentoBaixa: string
+  estabelecimentoDuplicata: string
 }
 
 function modalidadeLabel(type?: string): string {
@@ -28,8 +30,25 @@ function modalidadeLabel(type?: string): string {
   return type ?? '—'
 }
 
+// Trabalhamos com várias lojas (matriz + filiais) e uma duplicata pode ser
+// baixada com a venda de outra loja — mas a baixa no JJW precisa ser
+// lançada sempre no estabelecimento da VENDA, não no da duplicata.
+function estabelecimentosDivergem(duplicata: JjwDuplicata, venda: RedeTransaction): boolean {
+  const companyNumberVenda = venda.merchant?.companyNumber
+  if (!companyNumberVenda) return false
+  return companyNumberVenda !== duplicata.companyNumber
+}
+
+function estabelecimentoVendaLabel(venda: RedeTransaction): string {
+  return venda.merchant?.companyName ?? venda.merchant?.companyNumber ?? 'desconhecido'
+}
+
+function estabelecimentoDuplicataLabel(duplicata: JjwDuplicata): string {
+  return duplicata.companyName ?? duplicata.companyNumber
+}
+
 function formatarParaCopia(p: ParConfirmado): string {
-  return `NSU: ${p.nsu} | Autorização: ${p.autorizacao} | Parcelas: ${p.parcelas}x | Modalidade: ${p.modalidade} | Valor: ${formatBRL(p.valor)}`
+  return `NSU: ${p.nsu} | Autorização: ${p.autorizacao} | Parcelas: ${p.parcelas}x | Modalidade: ${p.modalidade} | Valor: ${formatBRL(p.valor)} | Baixar em: ${p.estabelecimentoBaixa}`
 }
 
 interface RedeEstablishment {
@@ -265,7 +284,9 @@ export function DuplicatasTab() {
   // Duplicata é seleção múltipla (várias duplicatas podem cair numa mesma
   // venda). A primeira duplicata clicada, se já tiver a venda casada pela
   // heurística e nenhuma venda estiver selecionada ainda, pré-seleciona essa
-  // venda — o usuário pode clicar em outra pra trocar.
+  // venda — o usuário pode clicar em outra pra trocar. Duplicata de outra
+  // loja pode ser baixada normalmente — a baixa é lançada no estabelecimento
+  // da venda, não no da duplicata (ver estabelecimentoBaixa em ParConfirmado).
   function selecionarDuplicata(i: number) {
     // Duplicata já vinculada a um par confirmado fica bloqueada — não pode
     // ser puxada pra outra venda até ser removida da lista de pares.
@@ -287,6 +308,7 @@ export function DuplicatasTab() {
   function confirmarPar() {
     if (selectedVendaIdx === null || selectedDuplicataIdxs.length === 0) return
     const venda = vendasResult[selectedVendaIdx].venda
+    const estabelecimentoBaixa = estabelecimentoVendaLabel(venda)
     const novosPares: ParConfirmado[] = selectedDuplicataIdxs.map(idx => {
       const duplicata = duplicatasResult[idx].duplicata
       return {
@@ -297,6 +319,8 @@ export function DuplicatasTab() {
         parcelas: venda.installmentQuantity,
         modalidade: modalidadeLabel(venda.modality?.type),
         valor: duplicata.valor,
+        estabelecimentoBaixa,
+        estabelecimentoDuplicata: estabelecimentoDuplicataLabel(duplicata),
       }
     })
     const numeros = new Set(novosPares.map(p => p.duplicataNumero))
@@ -347,7 +371,7 @@ export function DuplicatasTab() {
           </div>
           {vendaSelecionada && duplicatasSelecionadas.length > 0 ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">NSU</p>
                   <p className="text-sm font-semibold text-sky-900 dark:text-sky-200 font-mono">{vendaSelecionada.nsu}</p>
@@ -364,6 +388,10 @@ export function DuplicatasTab() {
                   <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">Modalidade</p>
                   <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">{modalidadeLabel(vendaSelecionada.modality?.type)}</p>
                 </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">Estabelecimento da baixa</p>
+                  <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">{estabelecimentoVendaLabel(vendaSelecionada)}</p>
+                </div>
               </div>
 
               <div>
@@ -371,13 +399,23 @@ export function DuplicatasTab() {
                   Duplicata(s) selecionada(s) — {duplicatasSelecionadas.length}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {duplicatasSelecionadas.map(d => (
-                    <span key={d.numero} className="inline-flex items-center gap-1.5 bg-white dark:bg-gray-800 border border-sky-200 dark:border-sky-800 rounded-lg px-2.5 py-1 text-xs text-sky-900 dark:text-sky-200">
-                      <span className="font-mono">{d.numero}</span>
-                      <span className="text-sky-500 dark:text-sky-400">·</span>
-                      <span>{formatBRL(d.valor)}</span>
-                    </span>
-                  ))}
+                  {duplicatasSelecionadas.map(d => {
+                    const divergente = estabelecimentosDivergem(d, vendaSelecionada)
+                    return (
+                      <span
+                        key={d.numero}
+                        title={divergente ? `Duplicata é do estabelecimento ${estabelecimentoDuplicataLabel(d)} — baixa será lançada em ${estabelecimentoVendaLabel(vendaSelecionada)}` : undefined}
+                        className="inline-flex items-center gap-1.5 bg-white dark:bg-gray-800 border border-sky-200 dark:border-sky-800 rounded-lg px-2.5 py-1 text-xs text-sky-900 dark:text-sky-200"
+                      >
+                        <span className="font-mono">{d.numero}</span>
+                        <span className="text-sky-500 dark:text-sky-400">·</span>
+                        <span>{formatBRL(d.valor)}</span>
+                        {divergente && (
+                          <span className="text-amber-600 dark:text-amber-400 font-medium">· loja diferente</span>
+                        )}
+                      </span>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -630,6 +668,7 @@ export function DuplicatasTab() {
                     <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Parcelas</th>
                     <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Modalidade</th>
                     <th className="text-right px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Valor</th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Baixar em</th>
                     <th className="px-3 py-2.5"></th>
                   </tr>
                 </thead>
@@ -643,6 +682,17 @@ export function DuplicatasTab() {
                       <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{p.parcelas}x</td>
                       <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{p.modalidade}</td>
                       <td className="px-3 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(p.valor)}</td>
+                      <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">
+                        {p.estabelecimentoBaixa}
+                        {p.estabelecimentoBaixa !== p.estabelecimentoDuplicata && (
+                          <span
+                            className="ml-1.5 text-amber-600 dark:text-amber-400 font-medium"
+                            title={`Duplicata é do estabelecimento ${p.estabelecimentoDuplicata}`}
+                          >
+                            (duplicata de {p.estabelecimentoDuplicata})
+                          </span>
+                        )}
+                      </td>
                       <td className="px-3 py-2.5 text-right whitespace-nowrap">
                         <button type="button" onClick={() => copiarPar(p, i)} className="text-xs text-brand-navy dark:text-blue-300 hover:underline mr-3">
                           {copiedIdx === i ? 'Copiado!' : 'Copiar'}

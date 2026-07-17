@@ -152,7 +152,16 @@ async function fetchRedeSalesForPv(
       content?: { transactions?: RedeTransaction[] }
       cursor?: { hasNextKey?: boolean; nextKey?: string }
     }
-    transactions.push(...(data.content?.transactions ?? []))
+    // `merchant.companyNumber` da API pode vir vazio — como a chamada já é
+    // filtrada por esse PV (parentCompanyNumber/subsidiaries acima), forçamos
+    // o valor aqui pra garantir que o estabelecimento da venda nunca fique
+    // sem essa informação (usado pra bloquear baixa entre lojas diferentes).
+    transactions.push(
+      ...(data.content?.transactions ?? []).map(t => ({
+        ...t,
+        merchant: { ...t.merchant, companyNumber: pvCompanyNumber },
+      }))
+    )
 
     if (!data.cursor?.hasNextKey || !data.cursor.nextKey) break
     pageKey = data.cursor.nextKey
