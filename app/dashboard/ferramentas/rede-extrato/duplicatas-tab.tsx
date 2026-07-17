@@ -47,17 +47,6 @@ function todayISO(offsetDays = 0): string {
   return d.toISOString().slice(0, 10)
 }
 
-const DUPLICATA_STATUS_LABEL: Record<DuplicataStatus, string> = {
-  conciliado: 'Conciliado',
-  divergente: 'Divergente',
-  sem_venda: 'Sem venda no cartão',
-}
-const DUPLICATA_STATUS_TONE: Record<DuplicataStatus, 'green' | 'amber' | 'gray'> = {
-  conciliado: 'green',
-  divergente: 'amber',
-  sem_venda: 'gray',
-}
-
 const VENDA_STATUS_LABEL: Record<VendaStatus, string> = {
   conciliado: 'Conciliado',
   divergente: 'Divergente',
@@ -254,9 +243,12 @@ export function DuplicatasTab() {
   const duplicatasResult: { duplicata: JjwDuplicata; venda: RedeTransaction | null; status: DuplicataStatus | null }[] =
     conciliacao ? conciliacao.duplicatasResult : (duplicatas ?? []).map(d => ({ duplicata: d, venda: null, status: null }))
 
-  const conciliadoCount = duplicatasResult.filter(d => d.status === 'conciliado').length
-  const divergenteCount = duplicatasResult.filter(d => d.status === 'divergente').length
-  const semVendaCount = duplicatasResult.filter(d => d.status === 'sem_venda').length
+  // Uma duplicata só é considerada vinculada quando entra de fato num par
+  // confirmado — o status da heurística (conciliado/divergente/sem_venda) só
+  // serve pra pré-selecionar a venda, não pra decidir a cor exibida.
+  const duplicataNumerosConfirmados = new Set(paresConfirmados.map(p => p.duplicataNumero))
+  const vinculadasCount = duplicatasResult.filter(d => duplicataNumerosConfirmados.has(d.duplicata.numero)).length
+  const naoVinculadasCount = duplicatasResult.length - vinculadasCount
 
   const totalVendas = (vendasFiltradasPorValor ?? []).reduce((acc, t) => acc + t.amount, 0)
   const totalDuplicatas = (duplicatas ?? []).reduce((acc, d) => acc + d.valor, 0)
@@ -270,6 +262,9 @@ export function DuplicatasTab() {
   // heurística e nenhuma venda estiver selecionada ainda, pré-seleciona essa
   // venda — o usuário pode clicar em outra pra trocar.
   function selecionarDuplicata(i: number) {
+    // Duplicata já vinculada a um par confirmado fica bloqueada — não pode
+    // ser puxada pra outra venda até ser removida da lista de pares.
+    if (duplicataNumerosConfirmados.has(duplicatasResult[i].duplicata.numero)) return
     const jaSelecionada = selectedDuplicataIdxs.includes(i)
     setSelectedDuplicataIdxs(prev => (jaSelecionada ? prev.filter(x => x !== i) : [...prev, i]))
     if (!jaSelecionada && selectedVendaIdx === null) {
@@ -328,11 +323,10 @@ export function DuplicatasTab() {
         identificador comum (NSU/TID) entre a venda no cartão e a duplicata do JJW.
       </div>
 
-      {vendas && duplicatas && !loadingVendas && !loadingDuplicatas && (
+      {duplicatas && !loadingDuplicatas && (
         <div className="flex flex-wrap gap-4 text-sm">
-          <Badge tone="green">{conciliadoCount} conciliada(s)</Badge>
-          <Badge tone="amber">{divergenteCount} divergente(s)</Badge>
-          <Badge tone="gray">{semVendaCount} sem venda no cartão</Badge>
+          <Badge tone="green">{vinculadasCount} vinculada(s)</Badge>
+          <Badge tone="red">{naoVinculadasCount} não vinculada(s)</Badge>
         </div>
       )}
 
@@ -545,28 +539,37 @@ export function DuplicatasTab() {
                     </tr>
                   </thead>
                   <tbody>
-                    {duplicatasResult.map((d, i) => (
-                      <tr
-                        key={`${d.duplicata.numero}-${i}`}
-                        onClick={() => selecionarDuplicata(i)}
-                        className={cn(
-                          'border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-950/30',
-                          selectedDuplicataIdxs.includes(i) && 'bg-sky-100 dark:bg-sky-900/40 ring-1 ring-inset ring-sky-300 dark:ring-sky-700'
-                        )}
-                      >
-                        <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{d.duplicata.numero}</td>
-                        <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{d.duplicata.dataVencimento}</td>
-                        <td className="px-3 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(d.duplicata.valor)}</td>
-                        <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 truncate max-w-[160px]">{d.duplicata.cliente}</td>
-                        <td className="px-3 py-2.5">
-                          {d.status ? (
-                            <Badge tone={DUPLICATA_STATUS_TONE[d.status]}>{DUPLICATA_STATUS_LABEL[d.status]}</Badge>
-                          ) : (
-                            <span className="text-xs text-gray-400 dark:text-gray-500">Aguardando vendas…</span>
+                    {duplicatasResult.map((d, i) => {
+                      const vinculada = duplicataNumerosConfirmados.has(d.duplicata.numero)
+                      return (
+                        <tr
+                          key={`${d.duplicata.numero}-${i}`}
+                          onClick={() => selecionarDuplicata(i)}
+                          title={vinculada ? 'Já vinculada a uma venda — remova o par pra liberar' : undefined}
+                          className={cn(
+                            'border-b border-gray-100 dark:border-gray-800 last:border-0',
+                            vinculada
+                              ? 'cursor-not-allowed opacity-60'
+                              : 'cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-950/30',
+                            !vinculada && selectedDuplicataIdxs.includes(i) && 'bg-sky-100 dark:bg-sky-900/40 ring-1 ring-inset ring-sky-300 dark:ring-sky-700'
                           )}
-                        </td>
-                      </tr>
-                    ))}
+                        >
+                          <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{d.duplicata.numero}</td>
+                          <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{d.duplicata.dataVencimento}</td>
+                          <td className="px-3 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(d.duplicata.valor)}</td>
+                          <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 truncate max-w-[160px]">{d.duplicata.cliente}</td>
+                          <td className="px-3 py-2.5">
+                            {vinculada ? (
+                              <Badge tone="green">Vinculada</Badge>
+                            ) : d.status === null ? (
+                              <span className="text-xs text-gray-400 dark:text-gray-500">Aguardando vendas…</span>
+                            ) : (
+                              <Badge tone="red">Não vinculada</Badge>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
