@@ -47,17 +47,6 @@ function todayISO(offsetDays = 0): string {
   return d.toISOString().slice(0, 10)
 }
 
-const VENDA_STATUS_LABEL: Record<VendaStatus, string> = {
-  conciliado: 'Conciliado',
-  divergente: 'Divergente',
-  sem_duplicata: 'Sem duplicata aberta',
-}
-const VENDA_STATUS_TONE: Record<VendaStatus, 'green' | 'amber' | 'gray'> = {
-  conciliado: 'green',
-  divergente: 'amber',
-  sem_duplicata: 'gray',
-}
-
 const inputBase = 'w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
 
 function EstablishmentPicker({
@@ -243,10 +232,11 @@ export function DuplicatasTab() {
   const duplicatasResult: { duplicata: JjwDuplicata; venda: RedeTransaction | null; status: DuplicataStatus | null }[] =
     conciliacao ? conciliacao.duplicatasResult : (duplicatas ?? []).map(d => ({ duplicata: d, venda: null, status: null }))
 
-  // Uma duplicata só é considerada vinculada quando entra de fato num par
-  // confirmado — o status da heurística (conciliado/divergente/sem_venda) só
-  // serve pra pré-selecionar a venda, não pra decidir a cor exibida.
+  // Uma duplicata (ou venda) só é considerada vinculada quando entra de fato
+  // num par confirmado — o status da heurística (conciliado/divergente/
+  // sem_venda) só serve pra pré-selecionar a venda, não pra decidir a cor.
   const duplicataNumerosConfirmados = new Set(paresConfirmados.map(p => p.duplicataNumero))
+  const vendaNsusConfirmados = new Set(paresConfirmados.map(p => p.nsu))
   const vinculadasCount = duplicatasResult.filter(d => duplicataNumerosConfirmados.has(d.duplicata.numero)).length
   const naoVinculadasCount = duplicatasResult.length - vinculadasCount
 
@@ -472,10 +462,12 @@ export function DuplicatasTab() {
                         <td className="px-3 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(v.venda.amount)}</td>
                         <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{v.venda.nsu}</td>
                         <td className="px-3 py-2.5">
-                          {v.status ? (
-                            <Badge tone={VENDA_STATUS_TONE[v.status]}>{VENDA_STATUS_LABEL[v.status]}</Badge>
-                          ) : (
+                          {vendaNsusConfirmados.has(v.venda.nsu) ? (
+                            <Badge tone="green">Vinculada</Badge>
+                          ) : v.status === null ? (
                             <span className="text-xs text-gray-400 dark:text-gray-500">Aguardando duplicatas…</span>
+                          ) : (
+                            <Badge tone="red">Não vinculada</Badge>
                           )}
                         </td>
                       </tr>
