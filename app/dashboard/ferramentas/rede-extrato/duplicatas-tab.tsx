@@ -20,7 +20,8 @@ interface ParConfirmado {
   parcelas: number
   modalidade: string
   valor: number
-  estabelecimentoBaixa: string
+  companyNumberBaixa: string
+  companyNumberDuplicata: string
   estabelecimentoDuplicata: string
 }
 
@@ -47,8 +48,8 @@ function estabelecimentoDuplicataLabel(duplicata: JjwDuplicata): string {
   return duplicata.companyName ?? duplicata.companyNumber
 }
 
-function formatarParaCopia(p: ParConfirmado): string {
-  return `NSU: ${p.nsu} | Autorização: ${p.autorizacao} | Parcelas: ${p.parcelas}x | Modalidade: ${p.modalidade} | Valor: ${formatBRL(p.valor)} | Baixar em: ${p.estabelecimentoBaixa}`
+function formatarParaCopia(p: ParConfirmado, estabelecimentoBaixaLabel: string): string {
+  return `NSU: ${p.nsu} | Autorização: ${p.autorizacao} | Parcelas: ${p.parcelas}x | Modalidade: ${p.modalidade} | Valor: ${formatBRL(p.valor)} | Baixar em: ${estabelecimentoBaixaLabel}`
 }
 
 interface RedeEstablishment {
@@ -58,6 +59,11 @@ interface RedeEstablishment {
 
 function establishmentLabel(e: RedeEstablishment): string {
   return e.name ? `${e.name} (${e.companyNumber})` : e.companyNumber
+}
+
+function labelPorCompanyNumber(companyNumber: string, establishments: RedeEstablishment[]): string {
+  const found = establishments.find(e => e.companyNumber === companyNumber)
+  return found ? establishmentLabel(found) : companyNumber
 }
 
 function todayISO(offsetDays = 0): string {
@@ -274,6 +280,10 @@ export function DuplicatasTab() {
   const totalVendas = (vendasFiltradasPorValor ?? []).reduce((acc, t) => acc + t.amount, 0)
   const totalDuplicatas = (duplicatasFiltradasPorValor ?? []).reduce((acc, d) => acc + d.valor, 0)
 
+  // As duas listas vêm do mesmo endpoint (matriz + filiais) — usa a que já
+  // carregou, pra popular o seletor de estabelecimento da baixa.
+  const todosEstabelecimentos = establishmentsVendas.length > 0 ? establishmentsVendas : establishmentsDuplicatas
+
   function selecionarVenda(i: number) {
     // Venda já vinculada a um par confirmado fica bloqueada — só permite um
     // lançamento, igual a duplicata.
@@ -285,8 +295,8 @@ export function DuplicatasTab() {
   // venda). A primeira duplicata clicada, se já tiver a venda casada pela
   // heurística e nenhuma venda estiver selecionada ainda, pré-seleciona essa
   // venda — o usuário pode clicar em outra pra trocar. Duplicata de outra
-  // loja pode ser baixada normalmente — a baixa é lançada no estabelecimento
-  // da venda, não no da duplicata (ver estabelecimentoBaixa em ParConfirmado).
+  // loja pode ser baixada normalmente — a sugestão inicial de estabelecimento
+  // da baixa é o da venda, mas fica editável depois (companyNumberBaixa).
   function selecionarDuplicata(i: number) {
     // Duplicata já vinculada a um par confirmado fica bloqueada — não pode
     // ser puxada pra outra venda até ser removida da lista de pares.
@@ -308,7 +318,9 @@ export function DuplicatasTab() {
   function confirmarPar() {
     if (selectedVendaIdx === null || selectedDuplicataIdxs.length === 0) return
     const venda = vendasResult[selectedVendaIdx].venda
-    const estabelecimentoBaixa = estabelecimentoVendaLabel(venda)
+    // Sugestão inicial = estabelecimento da venda, mas fica editável depois
+    // na lista de pares — quem faz a baixa decide a empresa final no JJW.
+    const companyNumberBaixaSugerido = venda.merchant?.companyNumber ?? ''
     const novosPares: ParConfirmado[] = selectedDuplicataIdxs.map(idx => {
       const duplicata = duplicatasResult[idx].duplicata
       return {
@@ -319,7 +331,8 @@ export function DuplicatasTab() {
         parcelas: venda.installmentQuantity,
         modalidade: modalidadeLabel(venda.modality?.type),
         valor: duplicata.valor,
-        estabelecimentoBaixa,
+        companyNumberBaixa: companyNumberBaixaSugerido,
+        companyNumberDuplicata: duplicata.companyNumber,
         estabelecimentoDuplicata: estabelecimentoDuplicataLabel(duplicata),
       }
     })
@@ -332,8 +345,15 @@ export function DuplicatasTab() {
     setParesConfirmados(prev => prev.filter(p => p.duplicataNumero !== duplicataNumero))
   }
 
+  function alterarEstabelecimentoBaixa(duplicataNumero: string, companyNumber: string) {
+    setParesConfirmados(prev =>
+      prev.map(p => (p.duplicataNumero === duplicataNumero ? { ...p, companyNumberBaixa: companyNumber } : p))
+    )
+  }
+
   async function copiarPar(p: ParConfirmado, idx: number) {
-    await navigator.clipboard.writeText(formatarParaCopia(p))
+    const label = labelPorCompanyNumber(p.companyNumberBaixa, todosEstabelecimentos)
+    await navigator.clipboard.writeText(formatarParaCopia(p, label))
     setCopiedIdx(idx)
     setTimeout(() => setCopiedIdx(null), 1500)
   }
@@ -682,14 +702,27 @@ export function DuplicatasTab() {
                       <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{p.parcelas}x</td>
                       <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">{p.modalidade}</td>
                       <td className="px-3 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(p.valor)}</td>
-                      <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300">
-                        {p.estabelecimentoBaixa}
-                        {p.estabelecimentoBaixa !== p.estabelecimentoDuplicata && (
+                      <td className="px-3 py-2.5">
+                        <select
+                          value={p.companyNumberBaixa}
+                          onChange={e => alterarEstabelecimentoBaixa(p.duplicataNumero, e.target.value)}
+                          className={inputBase + ' py-1 text-xs min-w-[160px]'}
+                        >
+                          {!todosEstabelecimentos.some(e => e.companyNumber === p.companyNumberBaixa) && (
+                            <option value={p.companyNumberBaixa}>
+                              {p.companyNumberBaixa ? labelPorCompanyNumber(p.companyNumberBaixa, todosEstabelecimentos) : 'Selecione…'}
+                            </option>
+                          )}
+                          {todosEstabelecimentos.map(e => (
+                            <option key={e.companyNumber} value={e.companyNumber}>{establishmentLabel(e)}</option>
+                          ))}
+                        </select>
+                        {p.companyNumberBaixa !== p.companyNumberDuplicata && (
                           <span
-                            className="ml-1.5 text-amber-600 dark:text-amber-400 font-medium"
+                            className="block mt-0.5 text-amber-600 dark:text-amber-400 text-xs font-medium"
                             title={`Duplicata é do estabelecimento ${p.estabelecimentoDuplicata}`}
                           >
-                            (duplicata de {p.estabelecimentoDuplicata})
+                            duplicata de {p.estabelecimentoDuplicata}
                           </span>
                         )}
                       </td>
