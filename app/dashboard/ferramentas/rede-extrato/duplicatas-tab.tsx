@@ -25,16 +25,6 @@ interface ParConfirmado {
   estabelecimentoDuplicata: string
 }
 
-interface CreditoGerado {
-  vendaNsu: number
-  codigoCliente: string
-  valor: number
-}
-
-function formatarCreditoParaCopia(c: CreditoGerado): string {
-  return `Código do cliente: ${c.codigoCliente} | Valor do crédito: ${formatBRL(c.valor)} | NSU da venda: ${c.vendaNsu}`
-}
-
 function modalidadeLabel(type?: string): string {
   if (type === 'CREDITO') return 'Crédito'
   if (type === 'DEBITO') return 'Débito'
@@ -175,10 +165,6 @@ export function DuplicatasTab() {
   const [selectedDuplicataIdxs, setSelectedDuplicataIdxs] = useState<number[]>([])
   const [paresConfirmados, setParesConfirmados] = useState<ParConfirmado[]>([])
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
-  const [gerarCredito, setGerarCredito] = useState(false)
-  const [codigoClienteCredito, setCodigoClienteCredito] = useState('')
-  const [creditosGerados, setCreditosGerados] = useState<CreditoGerado[]>([])
-  const [copiedCreditoIdx, setCopiedCreditoIdx] = useState<number | null>(null)
 
   // Lista de PVs (matriz + filiais) já disponível antes de qualquer busca,
   // pra poder filtrar por estabelecimento desde a primeira consulta.
@@ -338,13 +324,10 @@ export function DuplicatasTab() {
   function limparSelecao() {
     setSelectedVendaIdx(null)
     setSelectedDuplicataIdxs([])
-    setGerarCredito(false)
-    setCodigoClienteCredito('')
   }
 
   function confirmarPar() {
     if (selectedVendaIdx === null || selectedDuplicataIdxs.length === 0) return
-    if (gerarCredito && !codigoClienteCredito.trim()) return
     const venda = vendasResult[selectedVendaIdx].venda
     // Sugestão inicial = estabelecimento da venda, mas fica editável depois
     // na lista de pares — quem faz a baixa decide a empresa final no JJW.
@@ -366,31 +349,11 @@ export function DuplicatasTab() {
     })
     const numeros = new Set(novosPares.map(p => p.duplicataNumero))
     setParesConfirmados(prev => [...prev.filter(p => !numeros.has(p.duplicataNumero)), ...novosPares])
-
-    // Sobrou valor da venda depois de baixar a(s) duplicata(s) — se marcado,
-    // registra o crédito a lançar na conta do cliente com o código informado.
-    const totalDuplicatasConfirmadas = selectedDuplicataIdxs.reduce((acc, idx) => acc + duplicatasResult[idx].duplicata.valor, 0)
-    const diferenca = venda.amount - totalDuplicatasConfirmadas
-    if (gerarCredito && diferenca > 0.05) {
-      const credito: CreditoGerado = { vendaNsu: venda.nsu, codigoCliente: codigoClienteCredito.trim(), valor: diferenca }
-      setCreditosGerados(prev => [...prev.filter(c => c.vendaNsu !== venda.nsu), credito])
-    }
-
     limparSelecao()
   }
 
   function removerPar(duplicataNumero: string) {
     setParesConfirmados(prev => prev.filter(p => p.duplicataNumero !== duplicataNumero))
-  }
-
-  function removerCredito(vendaNsu: number) {
-    setCreditosGerados(prev => prev.filter(c => c.vendaNsu !== vendaNsu))
-  }
-
-  async function copiarCredito(c: CreditoGerado, idx: number) {
-    await navigator.clipboard.writeText(formatarCreditoParaCopia(c))
-    setCopiedCreditoIdx(idx)
-    setTimeout(() => setCopiedCreditoIdx(null), 1500)
   }
 
   function alterarEstabelecimentoBaixa(duplicataNumero: string, companyNumber: string) {
@@ -487,7 +450,7 @@ export function DuplicatasTab() {
                 </div>
               </div>
 
-              <div className="text-sm">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-sky-700 dark:text-sky-400">
                   Total das duplicatas: <span className="font-semibold text-sky-900 dark:text-sky-200">{formatBRL(totalDuplicatasSelecionadas)}</span>
                   {' '}· Valor da venda: <span className="font-semibold text-sky-900 dark:text-sky-200">{formatBRL(vendaSelecionada.amount)}</span>
@@ -498,40 +461,7 @@ export function DuplicatasTab() {
                     </span>
                   )}
                 </span>
-              </div>
-
-              {vendaSelecionada.amount - totalDuplicatasSelecionadas > 0.05 && (
-                <div className="border-t border-sky-200 dark:border-sky-800 pt-4">
-                  <label className="flex items-center gap-2 text-sm text-sky-800 dark:text-sky-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={gerarCredito}
-                      onChange={e => setGerarCredito(e.target.checked)}
-                      className="rounded border-sky-300 dark:border-sky-700"
-                    />
-                    Gerar crédito de <span className="font-semibold">{formatBRL(vendaSelecionada.amount - totalDuplicatasSelecionadas)}</span> na conta do cliente
-                  </label>
-                  {gerarCredito && (
-                    <div className="mt-2 max-w-xs">
-                      <label className="block text-[11px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400 mb-1">Código do cliente</label>
-                      <input
-                        type="text"
-                        autoFocus
-                        value={codigoClienteCredito}
-                        onChange={e => setCodigoClienteCredito(e.target.value)}
-                        placeholder="Ex: 12345"
-                        className={inputBase}
-                      />
-                      {!codigoClienteCredito.trim() && (
-                        <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">Informe o código do cliente pra confirmar.</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                <Button type="button" onClick={confirmarPar} disabled={gerarCredito && !codigoClienteCredito.trim()}>Confirmar par</Button>
+                <Button type="button" onClick={confirmarPar}>Confirmar par</Button>
               </div>
             </div>
           ) : (
@@ -812,43 +742,6 @@ export function DuplicatasTab() {
                           {copiedIdx === i ? 'Copiado!' : 'Copiar'}
                         </button>
                         <button type="button" onClick={() => removerPar(p.duplicataNumero)} className="text-xs text-red-600 dark:text-red-400 hover:underline">
-                          Remover
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </TableCard>
-        </div>
-      )}
-
-      {creditosGerados.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Créditos a gerar na conta do cliente ({creditosGerados.length})</h3>
-          <TableCard>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                  <tr>
-                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Código do cliente</th>
-                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">NSU da venda</th>
-                    <th className="text-right px-3 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Valor do crédito</th>
-                    <th className="px-3 py-2.5"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {creditosGerados.map((c, i) => (
-                    <tr key={c.vendaNsu} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
-                      <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{c.codigoCliente}</td>
-                      <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{c.vendaNsu}</td>
-                      <td className="px-3 py-2.5 text-right font-semibold text-gray-900 dark:text-gray-100">{formatBRL(c.valor)}</td>
-                      <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                        <button type="button" onClick={() => copiarCredito(c, i)} className="text-xs text-brand-navy dark:text-blue-300 hover:underline mr-3">
-                          {copiedCreditoIdx === i ? 'Copiado!' : 'Copiar'}
-                        </button>
-                        <button type="button" onClick={() => removerCredito(c.vendaNsu)} className="text-xs text-red-600 dark:text-red-400 hover:underline">
                           Remover
                         </button>
                       </td>
