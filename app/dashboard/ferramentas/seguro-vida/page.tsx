@@ -166,7 +166,7 @@ export default function SeguroVidaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-800">
       <PageHeader title="Seguro de Vida" subtitle="Cruzamento entre o relatório do seguro (PDF) e a planilha de funcionários (XLSX)." />
 
       <div className="max-w-5xl mx-auto px-8 py-8 space-y-6">
