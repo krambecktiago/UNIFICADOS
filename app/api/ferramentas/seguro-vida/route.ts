@@ -6,12 +6,17 @@ import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { normText } from '@/lib/utils/br-format'
 
-const LABEL_WORDS = new Set(['TOTAL','VALOR','QTD','SEGURADO','DATA','NOME','CPF','CARGO','EMPRESA','FILIAL','GRUPO','APOLICE','NUMERO','CONTRATO','PRODUTO','COBERTURA','CLASSE'])
+const LABEL_WORDS = new Set(['TOTAL','VALOR','QTD','SEGURADO','DATA','NOME','CPF','CARGO','EMPRESA','FILIAL','GRUPO','APOLICE','NUMERO','CONTRATO','PRODUTO','COBERTURA','CLASSE','EXPRESS','RELATORIO','MOVIMENTACAO','ESTIPULANTE','PAGADOR','DESCONTO'])
 
 function isValidName(s: string): boolean {
-  const words = s.trim().split(/\s+/).filter(w => /^[A-ZÀ-Ú]{2,}$/i.test(w))
-  if (words.length < 2) return false
-  const norm = normText(s)
+  const trimmed = s.trim()
+  // Nome de pessoa nunca tem dígito nem passa de ~8 palavras — filtra linhas
+  // de endereço/processo da seguradora (ex: "AV REPUBLICA DO CHILE 330...")
+  // que passariam pelo resto do filtro por serem só letras.
+  if (/\d/.test(trimmed)) return false
+  const words = trimmed.split(/\s+/).filter(w => /^[A-ZÀ-Ú]{2,}$/i.test(w))
+  if (words.length < 2 || words.length > 8) return false
+  const norm = normText(trimmed)
   return !LABEL_WORDS.has(norm) && !Array.from(LABEL_WORDS).some(l => norm.includes(l))
 }
 
@@ -37,7 +42,10 @@ async function parsePDF(buffer: Buffer): Promise<Map<string, string>> {
     if (upperBlock.includes('INCLUS')) status = 'INCLUSAO'
     else if (upperBlock.includes('EXCLUS')) status = 'EXCLUSAO'
 
-    for (const line of lines.slice(0, 5)) {
+    // Janela larga o suficiente pra atravessar o cabeçalho/rodapé que se
+    // repete a cada quebra de página do relatório (endereço da seguradora,
+    // título, campos do estipulante...) até achar o nome de fato.
+    for (const line of lines.slice(0, 20)) {
       if (isValidName(line) && line.length > 5) {
         result.set(normText(line), status)
         break
