@@ -110,11 +110,17 @@ export async function POST(request: NextRequest) {
       .map(([nome]) => nome)
       .sort((a, b) => a.localeCompare(b, 'pt-BR'))
 
+    // Lista completa da planilha — não dá pra reconstruir só com "Em Ambos" +
+    // "Só Planilha": gente em inclusão/exclusão pendente no PDF também pode
+    // já estar na planilha, e nesse caso não aparece em nenhum dos dois.
+    const ativosXlsx = Array.from(xlsxSet).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+
     await logToolUsage(supabase, user.id, 'seguro-vida', 2)
 
     return NextResponse.json({
       results,
       ativosPdf,
+      ativosXlsx,
       summary: { total: results.length, emAmbos, soPdf, soXlsx, inclusoes, exclusoes, totalXlsxAtivos: xlsxSet.size },
     })
   } catch (err) {

@@ -9,6 +9,7 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { FileInput } from '@/components/ui/file-input';
 import { Spinner } from '@/components/ui/spinner';
 import { TH_CLASS } from '@/components/ui/table';
+import { Tabs, TabPanel, type TabDef } from '@/components/ui/tabs';
 
 interface ResultRow {
   nome: string;
@@ -30,8 +31,11 @@ interface Summary {
 interface ApiResponse {
   results: ResultRow[];
   ativosPdf: string[];
+  ativosXlsx: string[];
   summary: Summary;
 }
+
+type Tab = 'ativosPlanilha' | 'ativosPdf' | 'emAmbos' | 'soPdf' | 'soPlanilha' | 'inclusoes' | 'exclusoes';
 
 function getRowStyle(status: string): string {
   switch (status) {
@@ -72,6 +76,89 @@ function formatStatus(status: string): string {
   return labels[status] ?? status;
 }
 
+function getTabRows(data: ApiResponse, tab: Tab): ResultRow[] {
+  switch (tab) {
+    case 'emAmbos': return data.results.filter(r => r.status === 'ATIVO');
+    case 'soPdf': return data.results.filter(r => r.status === 'SOMENTE_PDF');
+    case 'soPlanilha': return data.results.filter(r => r.status === 'SOMENTE_XLSX');
+    case 'inclusoes': return data.results.filter(r => r.status === 'INCLUSAO');
+    case 'exclusoes': return data.results.filter(r => r.status === 'EXCLUSAO');
+    default: return [];
+  }
+}
+
+const CHIP_TONE_CLASS: Record<'cyan' | 'green', string> = {
+  cyan: 'bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400',
+  green: 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400',
+};
+
+function NomeChipList({ nomes, tone, emptyLabel }: { nomes: string[]; tone: 'cyan' | 'green'; emptyLabel: string }) {
+  return (
+    <>
+      <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-end">
+        <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+          {nomes.length.toLocaleString('pt-BR')} {nomes.length === 1 ? 'nome' : 'nomes'}
+        </span>
+      </div>
+      {nomes.length === 0 ? (
+        <p className="px-5 py-6 text-center text-sm text-gray-400 dark:text-gray-500">{emptyLabel}</p>
+      ) : (
+        <div className="px-5 py-4 flex flex-wrap gap-2 max-h-96 overflow-y-auto">
+          {nomes.map((nome) => (
+            <span key={nome} className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap ${CHIP_TONE_CLASS[tone]}`}>
+              {nome}
+            </span>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function ResultTable({ rows }: { rows: ResultRow[] }) {
+  return (
+    <>
+      <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-end">
+        <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+          {rows.length.toLocaleString('pt-BR')} {rows.length === 1 ? 'registro' : 'registros'}
+        </span>
+      </div>
+      <div className="overflow-x-auto max-h-96 overflow-y-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-800 sticky top-0">
+            <tr>
+              <th className={TH_CLASS}>Nome</th>
+              <th className={TH_CLASS}>Status</th>
+              <th className={TH_CLASS}>Ação</th>
+              <th className={TH_CLASS}>Origem</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            {rows.map((row, i) => (
+              <tr key={i} className={`${getRowStyle(row.status)} transition-colors`}>
+                <td className="px-4 py-3 font-medium whitespace-nowrap">{row.nome}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <Badge tone={STATUS_TONE[row.status] ?? 'gray'}>{formatStatus(row.status)}</Badge>
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">{row.acao || '—'}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-xs">{row.origem || '—'}</td>
+              </tr>
+            ))}
+
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
+                  Nenhum resultado encontrado.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 export default function SeguroVidaPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [xlsxFile, setXlsxFile] = useState<File | null>(null);
@@ -80,6 +167,7 @@ export default function SeguroVidaPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ApiResponse | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('ativosPlanilha');
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -129,6 +217,7 @@ export default function SeguroVidaPage() {
     setLoading(true);
     setError(null);
     setData(null);
+    setActiveTab('ativosPlanilha');
 
     try {
       const formData = new FormData();
@@ -161,6 +250,7 @@ export default function SeguroVidaPage() {
     setXlsxFile(null);
     setData(null);
     setError(null);
+    setActiveTab('ativosPlanilha');
     if (pdfRef.current) pdfRef.current.value = '';
     if (xlsxRef.current) xlsxRef.current.value = '';
   }
@@ -268,83 +358,31 @@ export default function SeguroVidaPage() {
             </div>
 
             <TableCard>
-              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Ativos no PDF <span className="text-gray-400 dark:text-gray-500 font-normal">(desconsiderando inclusões/exclusões)</span>
-                </h2>
-                <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
-                  {data.ativosPdf.length.toLocaleString('pt-BR')}{' '}
-                  {data.ativosPdf.length === 1 ? 'nome' : 'nomes'}
-                </span>
-              </div>
-              {data.ativosPdf.length === 0 ? (
-                <p className="px-5 py-6 text-center text-sm text-gray-400 dark:text-gray-500">Nenhum nome ativo encontrado no PDF.</p>
-              ) : (
-                <div className="px-5 py-4 flex flex-wrap gap-2 max-h-64 overflow-y-auto">
-                  {data.ativosPdf.map((nome) => (
-                    <span key={nome} className="px-2.5 py-1 rounded-lg bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 text-xs font-medium whitespace-nowrap">
-                      {nome}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </TableCard>
+              <Tabs
+                tabs={[
+                  { key: 'ativosPlanilha', label: 'Ativos na Planilha', count: data.ativosXlsx.length, border: 'border-cyan-500', text: 'text-cyan-600 dark:text-cyan-400' },
+                  { key: 'ativosPdf', label: 'Ativos no PDF', count: data.ativosPdf.length, border: 'border-green-500', text: 'text-green-600 dark:text-green-400' },
+                  { key: 'emAmbos', label: 'Em Ambos', count: data.summary.emAmbos, border: 'border-emerald-500', text: 'text-emerald-600 dark:text-emerald-400' },
+                  { key: 'soPdf', label: 'Só PDF', count: data.summary.soPdf, border: 'border-orange-500', text: 'text-orange-600 dark:text-orange-400' },
+                  { key: 'soPlanilha', label: 'Só Planilha', count: data.summary.soXlsx, border: 'border-blue-500', text: 'text-blue-600 dark:text-blue-400' },
+                  { key: 'inclusoes', label: 'Inclusões', count: data.summary.inclusoes, border: 'border-yellow-500', text: 'text-yellow-600 dark:text-yellow-400' },
+                  { key: 'exclusoes', label: 'Exclusões', count: data.summary.exclusoes, border: 'border-red-500', text: 'text-red-600 dark:text-red-400' },
+                ]}
+                activeTab={activeTab}
+                onChange={setActiveTab}
+              />
 
-            <TableCard>
-              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Resultados
-                </h2>
-                <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
-                  {data.results.length.toLocaleString('pt-BR')}{' '}
-                  {data.results.length === 1 ? 'registro' : 'registros'}
-                </span>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-800">
-                    <tr>
-                      <th className={TH_CLASS}>Nome</th>
-                      <th className={TH_CLASS}>Status</th>
-                      <th className={TH_CLASS}>Ação</th>
-                      <th className={TH_CLASS}>Origem</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {data.results.map((row, i) => (
-                      <tr
-                        key={i}
-                        className={`${getRowStyle(row.status)} transition-colors`}
-                      >
-                        <td className="px-4 py-3 font-medium whitespace-nowrap">
-                          {row.nome}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <Badge tone={STATUS_TONE[row.status] ?? 'gray'}>{formatStatus(row.status)}</Badge>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {row.acao || '—'}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-xs">
-                          {row.origem || '—'}
-                        </td>
-                      </tr>
-                    ))}
-
-                    {data.results.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500"
-                        >
-                          Nenhum resultado encontrado.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <TabPanel tabKey={activeTab}>
+                {activeTab === 'ativosPlanilha' || activeTab === 'ativosPdf' ? (
+                  <NomeChipList
+                    nomes={activeTab === 'ativosPlanilha' ? data.ativosXlsx : data.ativosPdf}
+                    tone={activeTab === 'ativosPlanilha' ? 'cyan' : 'green'}
+                    emptyLabel={activeTab === 'ativosPlanilha' ? 'Nenhum nome encontrado na planilha.' : 'Nenhum nome ativo encontrado no PDF.'}
+                  />
+                ) : (
+                  <ResultTable rows={getTabRows(data, activeTab)} />
+                )}
+              </TabPanel>
             </TableCard>
           </div>
         )}
