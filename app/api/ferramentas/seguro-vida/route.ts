@@ -16,10 +16,14 @@ function isValidName(s: string): boolean {
 }
 
 async function parsePDF(buffer: Buffer): Promise<Map<string, string>> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfMod = (await import('pdf-parse')) as any
-  const data = await (pdfMod.default ?? pdfMod)(buffer) as { text: string }
-  const text = data.text
+  const { PDFParse } = await import('pdf-parse')
+  const parser = new PDFParse({ data: buffer })
+  let text: string
+  try {
+    text = (await parser.getText()).text
+  } finally {
+    await parser.destroy()
+  }
 
   const result = new Map<string, string>()
   const cpfRegex = /\d{3}\.\d{3}\.\d{3}-\d{2}/g
