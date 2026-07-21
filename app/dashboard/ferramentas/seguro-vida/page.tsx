@@ -348,8 +348,9 @@ export default function SeguroVidaPage() {
         {data && !loading && (
           <div className="space-y-5">
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
               <KpiCard label="Ativos na Planilha" value={data.summary.totalXlsxAtivos} accent="#0891b2" />
+              <KpiCard label="Ativos no PDF" value={data.ativosPdf.length} accent="#059669" />
               <KpiCard label="Em Ambos" value={data.summary.emAmbos} accent="#16a34a" />
               <KpiCard label="Só PDF" value={data.summary.soPdf} accent="#ea580c" />
               <KpiCard label="Só Planilha" value={data.summary.soXlsx} accent="#2563eb" />
