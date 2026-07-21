@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     full_name: fullName,
     role: 'user' as const,
     tools: [] as string[],
+    company_number: null as string | null,
     created_at: created.user.created_at,
   })
 }
@@ -66,7 +67,7 @@ export async function GET() {
 
   const [authResult, profilesResult, toolsResult, accessesResult] = await Promise.all([
     adminClient.auth.admin.listUsers({ perPage: 1000 }),
-    adminClient.from('profiles').select('id, full_name, role'),
+    adminClient.from('profiles').select('id, full_name, role, company_number'),
     adminClient.from('tools').select('id, slug').eq('active', true),
     adminClient.from('user_tool_access').select('user_id, tool_id'),
   ])
@@ -91,6 +92,7 @@ export async function GET() {
     full_name: profileMap.get(u.id)?.full_name ?? null,
     role: (profileMap.get(u.id)?.role ?? 'user') as 'admin' | 'user',
     tools: accessMap[u.id] ?? [],
+    company_number: profileMap.get(u.id)?.company_number ?? null,
     created_at: u.created_at,
   }))
 

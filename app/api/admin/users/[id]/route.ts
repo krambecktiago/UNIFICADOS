@@ -23,7 +23,7 @@ export async function PATCH(
   }
 
   const { id } = await params
-  const body = await request.json() as { role?: string; tools?: string[]; full_name?: string }
+  const body = await request.json() as { role?: string; tools?: string[]; full_name?: string; company_number?: string | null }
   const adminClient = createAdminClient()
 
   if (body.role !== undefined) {
@@ -44,6 +44,15 @@ export async function PATCH(
     const { error } = await adminClient
       .from('profiles')
       .update({ full_name: fullName, updated_at: new Date().toISOString() })
+      .eq('id', id)
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (body.company_number !== undefined) {
+    const { error } = await adminClient
+      .from('profiles')
+      .update({ company_number: body.company_number, updated_at: new Date().toISOString() })
       .eq('id', id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

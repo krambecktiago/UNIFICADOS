@@ -109,6 +109,17 @@ export default function RedeExtratoPage() {
       .catch(() => {})
   }, [])
 
+  // Se o usuário tem empresa cadastrada (Administração → Usuários), a
+  // ferramenta já abre filtrada pra ela em vez de "todos os estabelecimentos".
+  useEffect(() => {
+    fetch('/api/profile/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.companyNumber) setSelectedPvs([data.companyNumber])
+      })
+      .catch(() => {})
+  }, [])
+
   function togglePv(companyNumber: string) {
     setSelectedPvs(prev =>
       prev.includes(companyNumber) ? prev.filter(p => p !== companyNumber) : [...prev, companyNumber]

@@ -180,6 +180,17 @@ export function DuplicatasTab() {
       .catch(() => {})
   }, [])
 
+  // Se o usuário tem empresa cadastrada, o lado de vendas já abre filtrado
+  // pra ela — duplicata continua livre pra cruzar com qualquer loja.
+  useEffect(() => {
+    fetch('/api/profile/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.companyNumber) setSelectedPvsVendas([data.companyNumber])
+      })
+      .catch(() => {})
+  }, [])
+
   function togglePvVendas(companyNumber: string) {
     setSelectedPvsVendas(prev => (prev.includes(companyNumber) ? prev.filter(p => p !== companyNumber) : [...prev, companyNumber]))
   }

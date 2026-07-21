@@ -14,7 +14,17 @@ interface AdminUser {
   full_name: string | null
   role: 'admin' | 'user'
   tools: string[]
+  company_number: string | null
   created_at: string
+}
+
+interface Establishment {
+  companyNumber: string
+  name?: string
+}
+
+function establishmentLabel(e: Establishment): string {
+  return e.name ? `${e.name} (${e.companyNumber})` : e.companyNumber
 }
 
 interface ToolOption {
@@ -75,6 +85,7 @@ export default function AdminPage() {
   const [manageTools, setManageTools] = useState<ManagedTool[]>([])
   const [toolsError, setToolsError] = useState('')
   const [savingToolId, setSavingToolId] = useState<string | null>(null)
+  const [establishments, setEstablishments] = useState<Establishment[]>([])
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -111,6 +122,17 @@ export default function AdminPage() {
       .catch(() => setToolsError('Erro de rede'))
   }, [])
 
+  // Lista de estabelecimentos (matriz + filiais) cadastrados na conexão da
+  // Rede — usada pra escolher a empresa de cada usuário.
+  useEffect(() => {
+    fetch('/api/ferramentas/rede-extrato/establishments')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data.establishments)) setEstablishments(data.establishments)
+      })
+      .catch(() => {})
+  }, [])
+
   async function toggleToolActive(tool: ManagedTool) {
     const newActive = !tool.active
     setSavingToolId(tool.id)
@@ -138,7 +160,7 @@ export default function AdminPage() {
     }
   }
 
-  async function patchUser(userId: string, body: Partial<{ role: string; tools: string[]; full_name: string }>) {
+  async function patchUser(userId: string, body: Partial<{ role: string; tools: string[]; full_name: string; company_number: string | null }>) {
     setSaving(userId)
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
@@ -239,6 +261,16 @@ export default function AdminPage() {
     const ok = await patchUser(user.id, { full_name: newName })
     if (!ok) {
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, full_name: previousName } : u))
+    }
+  }
+
+  async function updateCompany(user: AdminUser, companyNumber: string | null) {
+    const previous = user.company_number
+    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, company_number: companyNumber } : u))
+
+    const ok = await patchUser(user.id, { company_number: companyNumber })
+    if (!ok) {
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, company_number: previous } : u))
     }
   }
 
@@ -540,6 +572,24 @@ export default function AdminPage() {
                       )
                     })}
                   </div>
+                </div>
+
+                {/* Empresa do funcionário */}
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-2 dark:text-gray-500">
+                    Empresa
+                  </p>
+                  <select
+                    value={user.company_number ?? ''}
+                    onChange={e => updateCompany(user, e.target.value || null)}
+                    disabled={isSaving}
+                    className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/30 disabled:opacity-40 dark:border-gray-700 dark:text-gray-300 dark:bg-gray-900 max-w-xs"
+                  >
+                    <option value="">Sem empresa definida</option>
+                    {establishments.map(e => (
+                      <option key={e.companyNumber} value={e.companyNumber}>{establishmentLabel(e)}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {isSaving && (

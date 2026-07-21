@@ -307,3 +307,14 @@ on conflict (slug) do nothing;
 insert into public.integrations (slug, name, type, description) values
   ('rede-producao', 'Rede — API Produção (Extrato)', 'api_key', 'Credenciais OAuth2 (clientId/clientSecret) e companyNumber usados pela ferramenta Extrato Rede. Ambiente: produção.')
 on conflict (slug) do nothing;
+
+-- ============================================================
+-- MIGRAÇÃO: Empresa do funcionário (profiles.company_number)
+-- Execute no SQL Editor do Supabase após o schema inicial
+-- Define a que estabelecimento (companyNumber cadastrado na conexão
+-- "rede-producao") cada usuário pertence — usado como padrão nos filtros
+-- de estabelecimento das ferramentas (ex: Extrato Rede). Só admin edita,
+-- em Administração → Usuários. Nulo = sem empresa definida (sem padrão).
+-- ============================================================
+alter table public.profiles
+  add column if not exists company_number text;
