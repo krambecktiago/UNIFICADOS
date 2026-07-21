@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
       // necessário; os outros (darwin, android, musl...) só inflariam
       // o tamanho da função sem servir pra nada em produção.
       './node_modules/@napi-rs/canvas-linux-x64-gnu/**',
+      // pdfjs-dist carrega o worker (pdf.worker.mjs) e outros arquivos do
+      // build "legacy" via caminho dinâmico — o rastreamento automático não
+      // segue esse require, então precisa do pacote inteiro aqui também.
+      './node_modules/pdfjs-dist/**',
     ],
   },
 }
