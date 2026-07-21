@@ -95,11 +95,19 @@ export async function POST(request: NextRequest) {
       if (!pdfMap.has(normNome)) { soXlsx++; results.push({ nome: normNome, status: 'SOMENTE_XLSX', acao: 'Verificar saída', origem: 'Planilha' }) }
     }
 
+    // Ativos no PDF = quem não está em inclusão/exclusão pendente — já
+    // desconsidera esses dois status, sobrando só quem de fato está no seguro.
+    const ativosPdf = Array.from(pdfMap.entries())
+      .filter(([, status]) => status === 'ATIVO')
+      .map(([nome]) => nome)
+      .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+
     await logToolUsage(supabase, user.id, 'seguro-vida', 2)
 
     return NextResponse.json({
       results,
-      summary: { total: results.length, emAmbos, soPdf, soXlsx, inclusoes, exclusoes },
+      ativosPdf,
+      summary: { total: results.length, emAmbos, soPdf, soXlsx, inclusoes, exclusoes, totalXlsxAtivos: xlsxSet.size },
     })
   } catch (err) {
     console.error(err)

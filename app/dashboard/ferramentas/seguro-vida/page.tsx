@@ -24,10 +24,12 @@ interface Summary {
   soXlsx: number;
   inclusoes: number;
   exclusoes: number;
+  totalXlsxAtivos: number;
 }
 
 interface ApiResponse {
   results: ResultRow[];
+  ativosPdf: string[];
   summary: Summary;
 }
 
@@ -256,13 +258,37 @@ export default function SeguroVidaPage() {
         {data && !loading && (
           <div className="space-y-5">
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <KpiCard label="Ativos na Planilha" value={data.summary.totalXlsxAtivos} accent="#0891b2" />
               <KpiCard label="Em Ambos" value={data.summary.emAmbos} accent="#16a34a" />
               <KpiCard label="Só PDF" value={data.summary.soPdf} accent="#ea580c" />
               <KpiCard label="Só Planilha" value={data.summary.soXlsx} accent="#2563eb" />
               <KpiCard label="Inclusões" value={data.summary.inclusoes} accent="#f59e0b" />
               <KpiCard label="Exclusões" value={data.summary.exclusoes} accent="#dc2626" />
             </div>
+
+            <TableCard>
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Ativos no PDF <span className="text-gray-400 dark:text-gray-500 font-normal">(desconsiderando inclusões/exclusões)</span>
+                </h2>
+                <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+                  {data.ativosPdf.length.toLocaleString('pt-BR')}{' '}
+                  {data.ativosPdf.length === 1 ? 'nome' : 'nomes'}
+                </span>
+              </div>
+              {data.ativosPdf.length === 0 ? (
+                <p className="px-5 py-6 text-center text-sm text-gray-400 dark:text-gray-500">Nenhum nome ativo encontrado no PDF.</p>
+              ) : (
+                <div className="px-5 py-4 flex flex-wrap gap-2 max-h-64 overflow-y-auto">
+                  {data.ativosPdf.map((nome) => (
+                    <span key={nome} className="px-2.5 py-1 rounded-lg bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 text-xs font-medium whitespace-nowrap">
+                      {nome}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </TableCard>
 
             <TableCard>
               <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
