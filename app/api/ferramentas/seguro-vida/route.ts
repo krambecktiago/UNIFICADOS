@@ -37,10 +37,17 @@ async function parsePDF(buffer: Buffer): Promise<Map<string, string>> {
   blocks.forEach((block, idx) => {
     if (idx === 0) return
     const lines = block.split('\n').map((l: string) => l.trim()).filter(Boolean)
+
+    // O CPF encerra a linha da tabela ANTES do resto das colunas dessa mesma
+    // pessoa (data de movimentação, status, valores) — essas colunas só
+    // aparecem no início do bloco SEGUINTE, junto com o nome da próxima
+    // pessoa. Por isso o status de quem está neste bloco vem das 2 primeiras
+    // linhas do próximo bloco, não deste aqui.
+    const nextLines = (blocks[idx + 1] ?? '').split('\n').map((l: string) => l.trim()).filter(Boolean).slice(0, 2)
+    const marker = nextLines.join(' ').toUpperCase()
     let status = 'ATIVO'
-    const upperBlock = block.toUpperCase()
-    if (upperBlock.includes('INCLUS')) status = 'INCLUSAO'
-    else if (upperBlock.includes('EXCLUS')) status = 'EXCLUSAO'
+    if (marker.includes('INCLUS')) status = 'INCLUSAO'
+    else if (marker.includes('EXCLUS')) status = 'EXCLUSAO'
 
     // Janela larga o suficiente pra atravessar o cabeçalho/rodapé que se
     // repete a cada quebra de página do relatório (endereço da seguradora,
