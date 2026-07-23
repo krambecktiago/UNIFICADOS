@@ -5,6 +5,17 @@ import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContai
 const BRAND_NAVY = '#0d1e45'
 const BRAND_RED = '#c8102e'
 
+// Tooltip com classes Tailwind (com variante dark:) em vez de contentStyle —
+// o contentStyle do recharts não define cor de texto, só herda do body, o
+// que no tema escuro resultava em texto claro sobre a caixa branca padrão.
+function TooltipBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg px-3 py-2 text-xs">
+      {children}
+    </div>
+  )
+}
+
 interface DailyUsagePoint {
   key: string
   label: string
@@ -32,9 +43,17 @@ export function DailyUsageChart({ data }: { data: DailyUsagePoint[] }) {
         />
         <YAxis tick={{ fontSize: 10, fill: 'currentColor' }} className="text-gray-400 dark:text-gray-500" axisLine={false} tickLine={false} allowDecimals={false} width={28} />
         <Tooltip
-          formatter={(value) => [`${value} uso${value === 1 ? '' : 's'}`, '']}
-          labelFormatter={(label) => label}
-          contentStyle={{ fontSize: 12, borderRadius: 8 }}
+          cursor={{ stroke: 'rgba(148, 163, 184, 0.4)', strokeWidth: 1 }}
+          content={({ active, payload, label }) => {
+            if (!active || !payload?.length) return null
+            const count = Number(payload[0]?.value ?? 0)
+            return (
+              <TooltipBox>
+                <p className="text-gray-500 dark:text-gray-400 mb-0.5">{label}</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{count} uso{count === 1 ? '' : 's'}</p>
+              </TooltipBox>
+            )
+          }}
         />
         <Area type="monotone" dataKey="count" stroke={BRAND_NAVY} strokeWidth={2} fill="url(#dailyUsageFill)" />
       </AreaChart>
@@ -64,9 +83,19 @@ export function ToolDistributionChart({ data }: { data: ToolDistributionEntry[] 
           width={140}
         />
         <Tooltip
-          formatter={(value) => [`${value} execuç${value === 1 ? 'ão' : 'ões'}`, '']}
-          contentStyle={{ fontSize: 12, borderRadius: 8 }}
-          cursor={{ fill: 'rgba(13, 30, 69, 0.06)' }}
+          cursor={{ fill: 'rgba(148, 163, 184, 0.18)' }}
+          content={({ active, payload }) => {
+            if (!active || !payload?.length) return null
+            const entry = payload[0]
+            const count = Number(entry?.value ?? 0)
+            const label = (entry?.payload as ToolDistributionEntry | undefined)?.label ?? ''
+            return (
+              <TooltipBox>
+                <p className="text-gray-500 dark:text-gray-400 mb-0.5">{label}</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{count} execuç{count === 1 ? 'ão' : 'ões'}</p>
+              </TooltipBox>
+            )
+          }}
         />
         <Bar dataKey="count" fill={BRAND_NAVY} radius={[0, 4, 4, 0]} activeBar={{ fill: BRAND_RED }} />
       </BarChart>
