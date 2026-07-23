@@ -6,19 +6,18 @@ import { formatDateTime, formatDayLabel, toDateKey } from '@/lib/utils'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card } from '@/components/ui/card'
 import { KpiCard } from '@/components/ui/kpi-card'
+import { AboutCompanyCard } from '@/components/dashboard/about-company-card'
+import { DailyUsageChart, ToolDistributionChart } from '@/components/dashboard/usage-charts'
+import { getAccessibleTools } from '@/lib/tools/catalog'
 
 // Telas (não ferramentas de processamento) que reaproveitam a tabela "tools"
 // só para controle de acesso — não entram na distribuição de uso por ferramenta.
 const SCREEN_SLUGS = ['dashboard', 'configuracoes']
 
-const VALUES = [
-  { title: 'Integridade', description: 'Ser ético e transparente em todas as nossas interações e decisões, garantindo a confiança e credibilidade perante nossos clientes, parceiros e colaboradores.' },
-  { title: 'Respeito', description: 'Valorização das pessoas, suas ideias, opiniões e contribuições, promovendo um ambiente de trabalho harmonioso.' },
-  { title: 'Comprometimento', description: 'Agir como dono, tomar a iniciativa, assumir as responsabilidades, ter dedicação e se comportar de maneira proativa e comprometida.' },
-  { title: 'Simplicidade', description: 'Buscar soluções práticas e eficientes, facilitando processos e promovendo a clareza e objetividade em nossas ações.' },
-  { title: 'Organização', description: 'Manter um ambiente de trabalho bem estruturado, onde cada detalhe é pensado para otimizar a produtividade, eficácia e o bem-estar.' },
-  { title: 'Inconformismo', description: 'Não se contentar com a situação atual, buscando constantemente melhorias e inovações que impulsionem o crescimento e os resultados.' },
-]
+const INTEGRATION_LABELS: Record<string, string> = {
+  'rede-producao': 'Rede — API Produção',
+  'discord-contas-pagar': 'Discord — Contas a Pagar',
+}
 
 export default async function DashboardPage() {
   await requireToolAccess('dashboard')
@@ -28,13 +27,14 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('full_name, role')
     .eq('id', user!.id)
     .maybeSingle()
 
   const name = profile?.full_name ?? user?.email ?? 'Usuário'
   const firstName = name.split(' ')[0]
   const lastLogin = user?.last_sign_in_at ? formatDateTime(user.last_sign_in_at) : '—'
+  const isAdmin = profile?.role === 'admin'
 
   const { data: usageLogs } = await supabase
     .from('tool_usage_logs')
@@ -60,6 +60,8 @@ export default async function DashboardPage() {
     .select('slug, name')
     .eq('active', true)
 
+  const toolNameBySlug = new Map((toolRows ?? []).map(t => [t.slug, t.name]))
+
   const toolDistribution = (toolRows ?? [])
     .filter(t => !SCREEN_SLUGS.includes(t.slug))
     .map(t => ({
@@ -69,7 +71,6 @@ export default async function DashboardPage() {
       percent: totalExecutions > 0 ? ((usageByTool.get(t.slug) ?? 0) / totalExecutions) * 100 : 0,
     }))
     .sort((a, b) => b.count - a.count)
-  const maxToolCount = Math.max(1, ...toolDistribution.map(t => t.count))
 
   const topUserEntries = [...usageByUser.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -97,7 +98,45 @@ export default async function DashboardPage() {
     const key = toDateKey(d)
     return { key, label: formatDayLabel(d), count: usageByDay.get(key) ?? 0 }
   })
-  const maxDailyCount = Math.max(1, ...dailyUsage.map(d => d.count))
+
+  // Últimos 7 dias (índices 23-29) vs os 7 dias anteriores (índices 16-22),
+  // para mostrar a tendência semanal de execuções no KPI.
+  const last7Count = dailyUsage.slice(23, 30).reduce((sum, d) => sum + d.count, 0)
+  const prev7Count = dailyUsage.slice(16, 23).reduce((sum, d) => sum + d.count, 0)
+  const weeklyDeltaLabel = prev7Count === 0
+    ? (last7Count > 0 ? '↑ novo esta semana' : 'sem uso na semana anterior')
+    : (() => {
+        const delta = Math.round(((last7Count - prev7Count) / prev7Count) * 100)
+        if (delta === 0) return 'estável vs. semana anterior'
+        return `${delta > 0 ? '↑' : '↓'} ${Math.abs(delta)}% vs. semana anterior`
+      })()
+
+  // Atividade do próprio usuário nos últimos 30 dias + última ferramenta usada.
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 29)
+  const myLogs = (usageLogs ?? []).filter(log => log.user_id === user!.id)
+  const myUsage30d = myLogs.filter(log => new Date(log.created_at) >= thirtyDaysAgo).length
+  const myLastLog = [...myLogs].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))[0]
+  const myLastToolLabel = myLastLog ? (toolNameBySlug.get(myLastLog.tool_slug) ?? myLastLog.tool_slug) : null
+
+  // Ferramentas acessíveis ao usuário, para o grid de atalhos individuais.
+  const accessibleTools = await getAccessibleTools(supabase, user!.id, isAdmin)
+
+  // Card de saúde das integrações (só admin) — mostra apenas se está
+  // configurada ou não, sem chamar a API da Rede nem disparar o webhook do
+  // Discord (isso enviaria uma mensagem real no canal a cada carregamento).
+  let integrations: { slug: string; name: string; configured: boolean; updatedAt: string }[] = []
+  if (isAdmin) {
+    const { data: integrationRows } = await supabase
+      .from('integrations')
+      .select('slug, name, value, updated_at')
+    integrations = (integrationRows ?? []).map(i => ({
+      slug: i.slug,
+      name: INTEGRATION_LABELS[i.slug] ?? i.name,
+      configured: !!i.value,
+      updatedAt: i.updated_at,
+    }))
+  }
 
   return (
     <div className="min-h-screen">
@@ -117,19 +156,41 @@ export default async function DashboardPage() {
 
         <section>
           <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-4">Acesso Rápido</p>
-          <div className="grid grid-cols-1 gap-4">
-            <QuickCard
-              href="/dashboard/ferramentas"
-              label="Ferramentas"
-              description="Acesse as ferramentas disponíveis"
-              iconBg="var(--color-brand-navy)"
-              icon={
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
-                </svg>
-              }
-            />
-          </div>
+          {accessibleTools.length === 0 ? (
+            <Card padding="5">
+              <p className="text-sm text-gray-400 dark:text-gray-500">Nenhuma ferramenta liberada para o seu usuário ainda.</p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {accessibleTools.map((tool, i) => {
+                const count = usageByTool.get(tool.slug) ?? 0
+                return (
+                  <Link
+                    key={tool.slug}
+                    href={tool.href}
+                    className="group bg-white dark:bg-gray-900 rounded-xl p-5 flex items-center gap-4 hover:shadow-xl hover:-translate-y-0.5 transition-all border border-gray-200 dark:border-gray-800 animate-fade-in-up"
+                    style={{ animationDelay: `${i * 40}ms` }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white"
+                      style={{ backgroundColor: tool.accent }}
+                    >
+                      {tool.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{tool.title}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        {count > 0 ? `Usado ${count}x` : 'Nunca usado'}
+                      </p>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0 group-hover:text-brand-navy transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
         </section>
 
         <section>
@@ -146,30 +207,41 @@ export default async function DashboardPage() {
               }
             />
 
-            <Card padding="5" className="sm:col-span-2">
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-4">Distribuição por ferramenta</p>
-              {totalExecutions === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum uso registrado ainda.</p>
-              ) : (
-                <div className="space-y-3">
-                  {toolDistribution.map(tool => (
-                    <div key={tool.slug}>
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="font-medium text-gray-700 dark:text-gray-300">{tool.label}</span>
-                        <span className="text-gray-400 dark:text-gray-500 text-xs">{tool.count}x · {tool.percent.toFixed(0)}%</span>
-                      </div>
-                      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-brand-navy rounded-full"
-                          style={{ width: `${(tool.count / maxToolCount) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
+            <KpiCard
+              label="Execuções (7 dias)"
+              value={last7Count}
+              sub={weeklyDeltaLabel}
+              accent="var(--color-brand-red)"
+              icon={
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.306a11.95 11.95 0 015.814-5.518l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
+                </svg>
+              }
+            />
+
+            <KpiCard
+              label="Sua atividade (30 dias)"
+              value={myUsage30d}
+              sub={myLastToolLabel ? `Última: ${myLastToolLabel}` : 'Nenhum uso ainda'}
+              accent="#7c3aed"
+              icon={
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+              }
+            />
           </div>
+        </section>
+
+        <section>
+          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-4">Distribuição por ferramenta</p>
+          <Card padding="5">
+            {totalExecutions === 0 ? (
+              <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum uso registrado ainda.</p>
+            ) : (
+              <ToolDistributionChart data={toolDistribution} />
+            )}
+          </Card>
         </section>
 
         <section>
@@ -178,22 +250,8 @@ export default async function DashboardPage() {
             {totalExecutions === 0 ? (
               <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum uso registrado ainda.</p>
             ) : (
-              <div className="flex items-end gap-1 h-32">
-                {dailyUsage.map(day => (
-                  <div key={day.key} className="flex-1 h-full flex flex-col justify-end group relative">
-                    <div
-                      className="w-full bg-brand-navy rounded-sm group-hover:bg-brand-red transition-colors min-h-[2px]"
-                      style={{ height: `${(day.count / maxDailyCount) * 100}%` }}
-                      title={`${day.label}: ${day.count} uso${day.count === 1 ? '' : 's'}`}
-                    />
-                  </div>
-                ))}
-              </div>
+              <DailyUsageChart data={dailyUsage} />
             )}
-            <div className="flex justify-between mt-2 text-[10px] text-gray-400 dark:text-gray-500">
-              <span>{dailyUsage[0]?.label}</span>
-              <span>{dailyUsage[dailyUsage.length - 1]?.label}</span>
-            </div>
           </Card>
         </section>
 
@@ -230,65 +288,36 @@ export default async function DashboardPage() {
       </div>
 
       <aside className="space-y-4 lg:sticky lg:top-8">
-        <Card padding="6" className="border-l-4 border-brand-navy">
-          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-2">Missão</p>
-          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-            Atender as necessidades de nossos clientes, com ampla disponibilidade de produtos automotivos, com qualidade e preço justo, comprometidos com as pessoas, o crescimento e sustentabilidade do negócio.
-          </p>
-        </Card>
+        <AboutCompanyCard />
 
-        <Card padding="6" className="border-l-4 border-brand-red">
-          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-2">Visão</p>
-          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-            Ser a principal referência no fornecimento de produtos automotivos, com qualidade e excelência no atendimento, consolidando nossa presença regional.
-          </p>
-        </Card>
-
-        <Card padding="6">
-          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-3">Valores</p>
-          <ul className="space-y-3">
-            {VALUES.map(value => (
-              <li key={value.title}>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{value.title}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mt-0.5">{value.description}</p>
-              </li>
-            ))}
-          </ul>
-        </Card>
+        {isAdmin && (
+          <Card padding="6">
+            <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-3">Saúde das integrações</p>
+            <ul className="space-y-3">
+              {integrations.map(integration => (
+                <li key={integration.slug} className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{integration.name}</span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                      integration.configured
+                        ? 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950'
+                        : 'text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950'
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${integration.configured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                    {integration.configured ? 'Configurado' : 'Pendente'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/dashboard/admin/conexoes" className="inline-block mt-4 text-xs font-semibold text-brand-navy dark:text-gray-300 hover:underline">
+              Gerenciar conexões →
+            </Link>
+          </Card>
+        )}
       </aside>
 
       </div>
     </div>
-  )
-}
-
-function QuickCard({
-  href, label, description, iconBg, icon,
-}: {
-  href: string
-  label: string
-  description: string
-  iconBg: string
-  icon: React.ReactNode
-}) {
-  return (
-    <Link
-      href={href}
-      className="group bg-white dark:bg-gray-900 rounded-xl p-5 flex items-center gap-4 hover:shadow-xl hover:-translate-y-0.5 transition-all border border-gray-200 dark:border-gray-800 animate-fade-in-up"
-    >
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{ backgroundColor: iconBg }}
-      >
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 transition-colors">{label}</p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">{description}</p>
-      </div>
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-300 dark:text-gray-600 ml-auto shrink-0 group-hover:text-brand-navy transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-      </svg>
-    </Link>
   )
 }
