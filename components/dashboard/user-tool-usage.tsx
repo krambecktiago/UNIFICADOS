@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatDateTime } from '@/lib/utils'
 
 interface ToolCount {
   slug: string
@@ -13,6 +14,7 @@ export interface UserToolBreakdown {
   name: string
   total: number
   tools: ToolCount[]
+  lastOnline: string | null
 }
 
 export function UserToolUsageList({ users, currentUserId }: { users: UserToolBreakdown[]; currentUserId: string }) {
@@ -41,9 +43,14 @@ export function UserToolUsageList({ users, currentUserId }: { users: UserToolBre
               <div className="w-7 h-7 rounded-full bg-brand-navy flex items-center justify-center text-white text-xs font-bold shrink-0">
                 {u.name.charAt(0).toUpperCase()}
               </div>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex-1 truncate">
-                {u.name}{u.id === currentUserId ? ' (você)' : ''}
-              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                  {u.name}{u.id === currentUserId ? ' (você)' : ''}
+                </p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">
+                  {u.lastOnline ? `Online em ${formatDateTime(u.lastOnline)}` : 'Nunca acessou'}
+                </p>
+              </div>
               <span className="text-gray-400 dark:text-gray-500 text-xs shrink-0">{u.total}x</span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
