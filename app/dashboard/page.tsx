@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { KpiCard } from '@/components/ui/kpi-card'
 import { AboutCompanyCard } from '@/components/dashboard/about-company-card'
 import { DailyUsageChart, ToolDistributionChart } from '@/components/dashboard/usage-charts'
+import { UserToolUsageList, type UserToolBreakdown } from '@/components/dashboard/user-tool-usage'
 import { getAccessibleTools } from '@/lib/tools/catalog'
 
 // Telas (não ferramentas de processamento) que reaproveitam a tabela "tools"
@@ -121,6 +122,35 @@ export default async function DashboardPage() {
 
   // Ferramentas acessíveis ao usuário, para o grid de atalhos individuais.
   const accessibleTools = await getAccessibleTools(supabase, user!.id, isAdmin)
+
+  // Uso por usuário e ferramenta (só admin) — todos os usuários cadastrados,
+  // mesmo quem nunca usou nada, com o detalhamento por ferramenta.
+  let userToolBreakdown: UserToolBreakdown[] = []
+  if (isAdmin) {
+    const usageByUserTool = new Map<string, Map<string, number>>()
+    for (const log of usageLogs ?? []) {
+      if (!usageByUserTool.has(log.user_id)) usageByUserTool.set(log.user_id, new Map())
+      const toolMap = usageByUserTool.get(log.user_id)!
+      toolMap.set(log.tool_slug, (toolMap.get(log.tool_slug) ?? 0) + 1)
+    }
+
+    const adminClient = createAdminClient()
+    const { data: allProfiles } = await adminClient
+      .from('profiles')
+      .select('id, full_name')
+
+    userToolBreakdown = (allProfiles ?? [])
+      .map(p => {
+        const toolMap = usageByUserTool.get(p.id) ?? new Map<string, number>()
+        const tools = toolDistribution
+          .map(t => ({ slug: t.slug, label: t.label, count: toolMap.get(t.slug) ?? 0 }))
+          .filter(t => t.count > 0)
+          .sort((a, b) => b.count - a.count)
+        const total = tools.reduce((sum, t) => sum + t.count, 0)
+        return { id: p.id, name: p.full_name || 'Usuário', total, tools }
+      })
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'pt-BR'))
+  }
 
   // Card de saúde das integrações (só admin) — mostra apenas se está
   // configurada ou não, sem chamar a API da Rede nem disparar o webhook do
@@ -284,6 +314,19 @@ export default async function DashboardPage() {
             )}
           </Card>
         </section>
+
+        {isAdmin && (
+          <section>
+            <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-4">Uso por usuário e ferramenta</p>
+            <Card padding="5">
+              {userToolBreakdown.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum usuário cadastrado ainda.</p>
+              ) : (
+                <UserToolUsageList users={userToolBreakdown} currentUserId={user!.id} />
+              )}
+            </Card>
+          </section>
+        )}
 
       </div>
 
