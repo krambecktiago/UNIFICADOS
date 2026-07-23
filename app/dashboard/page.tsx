@@ -135,11 +135,9 @@ export default async function DashboardPage() {
     }
 
     const adminClient = createAdminClient()
-    const [{ data: allProfiles }, { data: authUsers }] = await Promise.all([
-      adminClient.from('profiles').select('id, full_name'),
-      adminClient.auth.admin.listUsers({ perPage: 1000 }),
-    ])
-    const lastSignInMap = new Map((authUsers?.users ?? []).map(u => [u.id, u.last_sign_in_at]))
+    const { data: allProfiles } = await adminClient
+      .from('profiles')
+      .select('id, full_name, last_seen_at')
 
     userToolBreakdown = (allProfiles ?? [])
       .map(p => {
@@ -149,8 +147,7 @@ export default async function DashboardPage() {
           .filter(t => t.count > 0)
           .sort((a, b) => b.count - a.count)
         const total = tools.reduce((sum, t) => sum + t.count, 0)
-        const lastOnline = lastSignInMap.get(p.id) ?? null
-        return { id: p.id, name: p.full_name || 'Usuário', total, tools, lastOnline }
+        return { id: p.id, name: p.full_name || 'Usuário', total, tools, lastSeenAt: p.last_seen_at }
       })
       .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'pt-BR'))
   }

@@ -318,3 +318,14 @@ on conflict (slug) do nothing;
 -- ============================================================
 alter table public.profiles
   add column if not exists company_number text;
+
+-- ============================================================
+-- MIGRAÇÃO: Presença real do usuário (profiles.last_seen_at)
+-- Execute no SQL Editor do Supabase após o schema inicial
+-- Diferente de auth.users.last_sign_in_at (só muda em login novo), este
+-- campo é atualizado por um heartbeat do próprio navegador enquanto o
+-- usuário está com o dashboard aberto — usado no card "Uso por usuário e
+-- ferramenta" pra mostrar quando cada um esteve online de fato.
+-- ============================================================
+alter table public.profiles
+  add column if not exists last_seen_at timestamptz;

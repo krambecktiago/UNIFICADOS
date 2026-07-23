@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { AssistantWidget } from '@/components/ai-assistant-widget'
+import { PresenceHeartbeat } from '@/components/dashboard/presence-heartbeat'
 import { getGreeting } from '@/lib/utils'
 
 const GATED_SCREEN_SLUGS = ['dashboard', 'configuracoes']
@@ -55,6 +56,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {children}
       </main>
       <AssistantWidget />
+      <PresenceHeartbeat />
     </div>
   )
 }

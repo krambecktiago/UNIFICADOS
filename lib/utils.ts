@@ -41,6 +41,18 @@ export function formatDayLabel(date: string | Date): string {
   }).format(new Date(date))
 }
 
+export function formatRelativeTime(date: string | Date, now: Date = new Date()): string {
+  const diffMs = now.getTime() - new Date(date).getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  if (diffMin < 1) return 'agora mesmo'
+  if (diffMin < 60) return `há ${diffMin} min`
+  const diffHours = Math.floor(diffMin / 60)
+  if (diffHours < 24) return `há ${diffHours}h`
+  const diffDays = Math.floor(diffHours / 24)
+  if (diffDays < 7) return `há ${diffDays}d`
+  return formatDateTime(date)
+}
+
 // Servidor roda em UTC (Vercel) — sempre calcular a hora no fuso de Brasília,
 // senão a saudação vira "Boa noite" de manhã.
 export function getGreeting(date: Date = new Date()): string {
