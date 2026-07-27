@@ -254,6 +254,7 @@ export function RelatorioTab() {
   const [previsaoEndDate, setPrevisaoEndDate] = useState(() => todayISO(90))
   const [previsaoResumo, setPrevisaoResumo] = useState<PrevisaoResumo | null>(null)
   const [loadingPrevisao, setLoadingPrevisao] = useState(false)
+  const [exportingPrevisao, setExportingPrevisao] = useState(false)
   const [errorPrevisao, setErrorPrevisao] = useState('')
 
   useEffect(() => {
@@ -390,6 +391,35 @@ export function RelatorioTab() {
     }
   }
 
+  async function exportarPrevisao() {
+    if (!previsaoResumo) return
+    setExportingPrevisao(true)
+    setErrorPrevisao('')
+    try {
+      const res = await fetch('/api/ferramentas/rede-extrato/previsao-recebimentos/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(previsaoResumo),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setErrorPrevisao(data.error ?? 'Erro ao exportar planilha')
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `previsao-recebimentos-rede-${previsaoStartDate}_a_${previsaoEndDate}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setErrorPrevisao('Erro de rede')
+    } finally {
+      setExportingPrevisao(false)
+    }
+  }
+
   return (
     <div>
       <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 mb-6 flex flex-wrap items-end gap-4">
@@ -488,6 +518,11 @@ export function RelatorioTab() {
             <Button type="button" onClick={buscarPrevisao} loading={loadingPrevisao}>
               {loadingPrevisao ? 'Buscando…' : 'Buscar'}
             </Button>
+            {previsaoResumo && (
+              <Button type="button" onClick={exportarPrevisao} loading={exportingPrevisao} variant="secondary">
+                {exportingPrevisao ? 'Exportando…' : 'Exportar Excel'}
+              </Button>
+            )}
           </div>
 
           {errorPrevisao && (
