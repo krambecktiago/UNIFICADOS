@@ -13,8 +13,7 @@ import { formatBRL } from '@/lib/utils/br-format'
 import { getRedeBrandName } from '@/lib/rede/brands'
 import { EstablishmentPicker, type RedeEstablishment } from '@/components/rede/establishment-picker'
 import { DuplicatasTab } from './duplicatas-tab'
-import { RelatorioMensalTab } from './relatorio-mensal-tab'
-import { PrevisaoRecebimentosTab } from './previsao-recebimentos-tab'
+import { RelatorioTab } from './relatorio-tab'
 
 interface RedeTransaction {
   status: string
@@ -56,13 +55,12 @@ function statusTone(status: string): 'green' | 'red' | 'gray' {
   return 'gray'
 }
 
-type Tab = 'extrato' | 'duplicatas' | 'relatorio-mensal' | 'previsao-recebimentos'
+type Tab = 'extrato' | 'duplicatas' | 'relatorio'
 
 const TAB_DEFS: { key: Tab; label: string }[] = [
   { key: 'extrato', label: 'Extrato' },
   { key: 'duplicatas', label: 'Conciliação de Duplicatas' },
-  { key: 'relatorio-mensal', label: 'Relatório Mensal' },
-  { key: 'previsao-recebimentos', label: 'Previsão de Recebimentos' },
+  { key: 'relatorio', label: 'Relatório' },
 ]
 
 export default function RedeExtratoPage() {
@@ -384,18 +382,10 @@ export default function RedeExtratoPage() {
         </div>
       )}
 
-      {activeTab === 'relatorio-mensal' && (
+      {activeTab === 'relatorio' && (
         <div className="px-8 py-8">
-          <TabPanel tabKey="relatorio-mensal">
-            <RelatorioMensalTab />
-          </TabPanel>
-        </div>
-      )}
-
-      {activeTab === 'previsao-recebimentos' && (
-        <div className="px-8 py-8">
-          <TabPanel tabKey="previsao-recebimentos">
-            <PrevisaoRecebimentosTab />
+          <TabPanel tabKey="relatorio">
+            <RelatorioTab />
           </TabPanel>
         </div>
       )}

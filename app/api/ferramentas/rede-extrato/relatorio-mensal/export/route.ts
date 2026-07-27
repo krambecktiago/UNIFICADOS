@@ -11,13 +11,18 @@ interface BrandTotal {
   count: number
 }
 
-interface RelatorioResumo {
-  mesLabel: string
+interface VendasMetrics {
   totalBruto: number
   totalMdr: number
   totalLiquido: number
   canceladasNegadas: number
+}
+
+interface RelatorioResumo {
+  mesLabel: string
+  geral: VendasMetrics
   porBandeira: BrandTotal[]
+  porEmpresa: (VendasMetrics & { companyNumber: string; label: string })[]
 }
 
 const NAVY = 'FF0D1E45'
@@ -41,7 +46,7 @@ export async function POST(request: NextRequest) {
     wb.created = new Date()
 
     const ws = wb.addWorksheet('Relatório Mensal', { views: [{ showGridLines: false }] })
-    ws.columns = [{ width: 3 }, { width: 32 }, { width: 18 }, { width: 12 }]
+    ws.columns = [{ width: 3 }, { width: 32 }, { width: 18 }, { width: 14 }, { width: 18 }, { width: 18 }]
 
     ws.mergeCells('A1:D1')
     const title = ws.getCell('A1')
@@ -64,10 +69,10 @@ export async function POST(request: NextRequest) {
     headerRow.height = 20
 
     const metrics: { label: string; valor: number }[] = [
-      { label: 'Total bruto', valor: body.totalBruto },
-      { label: 'Total em taxas de venda (MDR)', valor: body.totalMdr },
-      { label: 'Total líquido', valor: body.totalLiquido },
-      { label: 'Canceladas/negadas', valor: body.canceladasNegadas },
+      { label: 'Total bruto', valor: body.geral.totalBruto },
+      { label: 'Total em taxas de venda (MDR)', valor: body.geral.totalMdr },
+      { label: 'Total líquido', valor: body.geral.totalLiquido },
+      { label: 'Canceladas/negadas', valor: body.geral.canceladasNegadas },
     ]
 
     metrics.forEach((m, i) => {
@@ -98,6 +103,36 @@ export async function POST(request: NextRequest) {
       r.getCell(4).value = b.count
       r.eachCell(cell => { cell.border = { bottom: { style: 'hair', color: { argb: 'FFE5E7EB' } } } })
     })
+
+    const porEmpresa = body.porEmpresa ?? []
+    if (porEmpresa.length > 1) {
+      const brandRowCount = (body.porBandeira ?? []).length
+      const empresaHeaderRowIdx = brandTableHeaderIdx + brandRowCount + 2
+      ws.mergeCells(`B${empresaHeaderRowIdx}:F${empresaHeaderRowIdx}`)
+      ws.getCell(`B${empresaHeaderRowIdx}`).value = 'Por estabelecimento'
+      ws.getCell(`B${empresaHeaderRowIdx}`).font = { bold: true }
+
+      const empresaTableHeaderIdx = empresaHeaderRowIdx + 1
+      const empresaTableHeader = ws.getRow(empresaTableHeaderIdx)
+      empresaTableHeader.values = ['', 'Estabelecimento', 'Bruto', 'MDR', 'Líquido', 'Canceladas/negadas']
+      empresaTableHeader.font = HEADER_FONT
+      empresaTableHeader.eachCell(cell => { cell.fill = HEADER_FILL })
+      empresaTableHeader.height = 20
+
+      porEmpresa.forEach((emp, i) => {
+        const r = ws.getRow(empresaTableHeaderIdx + 1 + i)
+        r.getCell(2).value = emp.label
+        r.getCell(3).value = emp.totalBruto
+        r.getCell(3).numFmt = CURRENCY_FMT
+        r.getCell(4).value = emp.totalMdr
+        r.getCell(4).numFmt = CURRENCY_FMT
+        r.getCell(5).value = emp.totalLiquido
+        r.getCell(5).numFmt = CURRENCY_FMT
+        r.getCell(6).value = emp.canceladasNegadas
+        r.getCell(6).numFmt = CURRENCY_FMT
+        r.eachCell(cell => { cell.border = { bottom: { style: 'hair', color: { argb: 'FFE5E7EB' } } } })
+      })
+    }
 
     const buffer = await wb.xlsx.writeBuffer()
 
