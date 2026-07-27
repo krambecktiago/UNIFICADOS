@@ -1,18 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSessionUser, getSessionProfile } from '@/lib/supabase/session'
 import { redirect } from 'next/navigation'
 
 export async function requireToolAccess(slug: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle()
-
+  const profile = await getSessionProfile()
   if (profile?.role === 'admin') return
+
+  const supabase = await createClient()
 
   const { data: tool } = await supabase
     .from('tools')

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSessionUser } from '@/lib/supabase/session'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 
@@ -24,8 +25,8 @@ export async function logToolUsage(
 // assim toda ferramenta nova já entra na contagem sem precisar de código
 // extra em cada rota de processamento.
 export async function logToolVisit(toolSlug: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) return
+  const supabase = await createClient()
   await logToolUsage(supabase, user.id, toolSlug, 0)
 }

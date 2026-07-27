@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getSessionUser, getSessionProfile } from '@/lib/supabase/session'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { AssistantWidget } from '@/components/ai-assistant-widget'
 import { PresenceHeartbeat } from '@/components/dashboard/presence-heartbeat'
@@ -8,22 +9,19 @@ import { getGreeting } from '@/lib/utils'
 const GATED_SCREEN_SLUGS = ['dashboard', 'configuracoes']
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getSessionUser()
 
   if (!user) {
     redirect('/login')
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, full_name')
-    .eq('id', user.id)
-    .maybeSingle()
+  const profile = await getSessionProfile()
 
   if (!profile?.full_name?.trim()) {
     redirect('/onboarding')
   }
+
+  const supabase = await createClient()
 
   const isAdmin = profile?.role === 'admin'
 

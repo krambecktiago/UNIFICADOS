@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getSessionUser, getSessionProfile } from '@/lib/supabase/session'
 import { requireToolAccess } from '@/lib/supabase/tool-access'
 import { formatDateTime, formatDayLabel, toDateKey } from '@/lib/utils'
 import { PageHeader } from '@/components/ui/page-header'
@@ -24,22 +25,36 @@ export default async function DashboardPage() {
   await requireToolAccess('dashboard')
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, role')
-    .eq('id', user!.id)
-    .maybeSingle()
+  const user = await getSessionUser()
+  const profile = await getSessionProfile()
 
   const name = profile?.full_name ?? user?.email ?? 'Usuário'
   const firstName = name.split(' ')[0]
   const lastLogin = user?.last_sign_in_at ? formatDateTime(user.last_sign_in_at) : '—'
   const isAdmin = profile?.role === 'admin'
 
-  const { data: usageLogs } = await supabase
-    .from('tool_usage_logs')
-    .select('tool_slug, files_count, user_id, created_at')
+  // Nenhuma dessas depende do resultado da outra — só os cálculos em memória
+  // feitos depois é que combinam os resultados.
+  const [
+    { data: usageLogs },
+    { data: toolRows },
+    accessibleTools,
+    integrationRows,
+    allProfilesForAdmin,
+  ] = await Promise.all([
+    supabase.from('tool_usage_logs').select('tool_slug, files_count, user_id, created_at'),
+    supabase.from('tools').select('slug, name').eq('active', true),
+    getAccessibleTools(supabase, user!.id, isAdmin),
+    isAdmin
+      ? supabase.from('integrations').select('slug, name, value, updated_at').then(r => r.data)
+      : Promise.resolve(null),
+    // Busca todos os perfis de uma vez (só admin) — reaproveitado tanto pelo
+    // nome dos "Usuários mais ativos" quanto pelo "Uso por usuário e
+    // ferramenta", evitando duas leituras separadas de profiles via admin.
+    isAdmin
+      ? createAdminClient().from('profiles').select('id, full_name, last_seen_at').then(r => r.data)
+      : Promise.resolve(null),
+  ])
 
   const totalFiles = (usageLogs ?? []).reduce((sum, log) => sum + log.files_count, 0)
   const totalExecutions = (usageLogs ?? []).length
@@ -53,13 +68,6 @@ export default async function DashboardPage() {
     const dayKey = toDateKey(log.created_at)
     usageByDay.set(dayKey, (usageByDay.get(dayKey) ?? 0) + 1)
   }
-
-  // Busca as ferramentas direto da tabela "tools" — assim, toda ferramenta
-  // nova cadastrada aparece aqui automaticamente, sem precisar editar código.
-  const { data: toolRows } = await supabase
-    .from('tools')
-    .select('slug, name')
-    .eq('active', true)
 
   const toolNameBySlug = new Map((toolRows ?? []).map(t => [t.slug, t.name]))
 
@@ -79,12 +87,17 @@ export default async function DashboardPage() {
 
   let topUsers: { id: string; name: string; count: number }[] = []
   if (topUserEntries.length > 0) {
-    const adminClient = createAdminClient()
-    const { data: rankedProfiles } = await adminClient
-      .from('profiles')
-      .select('id, full_name')
-      .in('id', topUserEntries.map(([id]) => id))
-    const nameMap = new Map((rankedProfiles ?? []).map(p => [p.id, p.full_name]))
+    let nameMap: Map<string, string | null>
+    if (isAdmin && allProfilesForAdmin) {
+      nameMap = new Map(allProfilesForAdmin.map(p => [p.id, p.full_name]))
+    } else {
+      const adminClient = createAdminClient()
+      const { data: rankedProfiles } = await adminClient
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', topUserEntries.map(([id]) => id))
+      nameMap = new Map((rankedProfiles ?? []).map(p => [p.id, p.full_name]))
+    }
     topUsers = topUserEntries.map(([id, count]) => ({
       id,
       count,
@@ -120,13 +133,10 @@ export default async function DashboardPage() {
   const myLastLog = [...myLogs].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))[0]
   const myLastToolLabel = myLastLog ? (toolNameBySlug.get(myLastLog.tool_slug) ?? myLastLog.tool_slug) : null
 
-  // Ferramentas acessíveis ao usuário, para o grid de atalhos individuais.
-  const accessibleTools = await getAccessibleTools(supabase, user!.id, isAdmin)
-
   // Uso por usuário e ferramenta (só admin) — todos os usuários cadastrados,
   // mesmo quem nunca usou nada, com o detalhamento por ferramenta.
   let userToolBreakdown: UserToolBreakdown[] = []
-  if (isAdmin) {
+  if (isAdmin && allProfilesForAdmin) {
     const usageByUserTool = new Map<string, Map<string, number>>()
     for (const log of usageLogs ?? []) {
       if (!usageByUserTool.has(log.user_id)) usageByUserTool.set(log.user_id, new Map())
@@ -134,12 +144,7 @@ export default async function DashboardPage() {
       toolMap.set(log.tool_slug, (toolMap.get(log.tool_slug) ?? 0) + 1)
     }
 
-    const adminClient = createAdminClient()
-    const { data: allProfiles } = await adminClient
-      .from('profiles')
-      .select('id, full_name, last_seen_at')
-
-    userToolBreakdown = (allProfiles ?? [])
+    userToolBreakdown = allProfilesForAdmin
       .map(p => {
         const toolMap = usageByUserTool.get(p.id) ?? new Map<string, number>()
         const tools = toolDistribution
@@ -155,18 +160,12 @@ export default async function DashboardPage() {
   // Card de saúde das integrações (só admin) — mostra apenas se está
   // configurada ou não, sem chamar a API da Rede nem disparar o webhook do
   // Discord (isso enviaria uma mensagem real no canal a cada carregamento).
-  let integrations: { slug: string; name: string; configured: boolean; updatedAt: string }[] = []
-  if (isAdmin) {
-    const { data: integrationRows } = await supabase
-      .from('integrations')
-      .select('slug, name, value, updated_at')
-    integrations = (integrationRows ?? []).map(i => ({
-      slug: i.slug,
-      name: INTEGRATION_LABELS[i.slug] ?? i.name,
-      configured: !!i.value,
-      updatedAt: i.updated_at,
-    }))
-  }
+  const integrations = (integrationRows ?? []).map(i => ({
+    slug: i.slug,
+    name: INTEGRATION_LABELS[i.slug] ?? i.name,
+    configured: !!i.value,
+    updatedAt: i.updated_at,
+  }))
 
   return (
     <div className="min-h-screen">
