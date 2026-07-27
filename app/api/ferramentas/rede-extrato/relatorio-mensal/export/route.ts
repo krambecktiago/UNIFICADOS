@@ -19,7 +19,7 @@ interface VendasMetrics {
 }
 
 interface RelatorioResumo {
-  mesLabel: string
+  periodoLabel: string
   geral: VendasMetrics
   porBandeira: BrandTotal[]
   porEmpresa: (VendasMetrics & { companyNumber: string; label: string })[]
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = (await request.json()) as RelatorioResumo
-    if (!body?.mesLabel) {
+    if (!body?.periodoLabel) {
       return NextResponse.json({ error: 'Dados do relatório ausentes.' }, { status: 400 })
     }
 
@@ -45,12 +45,12 @@ export async function POST(request: NextRequest) {
     wb.creator = 'Ferramentas Unificadas Krambeck'
     wb.created = new Date()
 
-    const ws = wb.addWorksheet('Relatório Mensal', { views: [{ showGridLines: false }] })
+    const ws = wb.addWorksheet('Relatório', { views: [{ showGridLines: false }] })
     ws.columns = [{ width: 3 }, { width: 32 }, { width: 18 }, { width: 14 }, { width: 18 }, { width: 18 }]
 
     ws.mergeCells('A1:D1')
     const title = ws.getCell('A1')
-    title.value = 'KRAMBECK — Relatório Mensal Rede'
+    title.value = 'KRAMBECK — Relatório Rede'
     title.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } }
     title.fill = HEADER_FILL
     title.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     ws.mergeCells('A2:D2')
     const subtitle = ws.getCell('A2')
-    subtitle.value = `Referente a ${body.mesLabel} — gerado em ${new Date().toLocaleString('pt-BR')}`
+    subtitle.value = `Referente ao período de ${body.periodoLabel} — gerado em ${new Date().toLocaleString('pt-BR')}`
     subtitle.font = { italic: true, size: 10, color: { argb: 'FF6B7280' } }
     subtitle.alignment = { indent: 1 }
 

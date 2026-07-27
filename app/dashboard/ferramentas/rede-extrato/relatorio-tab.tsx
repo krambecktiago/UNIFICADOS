@@ -50,7 +50,7 @@ interface PrevisaoMetrics {
 }
 
 interface VendasResumo {
-  mesLabel: string
+  periodoLabel: string
   geral: VendasMetrics
   porBandeira: BrandTotal[]
   porEmpresa: (VendasMetrics & { companyNumber: string; label: string })[]
@@ -82,25 +82,24 @@ function todayISO(offsetDays = 0): string {
   return d.toISOString().slice(0, 10)
 }
 
-// "YYYY-MM" (valor do <input type="month">) -> primeiro/último dia do mês,
-// no formato "yyyy-mm-dd" esperado pela API da Rede.
-function monthRange(monthStr: string): { start: string; end: string } {
-  const [y, m] = monthStr.split('-').map(Number)
-  const start = new Date(Date.UTC(y, m - 1, 1))
-  const end = new Date(Date.UTC(y, m, 0))
+// Relatório sai depois que o mês fecha — abre já no mês anterior completo
+// por padrão, mas o filtro em si é por dia (não fica preso a meses cheios).
+function previousMonthRange(): { start: string; end: string } {
+  const d = new Date()
+  const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1))
+  const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 0))
   return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) }
 }
 
-// Relatório sai depois que o mês fecha — abre já no mês anterior por padrão.
-function defaultMonth(): string {
-  const d = new Date()
-  d.setUTCMonth(d.getUTCMonth() - 1)
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+// Datas aqui são strings "yyyy-mm-dd" puras (sem hora) — formata direto por
+// string, sem passar por Date/timezone, senão desloca um dia perto da meia-noite.
+function formatDateBR(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-')
+  return `${d}/${m}/${y}`
 }
 
-function monthLabel(monthStr: string): string {
-  const [y, m] = monthStr.split('-').map(Number)
-  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+function periodoLabel(startDate: string, endDate: string): string {
+  return `${formatDateBR(startDate)} até ${formatDateBR(endDate)}`
 }
 
 function labelPorCompanyNumber(companyNumber: string, establishments: RedeEstablishment[]): string {
@@ -249,7 +248,8 @@ function SegmentedToggle<T extends string | number>({
 type Secao = 'vendas' | 'previsao'
 
 export function RelatorioTab() {
-  const [month, setMonth] = useState(defaultMonth())
+  const [startDate, setStartDate] = useState(() => previousMonthRange().start)
+  const [endDate, setEndDate] = useState(() => previousMonthRange().end)
   const [establishments, setEstablishments] = useState<RedeEstablishment[]>([])
   const [selectedPvs, setSelectedPvs] = useState<string[]>([])
   const [vendasResumo, setVendasResumo] = useState<VendasResumo | null>(null)
@@ -290,8 +290,7 @@ export function RelatorioTab() {
     setVendasResumo(null)
     setPrevisaoResumo(null)
     try {
-      const { start, end } = monthRange(month)
-      const paramsVendas = new URLSearchParams({ startDate: start, endDate: end })
+      const paramsVendas = new URLSearchParams({ startDate, endDate })
       selectedPvs.forEach(pv => paramsVendas.append('companyNumber', pv))
 
       // Busca de uma vez os 365 dias mais largos — o backend (fetchRedeInstallments)
@@ -332,7 +331,7 @@ export function RelatorioTab() {
         .sort((a, b) => b.totalBruto - a.totalBruto)
 
       setVendasResumo({
-        mesLabel: monthLabel(month),
+        periodoLabel: periodoLabel(startDate, endDate),
         geral: buildVendasMetrics(transactions),
         porBandeira: buildVendasBrandTotals(transactions),
         porEmpresa: vendasPorEmpresa,
@@ -387,7 +386,7 @@ export function RelatorioTab() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `relatorio-mensal-rede-${month}.xlsx`
+      a.download = `relatorio-rede-${startDate}_a_${endDate}.xlsx`
       a.click()
       URL.revokeObjectURL(url)
     } catch {
@@ -401,8 +400,12 @@ export function RelatorioTab() {
     <div>
       <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 mb-6 flex flex-wrap items-end gap-4">
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Mês (vendas)</label>
-          <input type="month" value={month} onChange={e => setMonth(e.target.value)} className={inputBase} />
+          <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data inicial (vendas)</label>
+          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputBase} />
+        </div>
+        <div>
+          <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data final (vendas)</label>
+          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputBase} />
         </div>
         <EstablishmentPicker
           establishments={establishments}
@@ -439,7 +442,7 @@ export function RelatorioTab() {
             value={secaoAtiva}
             onChange={setSecaoAtiva}
             options={[
-              { value: 'vendas', label: 'Vendas do Mês' },
+              { value: 'vendas', label: 'Vendas no Período' },
               { value: 'previsao', label: 'Previsão de Recebimentos' },
             ]}
           />
@@ -452,7 +455,7 @@ export function RelatorioTab() {
             Resumo mensal pra envio à contabilidade — mesmos números do relatório "histórico de vendas" do portal da Rede.
           </div>
 
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Vendas do mês — <span className="capitalize">{vendasResumo.mesLabel}</span></p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Vendas no período — {vendasResumo.periodoLabel}</p>
           <VendasMetricsRow metrics={vendasResumo.geral} />
 
           {vendasResumo.porEmpresa.length > 1 && (
