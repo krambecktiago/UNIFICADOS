@@ -253,6 +253,27 @@ async function fetchRedeInstallmentsForPv(
   return installments
 }
 
+// A API da Rede rejeita (400) consultas de recebíveis com intervalo maior
+// que ~61 dias (descoberto testando direto contra produção — não é
+// documentado). Quebra em sub-intervalos de até `maxDays` pra poder pedir
+// janelas maiores (ex: previsão de 365 dias) sem estourar esse limite.
+function splitDateRange(startDate: string, endDate: string, maxDays = 55): { start: string; end: string }[] {
+  const ranges: { start: string; end: string }[] = []
+  let cursor = new Date(`${startDate}T00:00:00Z`)
+  const end = new Date(`${endDate}T00:00:00Z`)
+
+  while (cursor <= end) {
+    const chunkEnd = new Date(cursor)
+    chunkEnd.setUTCDate(chunkEnd.getUTCDate() + maxDays)
+    const actualEnd = chunkEnd < end ? chunkEnd : end
+    ranges.push({ start: cursor.toISOString().slice(0, 10), end: actualEnd.toISOString().slice(0, 10) })
+    cursor = new Date(actualEnd)
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  }
+
+  return ranges
+}
+
 // startDate/endDate no formato "yyyy-mm-dd". Sem `companyNumbers` (ou vazio),
 // consulta todos os PVs cadastrados e mescla o resultado.
 export async function fetchRedeInstallments(
@@ -267,8 +288,10 @@ export async function fetchRedeInstallments(
     ? companyNumbers
     : listEstablishments(credentials).map(e => e.companyNumber)
 
-  const perPv = await Promise.all(
-    pvsToFetch.map(pv => fetchRedeInstallmentsForPv(token, pv, startDate, endDate))
+  const ranges = splitDateRange(startDate, endDate)
+
+  const perPvPerRange = await Promise.all(
+    pvsToFetch.flatMap(pv => ranges.map(r => fetchRedeInstallmentsForPv(token, pv, r.start, r.end)))
   )
-  return perPv.flat()
+  return perPvPerRange.flat()
 }

@@ -55,11 +55,23 @@ interface VendasResumo {
   porEmpresa: (VendasMetrics & { companyNumber: string; label: string })[]
 }
 
-interface PrevisaoResumo {
+interface PrevisaoJanela {
+  dias: number
+  label: string
   geral: PrevisaoMetrics
-  porBandeira: BrandTotal[]
   porEmpresa: (PrevisaoMetrics & { companyNumber: string; label: string })[]
 }
+
+interface PrevisaoResumo {
+  janelas: PrevisaoJanela[]
+  porBandeira: BrandTotal[]
+}
+
+const JANELAS_PREVISAO = [
+  { dias: 90, label: 'Próximos 90 dias' },
+  { dias: 180, label: 'Próximos 180 dias' },
+  { dias: 365, label: 'Próximos 365 dias' },
+]
 
 const inputBase = 'w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
 
@@ -247,9 +259,10 @@ export function RelatorioTab() {
       const paramsVendas = new URLSearchParams({ startDate: start, endDate: end })
       selectedPvs.forEach(pv => paramsVendas.append('companyNumber', pv))
 
-      // A API da Rede rejeita (400) intervalos maiores que ~61 dias nesse
-      // endpoint — 60 dias fica com folga segura desse limite.
-      const paramsPrevisao = new URLSearchParams({ startDate: todayISO(0), endDate: todayISO(60) })
+      // Busca de uma vez os 365 dias mais largos — o backend (fetchRedeInstallments)
+      // já quebra isso em sub-consultas menores contra a Rede, que rejeita
+      // intervalos maiores que ~61 dias por chamada.
+      const paramsPrevisao = new URLSearchParams({ startDate: todayISO(0), endDate: todayISO(365) })
       selectedPvs.forEach(pv => paramsPrevisao.append('companyNumber', pv))
 
       const [resVendas, resPrevisao] = await Promise.all([
@@ -291,19 +304,27 @@ export function RelatorioTab() {
       })
 
       const installments = (dataPrevisao.installments ?? []) as RedeInstallment[]
-      const previsaoPorEmpresaMap = groupByCompany(installments)
-      const previsaoPorEmpresa = [...previsaoPorEmpresaMap.entries()]
-        .map(([companyNumber, items]) => ({
-          companyNumber,
-          label: labelPorCompanyNumber(companyNumber, currentEstablishments),
-          ...buildPrevisaoMetrics(items),
-        }))
-        .sort((a, b) => b.totalBruto - a.totalBruto)
+
+      const janelas = JANELAS_PREVISAO.map(({ dias, label }) => {
+        const limite = todayISO(dias)
+        const doPeriodo = installments.filter(i => i.date <= limite)
+        const porEmpresaMap = groupByCompany(doPeriodo)
+        const porEmpresa = [...porEmpresaMap.entries()]
+          .map(([companyNumber, items]) => ({
+            companyNumber,
+            label: labelPorCompanyNumber(companyNumber, currentEstablishments),
+            ...buildPrevisaoMetrics(items),
+          }))
+          .sort((a, b) => b.totalBruto - a.totalBruto)
+
+        return { dias, label, geral: buildPrevisaoMetrics(doPeriodo), porEmpresa }
+      })
 
       setPrevisaoResumo({
-        geral: buildPrevisaoMetrics(installments),
+        janelas,
+        // Bandeira calculada sobre a janela mais ampla (365 dias) — não repete
+        // a mesma tabela em cada uma das 3 janelas.
         porBandeira: buildPrevisaoBrandTotals(installments),
-        porEmpresa: previsaoPorEmpresa,
       })
     } catch {
       setError('Erro de rede')
@@ -406,28 +427,31 @@ export function RelatorioTab() {
       {previsaoResumo && !loading && (
         <section>
           <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 text-sm px-4 py-3 rounded-lg mb-4">
-            Previsão das parcelas a receber nos próximos 60 dias (data prevista de recebimento, não data da venda).
-            Ainda não distingue "cancelado" ou "atrasado" — não há evidência de status diferente de "agendado" nos
-            dados observados até agora; a divisão abaixo é só entre parcelas já vencidas (recebido até hoje) e
-            futuras (a receber).
+            Previsão das parcelas a receber nos próximos 90, 180 e 365 dias (data prevista de recebimento, não data
+            da venda — cada janela é cumulativa, inclui a anterior). Ainda não distingue "cancelado" ou "atrasado" —
+            não há evidência de status diferente de "agendado" nos dados observados até agora.
           </div>
 
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Previsão de recebimentos — próximos 60 dias</p>
-          <PrevisaoMetricsRow metrics={previsaoResumo.geral} />
+          {previsaoResumo.janelas.map((janela, idx) => (
+            <div key={janela.dias} className={idx > 0 ? 'mt-8' : ''}>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">{janela.label}</p>
+              <PrevisaoMetricsRow metrics={janela.geral} />
 
-          {previsaoResumo.porEmpresa.length > 1 && (
-            <div className="mt-6 space-y-4">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Por estabelecimento</p>
-              {previsaoResumo.porEmpresa.map(empresa => (
-                <div key={empresa.companyNumber}>
-                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">{empresa.label}</p>
-                  <PrevisaoMetricsRow metrics={empresa} />
+              {janela.porEmpresa.length > 1 && (
+                <div className="mt-6 space-y-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Por estabelecimento</p>
+                  {janela.porEmpresa.map(empresa => (
+                    <div key={empresa.companyNumber}>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">{empresa.label}</p>
+                      <PrevisaoMetricsRow metrics={empresa} />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
+          ))}
 
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4 mt-6">Total líquido por bandeira</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4 mt-8">Total líquido por bandeira (365 dias)</p>
           <BrandTotalsRow porBandeira={previsaoResumo.porBandeira} emptyLabel="Nenhuma parcela encontrada no período." />
         </section>
       )}
