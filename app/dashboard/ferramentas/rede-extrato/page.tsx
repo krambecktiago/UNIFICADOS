@@ -10,6 +10,7 @@ import { TabPanel } from '@/components/ui/tabs'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { cn } from '@/lib/utils'
 import { formatBRL } from '@/lib/utils/br-format'
+import { getRedeBrandName } from '@/lib/rede/brands'
 import { DuplicatasTab } from './duplicatas-tab'
 
 interface RedeTransaction {
@@ -360,6 +361,7 @@ export default function RedeExtratoPage() {
                         <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Data</th>
                         <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Status</th>
                         <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Modalidade</th>
+                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Bandeira</th>
                         <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Cartão</th>
                         <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">NSU</th>
                         <th className="text-left px-4 py-2.5 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Autorização</th>
@@ -382,6 +384,7 @@ export default function RedeExtratoPage() {
                           </td>
                           <td className="px-4 py-2.5"><Badge tone={statusTone(t.status)}>{t.status}</Badge></td>
                           <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{t.modality?.type} · {captureTypeLabel(t.captureType)}</td>
+                          <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{getRedeBrandName(t.brandCode)}</td>
                           <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{t.cardNumber}</td>
                           <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{t.nsu}</td>
                           <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{t.authorizationCode}</td>
