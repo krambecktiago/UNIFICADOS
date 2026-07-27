@@ -208,6 +208,12 @@ export interface RedeInstallment {
 // Endpoint diferente do de vendas: o PV vai no header `Merchant-Id` (não em
 // query), então também é uma chamada por PV. `brands` é obrigatório — manda
 // todos os códigos conhecidos pra não deixar nenhuma bandeira de fora.
+//
+// Esse endpoint não aceita parâmetro `size` (diferente do de vendas) — a
+// página vem sempre com ~20 registros. Uma trava de 100 páginas (usada nas
+// vendas, onde size=100 dá 10 mil registros de folga) aqui vira só 2 mil
+// registros — pouco pra lojas com bastante parcelamento, e comprovadamente
+// cortava dado real (conferido comparando com o extrato oficial da Rede).
 async function fetchRedeInstallmentsForPv(
   token: string,
   pvCompanyNumber: string,
@@ -216,7 +222,7 @@ async function fetchRedeInstallmentsForPv(
 ): Promise<RedeInstallment[]> {
   const installments: RedeInstallment[] = []
   let pageKey: string | undefined
-  for (let page = 0; page < 100; page++) {
+  for (let page = 0; page < 2000; page++) {
     const params = new URLSearchParams({
       startDate,
       endDate,
