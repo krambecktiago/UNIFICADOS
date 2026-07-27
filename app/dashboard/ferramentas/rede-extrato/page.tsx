@@ -197,7 +197,6 @@ export default function RedeExtratoPage() {
   const brandTotals = [...totalsByBrand.entries()]
     .map(([code, v]) => ({ code, label: getRedeBrandName(code), ...v }))
     .sort((a, b) => b.bruto - a.bruto)
-  const maxBrandBruto = Math.max(1, ...brandTotals.map(b => b.bruto))
 
   const inputBase = 'w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
 
@@ -345,44 +344,27 @@ export default function RedeExtratoPage() {
 
         {transactions && !loading && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
+            <div className="flex flex-wrap gap-4 mb-6">
+              <div className="flex-1 min-w-[160px] bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Valor bruto</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{formatBRL(totalBruto)}</p>
               </div>
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
+              <div className="flex-1 min-w-[160px] bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Taxas</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{formatBRL(totalTaxa)}</p>
               </div>
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
+              <div className="flex-1 min-w-[160px] bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Valor líquido</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{formatBRL(totalLiquido)}</p>
               </div>
-            </div>
-
-            {brandTotals.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 mb-6">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4">Valor bruto por bandeira</p>
-                <div className="space-y-3">
-                  {brandTotals.map(b => (
-                    <div key={b.code}>
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="font-medium text-gray-700 dark:text-gray-300">{b.label}</span>
-                        <span className="text-gray-500 dark:text-gray-400">
-                          {b.count}x · {formatBRL(b.bruto)}
-                        </span>
-                      </div>
-                      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-brand-navy rounded-full"
-                          style={{ width: `${(b.bruto / maxBrandBruto) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+              {brandTotals.map(b => (
+                <div key={b.code} className="flex-1 min-w-[160px] bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">{b.label}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{formatBRL(b.bruto)}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{b.count}x</p>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
 
             {filteredTransactions.length === 0 ? (
               <p className="text-sm text-gray-400 dark:text-gray-500">Nenhuma transação encontrada no período.</p>
