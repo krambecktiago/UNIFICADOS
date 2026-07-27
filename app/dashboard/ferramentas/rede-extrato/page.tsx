@@ -11,7 +11,9 @@ import { CurrencyInput } from '@/components/ui/currency-input'
 import { cn } from '@/lib/utils'
 import { formatBRL } from '@/lib/utils/br-format'
 import { getRedeBrandName } from '@/lib/rede/brands'
+import { EstablishmentPicker, type RedeEstablishment } from '@/components/rede/establishment-picker'
 import { DuplicatasTab } from './duplicatas-tab'
+import { RelatorioMensalTab } from './relatorio-mensal-tab'
 
 interface RedeTransaction {
   status: string
@@ -28,15 +30,6 @@ interface RedeTransaction {
   saleHour?: string
   modality: { type: string; product: string }
   merchant?: { companyNumber: string; companyName?: string; tradeName?: string }
-}
-
-interface RedeEstablishment {
-  companyNumber: string
-  name?: string
-}
-
-function establishmentLabel(e: RedeEstablishment): string {
-  return e.name ? `${e.name} (${e.companyNumber})` : e.companyNumber
 }
 
 // Na API da Rede, vendas via Link de Pagamento vêm com captureType "ECOMMERCE"
@@ -62,11 +55,12 @@ function statusTone(status: string): 'green' | 'red' | 'gray' {
   return 'gray'
 }
 
-type Tab = 'extrato' | 'duplicatas'
+type Tab = 'extrato' | 'duplicatas' | 'relatorio-mensal'
 
 const TAB_DEFS: { key: Tab; label: string }[] = [
   { key: 'extrato', label: 'Extrato' },
   { key: 'duplicatas', label: 'Conciliação de Duplicatas' },
+  { key: 'relatorio-mensal', label: 'Relatório Mensal' },
 ]
 
 export default function RedeExtratoPage() {
@@ -74,8 +68,6 @@ export default function RedeExtratoPage() {
   const [startDate, setStartDate] = useState(todayISO(-1))
   const [endDate, setEndDate] = useState(todayISO(-1))
   const [selectedPvs, setSelectedPvs] = useState<string[]>([]) // [] = todos os estabelecimentos
-  const [showPvMenu, setShowPvMenu] = useState(false)
-  const pvMenuRef = useRef<HTMLDivElement>(null)
   const [selectedCaptureTypes, setSelectedCaptureTypes] = useState<string[]>([]) // [] = todos os tipos (PDV, POS, etc)
   const [showCaptureMenu, setShowCaptureMenu] = useState(false)
   const captureMenuRef = useRef<HTMLDivElement>(null)
@@ -88,9 +80,6 @@ export default function RedeExtratoPage() {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (pvMenuRef.current && !pvMenuRef.current.contains(e.target as Node)) {
-        setShowPvMenu(false)
-      }
       if (captureMenuRef.current && !captureMenuRef.current.contains(e.target as Node)) {
         setShowCaptureMenu(false)
       }
@@ -125,15 +114,6 @@ export default function RedeExtratoPage() {
     setSelectedPvs(prev =>
       prev.includes(companyNumber) ? prev.filter(p => p !== companyNumber) : [...prev, companyNumber]
     )
-  }
-
-  function pvMenuLabel(): string {
-    if (selectedPvs.length === 0) return 'Todos os estabelecimentos'
-    if (selectedPvs.length === 1) {
-      const found = establishments.find(e => e.companyNumber === selectedPvs[0])
-      return found ? establishmentLabel(found) : selectedPvs[0]
-    }
-    return `${selectedPvs.length} estabelecimentos selecionados`
   }
 
   function toggleCaptureType(captureType: string) {
@@ -244,42 +224,12 @@ export default function RedeExtratoPage() {
             <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data final</label>
             <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputBase} />
           </div>
-          <div className="relative" ref={pvMenuRef}>
-            <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Estabelecimento</label>
-            <button
-              type="button"
-              onClick={() => setShowPvMenu(v => !v)}
-              className={inputBase + ' text-left flex items-center justify-between gap-2 min-w-[220px]'}
-            >
-              <span className="truncate">{pvMenuLabel()}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
-            </button>
-            {showPvMenu && (
-              <div className="absolute z-10 mt-1 w-full min-w-[240px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 max-h-64 overflow-y-auto">
-                <label className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedPvs.length === 0}
-                    onChange={() => setSelectedPvs([])}
-                    className="rounded border-gray-300 dark:border-gray-600"
-                  />
-                  Todos os estabelecimentos
-                </label>
-                <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
-                {establishments.map(e => (
-                  <label key={e.companyNumber} className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedPvs.includes(e.companyNumber)}
-                      onChange={() => togglePv(e.companyNumber)}
-                      className="rounded border-gray-300 dark:border-gray-600"
-                    />
-                    {establishmentLabel(e)}
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
+          <EstablishmentPicker
+            establishments={establishments}
+            selected={selectedPvs}
+            onToggle={togglePv}
+            onClear={() => setSelectedPvs([])}
+          />
           <div className="relative" ref={captureMenuRef}>
             <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Tipo de venda</label>
             <button
@@ -428,6 +378,14 @@ export default function RedeExtratoPage() {
         <div className="px-8 py-8">
           <TabPanel tabKey="duplicatas">
             <DuplicatasTab />
+          </TabPanel>
+        </div>
+      )}
+
+      {activeTab === 'relatorio-mensal' && (
+        <div className="px-8 py-8">
+          <TabPanel tabKey="relatorio-mensal">
+            <RelatorioMensalTab />
           </TabPanel>
         </div>
       )}
