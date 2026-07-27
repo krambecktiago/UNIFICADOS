@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
+import { cn } from '@/lib/utils'
 import { formatBRL } from '@/lib/utils/br-format'
 import { getRedeBrandName } from '@/lib/rede/brands'
 import { EstablishmentPicker, establishmentLabel, type RedeEstablishment } from '@/components/rede/establishment-picker'
@@ -215,12 +216,46 @@ function BrandTotalsRow({ porBandeira, emptyLabel }: { porBandeira: BrandTotal[]
   )
 }
 
+function SegmentedToggle<T extends string | number>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[]
+  value: T
+  onChange: (value: T) => void
+}) {
+  return (
+    <div className="inline-flex flex-wrap rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-1 gap-1">
+      {options.map(opt => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={cn(
+            'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+            value === opt.value
+              ? 'bg-white dark:bg-gray-900 text-brand-navy dark:text-blue-300 shadow-sm'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          )}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+type Secao = 'vendas' | 'previsao'
+
 export function RelatorioTab() {
   const [month, setMonth] = useState(defaultMonth())
   const [establishments, setEstablishments] = useState<RedeEstablishment[]>([])
   const [selectedPvs, setSelectedPvs] = useState<string[]>([])
   const [vendasResumo, setVendasResumo] = useState<VendasResumo | null>(null)
   const [previsaoResumo, setPrevisaoResumo] = useState<PrevisaoResumo | null>(null)
+  const [secaoAtiva, setSecaoAtiva] = useState<Secao>('vendas')
+  const [janelaAtiva, setJanelaAtiva] = useState(90)
   const [loading, setLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
@@ -398,8 +433,21 @@ export function RelatorioTab() {
         </div>
       )}
 
-      {vendasResumo && !loading && (
-        <section className="mb-10">
+      {(vendasResumo || previsaoResumo) && !loading && (
+        <div className="mb-6">
+          <SegmentedToggle
+            value={secaoAtiva}
+            onChange={setSecaoAtiva}
+            options={[
+              { value: 'vendas', label: 'Vendas do Mês' },
+              { value: 'previsao', label: 'Previsão de Recebimentos' },
+            ]}
+          />
+        </div>
+      )}
+
+      {vendasResumo && !loading && secaoAtiva === 'vendas' && (
+        <section>
           <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 text-sm px-4 py-3 rounded-lg mb-4">
             Resumo mensal pra envio à contabilidade — mesmos números do relatório "histórico de vendas" do portal da Rede.
           </div>
@@ -424,32 +472,41 @@ export function RelatorioTab() {
         </section>
       )}
 
-      {previsaoResumo && !loading && (
+      {previsaoResumo && !loading && secaoAtiva === 'previsao' && (
         <section>
           <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 text-sm px-4 py-3 rounded-lg mb-4">
-            Previsão das parcelas a receber nos próximos 90, 180 e 365 dias (data prevista de recebimento, não data
-            da venda — cada janela é cumulativa, inclui a anterior). Ainda não distingue "cancelado" ou "atrasado" —
-            não há evidência de status diferente de "agendado" nos dados observados até agora.
+            Previsão das parcelas a receber (data prevista de recebimento, não data da venda — cada janela é
+            cumulativa, inclui a anterior). Ainda não distingue "cancelado" ou "atrasado" — não há evidência de
+            status diferente de "agendado" nos dados observados até agora.
           </div>
 
-          {previsaoResumo.janelas.map((janela, idx) => (
-            <div key={janela.dias} className={idx > 0 ? 'mt-8' : ''}>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">{janela.label}</p>
-              <PrevisaoMetricsRow metrics={janela.geral} />
+          <div className="mb-4">
+            <SegmentedToggle
+              value={janelaAtiva}
+              onChange={setJanelaAtiva}
+              options={previsaoResumo.janelas.map(j => ({ value: j.dias, label: j.label }))}
+            />
+          </div>
 
-              {janela.porEmpresa.length > 1 && (
-                <div className="mt-6 space-y-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Por estabelecimento</p>
-                  {janela.porEmpresa.map(empresa => (
-                    <div key={empresa.companyNumber}>
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">{empresa.label}</p>
-                      <PrevisaoMetricsRow metrics={empresa} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+          {previsaoResumo.janelas
+            .filter(janela => janela.dias === janelaAtiva)
+            .map(janela => (
+              <div key={janela.dias}>
+                <PrevisaoMetricsRow metrics={janela.geral} />
+
+                {janela.porEmpresa.length > 1 && (
+                  <div className="mt-6 space-y-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Por estabelecimento</p>
+                    {janela.porEmpresa.map(empresa => (
+                      <div key={empresa.companyNumber}>
+                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">{empresa.label}</p>
+                        <PrevisaoMetricsRow metrics={empresa} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
 
           <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4 mt-8">Total líquido por bandeira (365 dias)</p>
           <BrandTotalsRow porBandeira={previsaoResumo.porBandeira} emptyLabel="Nenhuma parcela encontrada no período." />
