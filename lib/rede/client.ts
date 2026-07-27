@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { ALL_REDE_BRAND_CODES } from '@/lib/rede/brands'
 
 const REDE_BASE_URL = 'https://api.userede.com.br/redelabs'
 
@@ -186,6 +187,87 @@ export async function fetchRedeSales(
 
   const perPv = await Promise.all(
     pvsToFetch.map(pv => fetchRedeSalesForPv(token, pv, startDate, endDate))
+  )
+  return perPv.flat()
+}
+
+export interface RedeInstallment {
+  amount: number
+  netAmount: number
+  mdrAmount: number
+  date: string
+  saleDate: string
+  brandCode: number
+  brandName: string
+  status: string
+  installmentNumber: number
+  installmentQuantity: number
+  merchant?: { companyNumber: string; companyName?: string }
+}
+
+// Endpoint diferente do de vendas: o PV vai no header `Merchant-Id` (não em
+// query), então também é uma chamada por PV. `brands` é obrigatório — manda
+// todos os códigos conhecidos pra não deixar nenhuma bandeira de fora.
+async function fetchRedeInstallmentsForPv(
+  token: string,
+  pvCompanyNumber: string,
+  startDate: string,
+  endDate: string
+): Promise<RedeInstallment[]> {
+  const installments: RedeInstallment[] = []
+  let pageKey: string | undefined
+  for (let page = 0; page < 100; page++) {
+    const params = new URLSearchParams({
+      startDate,
+      endDate,
+      brands: ALL_REDE_BRAND_CODES.join(','),
+    })
+    if (pageKey) params.set('pageKey', pageKey)
+
+    const res = await fetch(`${REDE_BASE_URL}/merchant-statement/v1/receivables/installments?${params}`, {
+      headers: { Authorization: `Bearer ${token}`, 'Merchant-Id': pvCompanyNumber },
+      cache: 'no-store',
+    })
+
+    if (res.status === 204) break
+    if (!res.ok) {
+      throw new Error(`Falha ao consultar recebíveis da Rede (PV ${pvCompanyNumber}, status ${res.status}).`)
+    }
+
+    const data = await res.json() as {
+      content?: { installments?: RedeInstallment[] }
+      cursor?: { hasNextKey?: boolean; nextKey?: string }
+    }
+    installments.push(
+      ...(data.content?.installments ?? []).map(i => ({
+        ...i,
+        merchant: { companyNumber: pvCompanyNumber },
+      }))
+    )
+
+    if (!data.cursor?.hasNextKey || !data.cursor.nextKey) break
+    pageKey = data.cursor.nextKey
+  }
+
+  return installments
+}
+
+// startDate/endDate no formato "yyyy-mm-dd". Sem `companyNumbers` (ou vazio),
+// consulta todos os PVs cadastrados e mescla o resultado.
+export async function fetchRedeInstallments(
+  startDate: string,
+  endDate: string,
+  companyNumbers?: string[]
+): Promise<RedeInstallment[]> {
+  const credentials = await getRedeCredentials()
+  const token = await getRedeToken(credentials)
+
+  const pvsToFetch = companyNumbers?.length
+    ? companyNumbers
+    : listEstablishments(credentials).map(e => e.companyNumber)
+
+  const perPv = await Promise.all(
+    pvsToFetch.map(pv => fetchRedeInstallmentsForPv(token, pv, startDate, endDate))
   )
   return perPv.flat()
 }
