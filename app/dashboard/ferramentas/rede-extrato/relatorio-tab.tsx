@@ -247,7 +247,9 @@ export function RelatorioTab() {
       const paramsVendas = new URLSearchParams({ startDate: start, endDate: end })
       selectedPvs.forEach(pv => paramsVendas.append('companyNumber', pv))
 
-      const paramsPrevisao = new URLSearchParams({ startDate: todayISO(0), endDate: todayISO(90) })
+      // A API da Rede rejeita (400) intervalos maiores que ~61 dias nesse
+      // endpoint — 60 dias fica com folga segura desse limite.
+      const paramsPrevisao = new URLSearchParams({ startDate: todayISO(0), endDate: todayISO(60) })
       selectedPvs.forEach(pv => paramsPrevisao.append('companyNumber', pv))
 
       const [resVendas, resPrevisao] = await Promise.all([
@@ -404,13 +406,13 @@ export function RelatorioTab() {
       {previsaoResumo && !loading && (
         <section>
           <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 text-sm px-4 py-3 rounded-lg mb-4">
-            Previsão das parcelas a receber nos próximos 90 dias (data prevista de recebimento, não data da venda).
+            Previsão das parcelas a receber nos próximos 60 dias (data prevista de recebimento, não data da venda).
             Ainda não distingue "cancelado" ou "atrasado" — não há evidência de status diferente de "agendado" nos
             dados observados até agora; a divisão abaixo é só entre parcelas já vencidas (recebido até hoje) e
             futuras (a receber).
           </div>
 
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Previsão de recebimentos — próximos 90 dias</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Previsão de recebimentos — próximos 60 dias</p>
           <PrevisaoMetricsRow metrics={previsaoResumo.geral} />
 
           {previsaoResumo.porEmpresa.length > 1 && (

@@ -231,7 +231,8 @@ async function fetchRedeInstallmentsForPv(
 
     if (res.status === 204) break
     if (!res.ok) {
-      throw new Error(`Falha ao consultar recebíveis da Rede (PV ${pvCompanyNumber}, status ${res.status}).`)
+      const body = await res.text().catch(() => '')
+      throw new Error(`Falha ao consultar recebíveis da Rede (PV ${pvCompanyNumber}, status ${res.status})${body ? `: ${body}` : '.'}`)
     }
 
     const data = await res.json() as {
