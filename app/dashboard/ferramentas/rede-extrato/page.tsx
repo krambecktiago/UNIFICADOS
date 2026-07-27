@@ -186,6 +186,19 @@ export default function RedeExtratoPage() {
   // real descontado é bruto − líquido de cada transação.
   const totalTaxa = totalBruto - totalLiquido
 
+  const totalsByBrand = new Map<number, { bruto: number; liquido: number; count: number }>()
+  for (const t of filteredTransactions) {
+    const entry = totalsByBrand.get(t.brandCode) ?? { bruto: 0, liquido: 0, count: 0 }
+    entry.bruto += t.amount
+    entry.liquido += t.netAmount
+    entry.count += 1
+    totalsByBrand.set(t.brandCode, entry)
+  }
+  const brandTotals = [...totalsByBrand.entries()]
+    .map(([code, v]) => ({ code, label: getRedeBrandName(code), ...v }))
+    .sort((a, b) => b.bruto - a.bruto)
+  const maxBrandBruto = Math.max(1, ...brandTotals.map(b => b.bruto))
+
   const inputBase = 'w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
 
   return (
@@ -346,6 +359,30 @@ export default function RedeExtratoPage() {
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{formatBRL(totalLiquido)}</p>
               </div>
             </div>
+
+            {brandTotals.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 mb-6">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4">Valor bruto por bandeira</p>
+                <div className="space-y-3">
+                  {brandTotals.map(b => (
+                    <div key={b.code}>
+                      <div className="flex items-center justify-between text-sm mb-1">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{b.label}</span>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          {b.count}x · {formatBRL(b.bruto)}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-brand-navy rounded-full"
+                          style={{ width: `${(b.bruto / maxBrandBruto) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {filteredTransactions.length === 0 ? (
               <p className="text-sm text-gray-400 dark:text-gray-500">Nenhuma transação encontrada no período.</p>
