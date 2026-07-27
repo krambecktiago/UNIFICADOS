@@ -56,23 +56,12 @@ interface VendasResumo {
   porEmpresa: (VendasMetrics & { companyNumber: string; label: string })[]
 }
 
-interface PrevisaoJanela {
-  dias: number
-  label: string
+interface PrevisaoResumo {
+  periodoLabel: string
   geral: PrevisaoMetrics
+  porBandeira: BrandTotal[]
   porEmpresa: (PrevisaoMetrics & { companyNumber: string; label: string })[]
 }
-
-interface PrevisaoResumo {
-  janelas: PrevisaoJanela[]
-  porBandeira: BrandTotal[]
-}
-
-const JANELAS_PREVISAO = [
-  { dias: 90, label: 'Próximos 90 dias' },
-  { dias: 180, label: 'Próximos 180 dias' },
-  { dias: 365, label: 'Próximos 365 dias' },
-]
 
 const inputBase = 'w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
 
@@ -215,7 +204,7 @@ function BrandTotalsRow({ porBandeira, emptyLabel }: { porBandeira: BrandTotal[]
   )
 }
 
-function SegmentedToggle<T extends string | number>({
+function SegmentedToggle<T extends string>({
   options,
   value,
   onChange,
@@ -248,17 +237,24 @@ function SegmentedToggle<T extends string | number>({
 type Secao = 'vendas' | 'previsao'
 
 export function RelatorioTab() {
-  const [startDate, setStartDate] = useState(() => previousMonthRange().start)
-  const [endDate, setEndDate] = useState(() => previousMonthRange().end)
   const [establishments, setEstablishments] = useState<RedeEstablishment[]>([])
   const [selectedPvs, setSelectedPvs] = useState<string[]>([])
-  const [vendasResumo, setVendasResumo] = useState<VendasResumo | null>(null)
-  const [previsaoResumo, setPrevisaoResumo] = useState<PrevisaoResumo | null>(null)
   const [secaoAtiva, setSecaoAtiva] = useState<Secao>('vendas')
-  const [janelaAtiva, setJanelaAtiva] = useState(90)
-  const [loading, setLoading] = useState(false)
+
+  // Filtro de Vendas — período independente do de Previsão.
+  const [vendasStartDate, setVendasStartDate] = useState(() => previousMonthRange().start)
+  const [vendasEndDate, setVendasEndDate] = useState(() => previousMonthRange().end)
+  const [vendasResumo, setVendasResumo] = useState<VendasResumo | null>(null)
+  const [loadingVendas, setLoadingVendas] = useState(false)
   const [exporting, setExporting] = useState(false)
-  const [error, setError] = useState('')
+  const [errorVendas, setErrorVendas] = useState('')
+
+  // Filtro de Previsão — período independente do de Vendas.
+  const [previsaoStartDate, setPrevisaoStartDate] = useState(() => todayISO(0))
+  const [previsaoEndDate, setPrevisaoEndDate] = useState(() => todayISO(90))
+  const [previsaoResumo, setPrevisaoResumo] = useState<PrevisaoResumo | null>(null)
+  const [loadingPrevisao, setLoadingPrevisao] = useState(false)
+  const [errorPrevisao, setErrorPrevisao] = useState('')
 
   useEffect(() => {
     fetch('/api/ferramentas/rede-extrato/establishments')
@@ -284,93 +280,91 @@ export function RelatorioTab() {
     )
   }
 
-  async function buscar() {
-    setLoading(true)
-    setError('')
+  async function buscarVendas() {
+    setLoadingVendas(true)
+    setErrorVendas('')
     setVendasResumo(null)
-    setPrevisaoResumo(null)
     try {
-      const paramsVendas = new URLSearchParams({ startDate, endDate })
-      selectedPvs.forEach(pv => paramsVendas.append('companyNumber', pv))
+      const params = new URLSearchParams({ startDate: vendasStartDate, endDate: vendasEndDate })
+      selectedPvs.forEach(pv => params.append('companyNumber', pv))
+      const res = await fetch(`/api/ferramentas/rede-extrato?${params}`)
+      const data = await res.json()
+      if (Array.isArray(data?.establishments)) setEstablishments(data.establishments)
 
-      // Busca de uma vez os 365 dias mais largos — o backend (fetchRedeInstallments)
-      // já quebra isso em sub-consultas menores contra a Rede, que rejeita
-      // intervalos maiores que ~61 dias por chamada.
-      const paramsPrevisao = new URLSearchParams({ startDate: todayISO(0), endDate: todayISO(365) })
-      selectedPvs.forEach(pv => paramsPrevisao.append('companyNumber', pv))
-
-      const [resVendas, resPrevisao] = await Promise.all([
-        fetch(`/api/ferramentas/rede-extrato?${paramsVendas}`),
-        fetch(`/api/ferramentas/rede-extrato/previsao-recebimentos?${paramsPrevisao}`),
-      ])
-      const dataVendas = await resVendas.json()
-      const dataPrevisao = await resPrevisao.json()
-
-      const currentEstablishments: RedeEstablishment[] = Array.isArray(dataVendas?.establishments)
-        ? dataVendas.establishments
-        : establishments
-      setEstablishments(currentEstablishments)
-
-      if (!resVendas.ok) {
-        setError(dataVendas.error ?? 'Erro ao consultar extrato')
-        return
-      }
-      if (!resPrevisao.ok) {
-        setError(dataPrevisao.error ?? 'Erro ao consultar recebíveis')
+      if (!res.ok) {
+        setErrorVendas(data.error ?? 'Erro ao consultar extrato')
         return
       }
 
-      const transactions = (dataVendas.transactions ?? []) as RedeTransaction[]
-      const vendasPorEmpresaMap = groupByCompany(transactions)
-      const vendasPorEmpresa = [...vendasPorEmpresaMap.entries()]
+      const transactions = (data.transactions ?? []) as RedeTransaction[]
+      const porEmpresaMap = groupByCompany(transactions)
+      const porEmpresa = [...porEmpresaMap.entries()]
         .map(([companyNumber, items]) => ({
           companyNumber,
-          label: labelPorCompanyNumber(companyNumber, currentEstablishments),
+          label: labelPorCompanyNumber(companyNumber, Array.isArray(data?.establishments) ? data.establishments : establishments),
           ...buildVendasMetrics(items),
         }))
         .sort((a, b) => b.totalBruto - a.totalBruto)
 
       setVendasResumo({
-        periodoLabel: periodoLabel(startDate, endDate),
+        periodoLabel: periodoLabel(vendasStartDate, vendasEndDate),
         geral: buildVendasMetrics(transactions),
         porBandeira: buildVendasBrandTotals(transactions),
-        porEmpresa: vendasPorEmpresa,
-      })
-
-      const installments = (dataPrevisao.installments ?? []) as RedeInstallment[]
-
-      const janelas = JANELAS_PREVISAO.map(({ dias, label }) => {
-        const limite = todayISO(dias)
-        const doPeriodo = installments.filter(i => i.date <= limite)
-        const porEmpresaMap = groupByCompany(doPeriodo)
-        const porEmpresa = [...porEmpresaMap.entries()]
-          .map(([companyNumber, items]) => ({
-            companyNumber,
-            label: labelPorCompanyNumber(companyNumber, currentEstablishments),
-            ...buildPrevisaoMetrics(items),
-          }))
-          .sort((a, b) => b.totalBruto - a.totalBruto)
-
-        return { dias, label, geral: buildPrevisaoMetrics(doPeriodo), porEmpresa }
-      })
-
-      setPrevisaoResumo({
-        janelas,
-        // Bandeira calculada sobre a janela mais ampla (365 dias) — não repete
-        // a mesma tabela em cada uma das 3 janelas.
-        porBandeira: buildPrevisaoBrandTotals(installments),
+        porEmpresa,
       })
     } catch {
-      setError('Erro de rede')
+      setErrorVendas('Erro de rede')
     } finally {
-      setLoading(false)
+      setLoadingVendas(false)
+    }
+  }
+
+  async function buscarPrevisao() {
+    setLoadingPrevisao(true)
+    setErrorPrevisao('')
+    setPrevisaoResumo(null)
+    try {
+      // O backend (fetchRedeInstallments) já quebra internamente em
+      // sub-consultas menores contra a Rede, que rejeita intervalos maiores
+      // que ~61 dias por chamada — aqui pode mandar qualquer período.
+      const params = new URLSearchParams({ startDate: previsaoStartDate, endDate: previsaoEndDate })
+      selectedPvs.forEach(pv => params.append('companyNumber', pv))
+      const res = await fetch(`/api/ferramentas/rede-extrato/previsao-recebimentos?${params}`)
+      const data = await res.json()
+      if (Array.isArray(data?.establishments)) setEstablishments(data.establishments)
+
+      if (!res.ok) {
+        setErrorPrevisao(data.error ?? 'Erro ao consultar recebíveis')
+        return
+      }
+
+      const installments = (data.installments ?? []) as RedeInstallment[]
+      const porEmpresaMap = groupByCompany(installments)
+      const porEmpresa = [...porEmpresaMap.entries()]
+        .map(([companyNumber, items]) => ({
+          companyNumber,
+          label: labelPorCompanyNumber(companyNumber, Array.isArray(data?.establishments) ? data.establishments : establishments),
+          ...buildPrevisaoMetrics(items),
+        }))
+        .sort((a, b) => b.totalBruto - a.totalBruto)
+
+      setPrevisaoResumo({
+        periodoLabel: periodoLabel(previsaoStartDate, previsaoEndDate),
+        geral: buildPrevisaoMetrics(installments),
+        porBandeira: buildPrevisaoBrandTotals(installments),
+        porEmpresa,
+      })
+    } catch {
+      setErrorPrevisao('Erro de rede')
+    } finally {
+      setLoadingPrevisao(false)
     }
   }
 
   async function exportar() {
     if (!vendasResumo) return
     setExporting(true)
-    setError('')
+    setErrorVendas('')
     try {
       const res = await fetch('/api/ferramentas/rede-extrato/relatorio-mensal/export', {
         method: 'POST',
@@ -379,18 +373,18 @@ export function RelatorioTab() {
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setError(data.error ?? 'Erro ao exportar planilha')
+        setErrorVendas(data.error ?? 'Erro ao exportar planilha')
         return
       }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `relatorio-rede-${startDate}_a_${endDate}.xlsx`
+      a.download = `relatorio-rede-${vendasStartDate}_a_${vendasEndDate}.xlsx`
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      setError('Erro de rede')
+      setErrorVendas('Erro de rede')
     } finally {
       setExporting(false)
     }
@@ -399,120 +393,144 @@ export function RelatorioTab() {
   return (
     <div>
       <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 mb-6 flex flex-wrap items-end gap-4">
-        <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data inicial (vendas)</label>
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputBase} />
-        </div>
-        <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data final (vendas)</label>
-          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputBase} />
-        </div>
         <EstablishmentPicker
           establishments={establishments}
           selected={selectedPvs}
           onToggle={togglePv}
           onClear={() => setSelectedPvs([])}
         />
-        <Button type="button" onClick={buscar} loading={loading}>
-          {loading ? 'Buscando…' : 'Buscar'}
-        </Button>
-        {vendasResumo && (
-          <Button type="button" onClick={exportar} loading={exporting} variant="secondary">
-            {exporting ? 'Exportando…' : 'Exportar Excel'}
-          </Button>
-        )}
       </div>
 
-      {error && (
-        <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-lg mb-6">
-          {error}
-        </div>
-      )}
+      <div className="mb-6">
+        <SegmentedToggle
+          value={secaoAtiva}
+          onChange={setSecaoAtiva}
+          options={[
+            { value: 'vendas', label: 'Vendas no Período' },
+            { value: 'previsao', label: 'Previsão de Recebimentos' },
+          ]}
+        />
+      </div>
 
-      {loading && (
-        <div className="flex items-center gap-3 text-sm text-gray-400 dark:text-gray-500">
-          <Spinner size="md" />
-          Consultando API da Rede...
-        </div>
-      )}
-
-      {(vendasResumo || previsaoResumo) && !loading && (
-        <div className="mb-6">
-          <SegmentedToggle
-            value={secaoAtiva}
-            onChange={setSecaoAtiva}
-            options={[
-              { value: 'vendas', label: 'Vendas no Período' },
-              { value: 'previsao', label: 'Previsão de Recebimentos' },
-            ]}
-          />
-        </div>
-      )}
-
-      {vendasResumo && !loading && secaoAtiva === 'vendas' && (
+      {secaoAtiva === 'vendas' && (
         <section>
-          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 text-sm px-4 py-3 rounded-lg mb-4">
-            Resumo mensal pra envio à contabilidade — mesmos números do relatório "histórico de vendas" do portal da Rede.
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 mb-6 flex flex-wrap items-end gap-4">
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data inicial</label>
+              <input type="date" value={vendasStartDate} onChange={e => setVendasStartDate(e.target.value)} className={inputBase} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data final</label>
+              <input type="date" value={vendasEndDate} onChange={e => setVendasEndDate(e.target.value)} className={inputBase} />
+            </div>
+            <Button type="button" onClick={buscarVendas} loading={loadingVendas}>
+              {loadingVendas ? 'Buscando…' : 'Buscar'}
+            </Button>
+            {vendasResumo && (
+              <Button type="button" onClick={exportar} loading={exporting} variant="secondary">
+                {exporting ? 'Exportando…' : 'Exportar Excel'}
+              </Button>
+            )}
           </div>
 
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Vendas no período — {vendasResumo.periodoLabel}</p>
-          <VendasMetricsRow metrics={vendasResumo.geral} />
-
-          {vendasResumo.porEmpresa.length > 1 && (
-            <div className="mt-6 space-y-4">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Por estabelecimento</p>
-              {vendasResumo.porEmpresa.map(empresa => (
-                <div key={empresa.companyNumber}>
-                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">{empresa.label}</p>
-                  <VendasMetricsRow metrics={empresa} />
-                </div>
-              ))}
+          {errorVendas && (
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-lg mb-6">
+              {errorVendas}
             </div>
           )}
 
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4 mt-6">Total líquido por bandeira</p>
-          <BrandTotalsRow porBandeira={vendasResumo.porBandeira} emptyLabel="Nenhuma venda aprovada no período." />
+          {loadingVendas && (
+            <div className="flex items-center gap-3 text-sm text-gray-400 dark:text-gray-500">
+              <Spinner size="md" />
+              Consultando API da Rede...
+            </div>
+          )}
+
+          {vendasResumo && !loadingVendas && (
+            <>
+              <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 text-sm px-4 py-3 rounded-lg mb-4">
+                Resumo pra envio à contabilidade — mesmos números do relatório "histórico de vendas" do portal da Rede.
+              </div>
+
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Vendas no período — {vendasResumo.periodoLabel}</p>
+              <VendasMetricsRow metrics={vendasResumo.geral} />
+
+              {vendasResumo.porEmpresa.length > 1 && (
+                <div className="mt-6 space-y-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Por estabelecimento</p>
+                  {vendasResumo.porEmpresa.map(empresa => (
+                    <div key={empresa.companyNumber}>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">{empresa.label}</p>
+                      <VendasMetricsRow metrics={empresa} />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4 mt-6">Total líquido por bandeira</p>
+              <BrandTotalsRow porBandeira={vendasResumo.porBandeira} emptyLabel="Nenhuma venda aprovada no período." />
+            </>
+          )}
         </section>
       )}
 
-      {previsaoResumo && !loading && secaoAtiva === 'previsao' && (
+      {secaoAtiva === 'previsao' && (
         <section>
-          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 text-sm px-4 py-3 rounded-lg mb-4">
-            Previsão das parcelas a receber (data prevista de recebimento, não data da venda — cada janela é
-            cumulativa, inclui a anterior). Ainda não distingue "cancelado" ou "atrasado" — não há evidência de
-            status diferente de "agendado" nos dados observados até agora.
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 mb-6 flex flex-wrap items-end gap-4">
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data inicial</label>
+              <input type="date" value={previsaoStartDate} onChange={e => setPrevisaoStartDate(e.target.value)} className={inputBase} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Data final</label>
+              <input type="date" value={previsaoEndDate} onChange={e => setPrevisaoEndDate(e.target.value)} className={inputBase} />
+            </div>
+            <Button type="button" onClick={buscarPrevisao} loading={loadingPrevisao}>
+              {loadingPrevisao ? 'Buscando…' : 'Buscar'}
+            </Button>
           </div>
 
-          <div className="mb-4">
-            <SegmentedToggle
-              value={janelaAtiva}
-              onChange={setJanelaAtiva}
-              options={previsaoResumo.janelas.map(j => ({ value: j.dias, label: j.label }))}
-            />
-          </div>
+          {errorPrevisao && (
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-lg mb-6">
+              {errorPrevisao}
+            </div>
+          )}
 
-          {previsaoResumo.janelas
-            .filter(janela => janela.dias === janelaAtiva)
-            .map(janela => (
-              <div key={janela.dias}>
-                <PrevisaoMetricsRow metrics={janela.geral} />
+          {loadingPrevisao && (
+            <div className="flex items-center gap-3 text-sm text-gray-400 dark:text-gray-500">
+              <Spinner size="md" />
+              Consultando API da Rede...
+            </div>
+          )}
 
-                {janela.porEmpresa.length > 1 && (
-                  <div className="mt-6 space-y-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Por estabelecimento</p>
-                    {janela.porEmpresa.map(empresa => (
-                      <div key={empresa.companyNumber}>
-                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">{empresa.label}</p>
-                        <PrevisaoMetricsRow metrics={empresa} />
-                      </div>
-                    ))}
-                  </div>
-                )}
+          {previsaoResumo && !loadingPrevisao && (
+            <>
+              <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 text-sm px-4 py-3 rounded-lg mb-4">
+                Previsão das parcelas a receber no período (data prevista de recebimento, não data da venda). Ainda
+                não distingue "cancelado" ou "atrasado" — não há evidência de status diferente de "agendado" nos
+                dados observados até agora; a divisão abaixo é só entre parcelas já vencidas (recebido até hoje) e
+                futuras (a receber).
               </div>
-            ))}
 
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4 mt-8">Total líquido por bandeira (365 dias)</p>
-          <BrandTotalsRow porBandeira={previsaoResumo.porBandeira} emptyLabel="Nenhuma parcela encontrada no período." />
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Previsão de recebimentos — {previsaoResumo.periodoLabel}</p>
+              <PrevisaoMetricsRow metrics={previsaoResumo.geral} />
+
+              {previsaoResumo.porEmpresa.length > 1 && (
+                <div className="mt-6 space-y-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Por estabelecimento</p>
+                  {previsaoResumo.porEmpresa.map(empresa => (
+                    <div key={empresa.companyNumber}>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">{empresa.label}</p>
+                      <PrevisaoMetricsRow metrics={empresa} />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4 mt-6">Total líquido por bandeira</p>
+              <BrandTotalsRow porBandeira={previsaoResumo.porBandeira} emptyLabel="Nenhuma parcela encontrada no período." />
+            </>
+          )}
         </section>
       )}
     </div>
