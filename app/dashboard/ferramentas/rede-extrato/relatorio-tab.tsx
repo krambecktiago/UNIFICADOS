@@ -106,14 +106,17 @@ function groupByCompany<T extends { merchant?: { companyNumber: string } }>(item
   return map
 }
 
+// Transações canceladas/negadas às vezes vêm sem `amount`/`netAmount`/`mdrAmount`
+// da Rede — `?? 0` evita NaN nos totais (mais comum ao puxar "todos os
+// estabelecimentos", onde aparece mais variedade de status e maquininhas).
 function buildVendasMetrics(transactions: RedeTransaction[]): VendasMetrics {
   const approved = transactions.filter(t => t.status === 'APPROVED')
   const naoAprovadas = transactions.filter(t => t.status !== 'APPROVED')
   return {
-    totalBruto: approved.reduce((acc, t) => acc + t.amount, 0),
+    totalBruto: approved.reduce((acc, t) => acc + (t.amount ?? 0), 0),
     totalMdr: approved.reduce((acc, t) => acc + (t.mdrAmount ?? 0), 0),
-    totalLiquido: approved.reduce((acc, t) => acc + t.netAmount, 0),
-    canceladasNegadas: naoAprovadas.reduce((acc, t) => acc + t.amount, 0),
+    totalLiquido: approved.reduce((acc, t) => acc + (t.netAmount ?? 0), 0),
+    canceladasNegadas: naoAprovadas.reduce((acc, t) => acc + (t.amount ?? 0), 0),
   }
 }
 
@@ -122,7 +125,7 @@ function buildVendasBrandTotals(transactions: RedeTransaction[]): BrandTotal[] {
   const totalsByBrand = new Map<number, { liquido: number; count: number }>()
   for (const t of approved) {
     const entry = totalsByBrand.get(t.brandCode) ?? { liquido: 0, count: 0 }
-    entry.liquido += t.netAmount
+    entry.liquido += t.netAmount ?? 0
     entry.count += 1
     totalsByBrand.set(t.brandCode, entry)
   }
@@ -134,11 +137,11 @@ function buildVendasBrandTotals(transactions: RedeTransaction[]): BrandTotal[] {
 function buildPrevisaoMetrics(installments: RedeInstallment[]): PrevisaoMetrics {
   const hoje = todayISO(0)
   return {
-    totalBruto: installments.reduce((acc, i) => acc + i.amount, 0),
+    totalBruto: installments.reduce((acc, i) => acc + (i.amount ?? 0), 0),
     totalMdr: installments.reduce((acc, i) => acc + (i.mdrAmount ?? 0), 0),
-    totalLiquido: installments.reduce((acc, i) => acc + i.netAmount, 0),
-    recebidoAteHoje: installments.filter(i => i.date <= hoje).reduce((acc, i) => acc + i.netAmount, 0),
-    aReceber: installments.filter(i => i.date > hoje).reduce((acc, i) => acc + i.netAmount, 0),
+    totalLiquido: installments.reduce((acc, i) => acc + (i.netAmount ?? 0), 0),
+    recebidoAteHoje: installments.filter(i => i.date <= hoje).reduce((acc, i) => acc + (i.netAmount ?? 0), 0),
+    aReceber: installments.filter(i => i.date > hoje).reduce((acc, i) => acc + (i.netAmount ?? 0), 0),
   }
 }
 
@@ -146,7 +149,7 @@ function buildPrevisaoBrandTotals(installments: RedeInstallment[]): BrandTotal[]
   const totalsByBrand = new Map<number, { liquido: number; count: number; label: string }>()
   for (const i of installments) {
     const entry = totalsByBrand.get(i.brandCode) ?? { liquido: 0, count: 0, label: i.brandName || getRedeBrandName(i.brandCode) }
-    entry.liquido += i.netAmount
+    entry.liquido += i.netAmount ?? 0
     entry.count += 1
     totalsByBrand.set(i.brandCode, entry)
   }

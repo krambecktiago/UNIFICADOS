@@ -3,8 +3,11 @@ export function parseBRL(str: unknown): number {
   return parseFloat(String(str).replace(/[R$\s.]/g, '').replace(',', '.')) || 0
 }
 
-export function formatBRL(n: number): string {
-  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+// APIs externas (ex: Rede) às vezes omitem campos de valor em transações
+// canceladas/negadas — sem o `?? 0` aqui, `undefined.toLocaleString()`
+// derruba a tela inteira em vez de só mostrar R$ 0,00 na linha.
+export function formatBRL(n: number | null | undefined): string {
+  return (n ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
 export function normText(str: unknown): string {

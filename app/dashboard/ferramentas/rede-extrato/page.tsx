@@ -159,8 +159,11 @@ export default function RedeExtratoPage() {
     return true
   })
 
-  const totalBruto = filteredTransactions.reduce((acc, t) => acc + t.amount, 0)
-  const totalLiquido = filteredTransactions.reduce((acc, t) => acc + t.netAmount, 0)
+  // Transações canceladas/negadas às vezes vêm sem `amount`/`netAmount` da
+  // Rede — `?? 0` evita que isso vire NaN nos totais (mais fácil de acontecer
+  // ao puxar "todos os estabelecimentos", onde aparece mais variedade de status).
+  const totalBruto = filteredTransactions.reduce((acc, t) => acc + (t.amount ?? 0), 0)
+  const totalLiquido = filteredTransactions.reduce((acc, t) => acc + (t.netAmount ?? 0), 0)
   // Não soma `feeTotal` — nessa rota da Rede esse campo vem como taxa
   // percentual (mesmo formato de `mdrFee`), não como valor em R$. O valor
   // real descontado é bruto − líquido de cada transação.
@@ -169,8 +172,8 @@ export default function RedeExtratoPage() {
   const totalsByBrand = new Map<number, { bruto: number; liquido: number; count: number }>()
   for (const t of filteredTransactions) {
     const entry = totalsByBrand.get(t.brandCode) ?? { bruto: 0, liquido: 0, count: 0 }
-    entry.bruto += t.amount
-    entry.liquido += t.netAmount
+    entry.bruto += t.amount ?? 0
+    entry.liquido += t.netAmount ?? 0
     entry.count += 1
     totalsByBrand.set(t.brandCode, entry)
   }
@@ -359,7 +362,7 @@ export default function RedeExtratoPage() {
                           <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{t.authorizationCode}</td>
                           <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{t.installmentQuantity}x</td>
                           <td className="px-4 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(t.amount)}</td>
-                          <td className="px-4 py-2.5 text-right text-gray-500 dark:text-gray-400">{formatBRL(t.amount - t.netAmount)}</td>
+                          <td className="px-4 py-2.5 text-right text-gray-500 dark:text-gray-400">{formatBRL((t.amount ?? 0) - (t.netAmount ?? 0))}</td>
                           <td className="px-4 py-2.5 text-right font-semibold text-gray-900 dark:text-gray-100">{formatBRL(t.netAmount)}</td>
                         </tr>
                       ))}
