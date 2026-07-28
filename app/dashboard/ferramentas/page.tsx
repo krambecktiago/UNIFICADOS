@@ -38,7 +38,7 @@ export default async function FerramentasPage() {
               <Link
                 key={tool.href}
                 href={tool.href}
-                target="_blank"
+                target={`ferramenta-${tool.slug}`}
                 rel="noopener noreferrer"
                 className="group bg-white dark:bg-gray-900 rounded-xl p-6 hover:shadow-xl hover:-translate-y-0.5 transition-all border border-gray-200 dark:border-gray-800 animate-fade-in-up"
                 style={{ animationDelay: `${i * 40}ms` }}

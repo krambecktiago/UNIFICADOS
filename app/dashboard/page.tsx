@@ -197,6 +197,8 @@ export default async function DashboardPage() {
                   <Link
                     key={tool.slug}
                     href={tool.href}
+                    target={`ferramenta-${tool.slug}`}
+                    rel="noopener noreferrer"
                     className="group bg-white dark:bg-gray-900 rounded-xl p-5 flex items-center gap-4 hover:shadow-xl hover:-translate-y-0.5 transition-all border border-gray-200 dark:border-gray-800 animate-fade-in-up"
                     style={{ animationDelay: `${i * 40}ms` }}
                   >
