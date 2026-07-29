@@ -9,6 +9,13 @@ interface ErpEntry {
   lanc: string
   valor: number
   desc: string
+  // Valores individuais (Vl. pago + Vl. juros de cada Código/Pessoa/Duplicata
+  // do detalhamento) só quando o lançamento tem 2+ linhas de detalhe — um
+  // lote (ex: "FORNECEDORES DDA") que o banco debita em várias transferências
+  // separadas. Usado como atalho de correspondência exata na Fase 2 de
+  // matchSide, evitando depender só do subset-sum (que tem teto de candidatos
+  // e pode não achar a combinação certa num dia com muitos lançamentos).
+  detalhes?: number[]
 }
 
 interface BankEntry {
@@ -42,37 +49,96 @@ function convFloat(s: string): number {
 // linha. A posição do primeiro valor decide de qual lado o lançamento é.
 const CREDITO_COL_THRESHOLD = 40
 
+const LANCAMENTO_PAT = /^ (\d{2}\/\d{2}\/\d{4})\s+(\d{7,})/
+
+// Cada lançamento normalmente vem seguido de um detalhamento por invoice:
+//     Código   Pessoa                    Duplicata      Vl. pago  Vl. juros  Vl. desconto
+//     788      CELESC DISTRIBUICAO SA    98057650.1        231,84       0,00          0,00
+// Ancorado em "início da linha + dígitos" pra nunca casar com o próprio
+// cabeçalho da coluna (que começa com a palavra "Código") nem com o
+// cabeçalho de página repetido a cada quebra.
+const DETALHE_PAT = /^\s*\d+\s+.*?\s+(\S+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s*$/
+
+// Cabeçalho de página, repetido a cada quebra — regra igual à já usada nos
+// parsers de 341/343 desta mesma sessão: regex ancorada, nunca `.includes()`
+// (evita colidir com nome de fornecedor/histórico que contenha essas palavras).
+function isPaginaHeaderLike(line: string): boolean {
+  if (!line.trim()) return true
+  if (/^LOJA \d+/.test(line)) return true
+  if (/^Rela..o de lan.amentos/.test(line)) return true
+  if (/^\s*\(\*\) antes/.test(line)) return true
+  if (/^\s*\(N\) antes/.test(line)) return true
+  if (/^\s*Emp:/.test(line)) return true
+  if (/^\s*Data\s+Lan.amento/.test(line)) return true
+  if (/^=+$/.test(line)) return true
+  return false
+}
+
 // Lê TODOS os lançamentos do ERP (crédito e débito), com descrição — usada
 // tanto pra conciliar Entradas quanto Saídas, e pra identificar cheques
 // devolvidos ("CHEQUES DEVOLVIDOS...") dentro do lado de débito.
+//
+// Achado importante: quando um lançamento com várias linhas de detalhe cai
+// no fim de uma página impressa, o relatório reimprime a PRÓPRIA linha do
+// lançamento (mesma data/lanc/valor) no topo da página seguinte antes de
+// continuar as linhas de detalhe restantes — sem reconhecer esse eco e
+// continuar acumulando no mesmo lançamento, o detalhamento ficaria
+// incompleto (soma não bate com o total do cabeçalho).
 function parseErpLancamentos(text: string): { creditos: ErpEntry[]; debitos: ErpEntry[] } {
+  const lines = text.split('\n')
   const seen = new Set<string>()
   const creditos: ErpEntry[] = []
   const debitos: ErpEntry[] = []
 
-  for (const line of text.split('\n')) {
-    const m = line.match(/^ (\d{2}\/\d{2}\/\d{4})\s+(\d{7,})/)
-    if (!m) continue
-    const [, date, lanc] = m
-    if (seen.has(lanc)) continue
+  let current: { date: string; lanc: string; valor: number; desc: string; isCredito: boolean; detalhes: number[] } | null = null
 
-    // Cada linha só tem um valor populado (Débito OU Crédito) antes do
-    // Saldo — precisa de pelo menos 2 números (valor + saldo) pra ser uma
-    // linha de lançamento de verdade (não cabeçalho/rodapé).
-    const matches = [...line.matchAll(/([\d.]+,\d{2})/g)]
-    if (matches.length < 2) continue
-    const [valorMatch] = matches
-    const valor = convFloat(valorMatch[1])
-    if (valor <= 0) continue
-
-    seen.add(lanc)
-    const last = matches[matches.length - 1]
-    const desc = line.slice((last.index ?? 0) + last[0].length).trim()
-    const entry: ErpEntry = { date, lanc, valor, desc }
-
-    if ((valorMatch.index ?? 0) >= CREDITO_COL_THRESHOLD) creditos.push(entry)
+  function flush() {
+    if (!current) return
+    const entry: ErpEntry = { date: current.date, lanc: current.lanc, valor: current.valor, desc: current.desc }
+    if (current.detalhes.length > 1) entry.detalhes = current.detalhes
+    if (current.isCredito) creditos.push(entry)
     else debitos.push(entry)
   }
+
+  for (const line of lines) {
+    const m = line.match(LANCAMENTO_PAT)
+    if (m) {
+      const [, date, lanc] = m
+      // Eco do cabeçalho de página (mesmo lanc já visto) — não abre um novo
+      // lançamento, só ignora a linha e segue acumulando detalhe no atual.
+      if (seen.has(lanc)) continue
+
+      // Cada linha só tem um valor populado (Débito OU Crédito) antes do
+      // Saldo — precisa de pelo menos 2 números (valor + saldo) pra ser uma
+      // linha de lançamento de verdade (não cabeçalho/rodapé).
+      const matches = [...line.matchAll(/([\d.]+,\d{2})/g)]
+      if (matches.length < 2) continue
+      const [valorMatch] = matches
+      const valor = convFloat(valorMatch[1])
+      if (valor <= 0) continue
+
+      seen.add(lanc)
+      const last = matches[matches.length - 1]
+      const desc = line.slice((last.index ?? 0) + last[0].length).trim()
+
+      flush()
+      current = { date, lanc, valor, desc, isCredito: (valorMatch.index ?? 0) >= CREDITO_COL_THRESHOLD, detalhes: [] }
+      continue
+    }
+
+    if (current && !isPaginaHeaderLike(line)) {
+      const d = line.match(DETALHE_PAT)
+      if (d) {
+        const [, , pago, juros] = d
+        // "Vl. pago" já sai líquido de desconto (não subtrair de novo);
+        // "Vl. juros" é somado por cima quando o pagamento sai com atraso —
+        // validado batendo a soma do detalhamento contra o total do
+        // cabeçalho em todos os lançamentos de um extrato real.
+        current.detalhes.push(convFloat(pago) + convFloat(juros))
+      }
+    }
+  }
+  flush()
 
   return { creditos, debitos }
 }
@@ -227,15 +293,44 @@ function matchSide(erp: ErpEntry[], bank: BankEntry[]) {
     }
   }
 
-  // Fase 2: matching N:1 (soma de lançamentos banco = 1 ERP)
   const byDate: Record<string, BankEntry[]> = {}
   for (const t of phase1miss) {
     if (!byDate[t.date]) byDate[t.date] = []
     byDate[t.date].push(t)
   }
 
-  const erpFree = Object.values(erpIdx).flat().filter(e => !e._used)
+  const erpFreeAfterFase1 = Object.values(erpIdx).flat().filter(e => !e._used)
   const usedInGroup = new Set<BankEntry>()
+
+  // Fase 2: lançamento com detalhamento próprio (lote com 2+ Código/Pessoa/
+  // Duplicata, ex: "FORNECEDORES DDA" pago pelo banco em várias transferências
+  // separadas) — casa cada valor individual já conhecido contra o banco por
+  // igualdade exata, sem adivinhar combinação. Roda antes da Fase 3 (soma
+  // cega) porque é mais barata e mais confiável: um dia com muitos
+  // lançamentos sem par facilmente passa do teto de candidatos do
+  // subset-sum e o lote inteiro ficaria sem bater, mesmo quando o próprio
+  // relatório já lista exatamente como ele se divide.
+  for (const erpE of erpFreeAfterFase1) {
+    if (!erpE.detalhes || erpE.detalhes.length < 2) continue
+    const cands = (byDate[erpE.date] || []).filter(t => !usedInGroup.has(t))
+    const localUsed: BankEntry[] = []
+    let ok = true
+    for (const dv of erpE.detalhes) {
+      const targetCents = Math.round(dv * 100)
+      const match = cands.find(c => !usedInGroup.has(c) && !localUsed.includes(c) && Math.round(c.valor * 100) === targetCents)
+      if (!match) { ok = false; break }
+      localUsed.push(match)
+    }
+    if (ok) {
+      erpE._used = true
+      localUsed.forEach(b => usedInGroup.add(b))
+      matched.push({ type: 'N:1', banks: localUsed, erp: erpE })
+    }
+  }
+
+  // Fase 3: matching N:1 (soma de lançamentos banco = 1 ERP) — cobre o que
+  // sobrou sem detalhamento próprio (ou cujo detalhamento não bateu 1:1).
+  const erpFree = erpFreeAfterFase1.filter(e => !e._used)
 
   for (const erpE of erpFree) {
     const cands = (byDate[erpE.date] || []).filter(t => !usedInGroup.has(t))
@@ -251,8 +346,8 @@ function matchSide(erp: ErpEntry[], bank: BankEntry[]) {
   const afterPhase2Missing = phase1miss.filter(t => !usedInGroup.has(t))
   const afterPhase2Pending = Object.values(erpIdx).flat().filter(e => !e._used)
 
-  // Fase 3: matching 1:N (soma de lançamentos ERP = 1 banco) — caso inverso
-  // da Fase 2: quando o banco lança em uma única linha o que o ERP separou
+  // Fase 4: matching 1:N (soma de lançamentos ERP = 1 banco) — caso inverso
+  // da Fase 3: quando o banco lança em uma única linha o que o ERP separou
   // em vários (ex: mais de um pagamento de saída no mesmo dia agrupado
   // numa só transferência bancária).
   const pendingByDate: Record<string, ErpIndexed[]> = {}
@@ -277,7 +372,7 @@ function matchSide(erp: ErpEntry[], bank: BankEntry[]) {
   const afterPhase3Missing = afterPhase2Missing.filter(t => !bankUsedInErpGroup.has(t))
   const afterPhase3Pending = afterPhase2Pending.filter(e => !erpUsedInGroup.has(e))
 
-  // Fase 4: matching M:N — quando nem um único lançamento (de nenhum lado)
+  // Fase 5: matching M:N — quando nem um único lançamento (de nenhum lado)
   // fecha isolado, mas um lote de vários débitos ERP soma exatamente ao
   // lote de vários débitos do banco que restaram no dia (ex: DDA + PIX +
   // taxas do mesmo lote batidos contra dezenas de lançamentos individuais
