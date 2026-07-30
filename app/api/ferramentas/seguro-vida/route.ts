@@ -119,6 +119,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Não consegui ler a planilha "${xlsxFile.name}" — confira se é um .xlsx/.xls válido.` }, { status: 400 })
     }
 
+    // Inclusão só é "pendente" se ainda não está refletida na planilha — se o
+    // nome já consta lá, a inclusão já foi efetivada e a pessoa é só mais um
+    // ativo normal (Em Ambos), não uma pendência.
+    for (const [normNome, status] of pdfMap) {
+      if (status === 'INCLUSAO' && xlsxSet.has(normNome)) pdfMap.set(normNome, 'ATIVO')
+    }
+
     type Result = { nome: string; status: string; acao: string; origem: string }
     const results: Result[] = []
     let emAmbos = 0, soPdf = 0, soXlsx = 0, inclusoes = 0, exclusoes = 0
