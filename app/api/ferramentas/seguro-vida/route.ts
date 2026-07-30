@@ -93,8 +93,31 @@ export async function POST(request: NextRequest) {
 
     if (!pdfFile || !xlsxFile) return NextResponse.json({ error: 'Arquivos obrigatórios' }, { status: 400 })
 
-    const pdfMap = await parsePDF(Buffer.from(await pdfFile.arrayBuffer()))
-    const xlsxSet = parseXLSX(Buffer.from(await xlsxFile.arrayBuffer()), coluna, linhaInicial)
+    const pdfBuffer = Buffer.from(await pdfFile.arrayBuffer())
+    const xlsxBuffer = Buffer.from(await xlsxFile.arrayBuffer())
+
+    // "%PDF" nos primeiros bytes é a assinatura do formato — flagra na hora
+    // um arquivo trocado de campo (ex: enviaram a planilha no campo do PDF)
+    // em vez de deixar o pdf-parse falhar com um erro genérico mais abaixo.
+    if (pdfBuffer.subarray(0, 4).toString('latin1') !== '%PDF') {
+      return NextResponse.json({ error: `O arquivo enviado em "Relatório Seguro" não é um PDF válido (recebido: ${pdfFile.name}). Confira se não trocou com a planilha.` }, { status: 400 })
+    }
+
+    let pdfMap: Map<string, string>
+    try {
+      pdfMap = await parsePDF(pdfBuffer)
+    } catch (e) {
+      console.error('Erro ao ler PDF do seguro:', e)
+      return NextResponse.json({ error: `Não consegui ler o PDF "${pdfFile.name}" — o arquivo pode estar corrompido ou protegido.` }, { status: 400 })
+    }
+
+    let xlsxSet: Set<string>
+    try {
+      xlsxSet = parseXLSX(xlsxBuffer, coluna, linhaInicial)
+    } catch (e) {
+      console.error('Erro ao ler planilha do seguro:', e)
+      return NextResponse.json({ error: `Não consegui ler a planilha "${xlsxFile.name}" — confira se é um .xlsx/.xls válido.` }, { status: 400 })
+    }
 
     type Result = { nome: string; status: string; acao: string; origem: string }
     const results: Result[] = []
