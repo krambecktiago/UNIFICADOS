@@ -21,6 +21,34 @@ const INTEGRATION_LABELS: Record<string, string> = {
   'discord-contas-pagar': 'Discord — Contas a Pagar',
 }
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
+type UsageLog = { tool_slug: string; files_count: number; user_id: string; created_at: string }
+
+const USAGE_LOGS_PAGE_SIZE = 1000
+
+// O Supabase limita cada select a 1000 linhas por padrão — sem paginar, a
+// tabela já passou desse total e os KPIs do Dashboard (Arquivos analisados,
+// Execuções, Distribuição por ferramenta etc.) vinham truncados de forma
+// não-determinística, variando conforme novas linhas entravam.
+async function fetchAllUsageLogs(supabase: SupabaseServerClient): Promise<UsageLog[]> {
+  const rows: UsageLog[] = []
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('tool_usage_logs')
+      .select('tool_slug, files_count, user_id, created_at')
+      .range(from, from + USAGE_LOGS_PAGE_SIZE - 1)
+    if (error) {
+      console.error('Erro ao buscar registros de uso:', error)
+      break
+    }
+    rows.push(...(data ?? []))
+    if (!data || data.length < USAGE_LOGS_PAGE_SIZE) break
+    from += USAGE_LOGS_PAGE_SIZE
+  }
+  return rows
+}
+
 export default async function DashboardPage() {
   await requireToolAccess('dashboard')
 
@@ -36,13 +64,13 @@ export default async function DashboardPage() {
   // Nenhuma dessas depende do resultado da outra — só os cálculos em memória
   // feitos depois é que combinam os resultados.
   const [
-    { data: usageLogs },
+    usageLogs,
     { data: toolRows },
     accessibleTools,
     integrationRows,
     allProfilesForAdmin,
   ] = await Promise.all([
-    supabase.from('tool_usage_logs').select('tool_slug, files_count, user_id, created_at'),
+    fetchAllUsageLogs(supabase),
     supabase.from('tools').select('slug, name').eq('active', true),
     getAccessibleTools(supabase, user!.id, isAdmin),
     isAdmin
