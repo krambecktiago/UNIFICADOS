@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
+import { logActivity } from '@/lib/supabase/activity-log'
 import { parseBRL, normDup, formatBRL } from '@/lib/utils/br-format'
 
 export async function POST(request: NextRequest) {
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
     })
 
     await logToolUsage(supabase, user.id, 'duplicatas', 2)
+    await logActivity(user.id, 'tool_run', 'Processou Conferência de Duplicatas')
 
     return NextResponse.json({ results, summary: { baixadas, naoBaixadas, total: results.length } })
   } catch (err) {

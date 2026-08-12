@@ -3,11 +3,12 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logActivity } from '@/lib/supabase/activity-log'
 
 async function requireAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: NextResponse.json({ error: 'Não autorizado' }, { status: 401 }) }
+  if (!user) return { error: NextResponse.json({ error: 'Não autorizado' }, { status: 401 }), user: null }
 
   const { data: selfProfile } = await supabase
     .from('profiles')
@@ -16,14 +17,14 @@ async function requireAdmin() {
     .maybeSingle()
 
   if (selfProfile?.role !== 'admin') {
-    return { error: NextResponse.json({ error: 'Acesso negado' }, { status: 403 }) }
+    return { error: NextResponse.json({ error: 'Acesso negado' }, { status: 403 }), user: null }
   }
 
-  return { error: null }
+  return { error: null, user }
 }
 
 export async function POST(request: NextRequest) {
-  const { error: authError } = await requireAdmin()
+  const { error: authError, user: adminUser } = await requireAdmin()
   if (authError) return authError
 
   const body = await request.json() as { full_name?: string; email?: string; password?: string }
@@ -47,6 +48,8 @@ export async function POST(request: NextRequest) {
   if (createError) {
     return NextResponse.json({ error: createError.message }, { status: 400 })
   }
+
+  await logActivity(adminUser!.id, 'admin_user_create', `Criou o usuário ${fullName} (${email})`)
 
   return NextResponse.json({
     id: created.user.id,

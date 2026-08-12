@@ -3,6 +3,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import ExcelJS from 'exceljs'
 import { createClient } from '@/lib/supabase/server'
+import { logActivity } from '@/lib/supabase/activity-log'
 
 interface Venda {
   data: string
@@ -288,6 +289,7 @@ export async function POST(request: NextRequest) {
     buildPendingSheet(wb, body.pending ?? [])
 
     const buffer = await wb.xlsx.writeBuffer()
+    await logActivity(user.id, 'tool_export', 'Exportou Excel da Conciliação de Recibos')
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,

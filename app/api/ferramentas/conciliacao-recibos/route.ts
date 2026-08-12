@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
+import { logActivity } from '@/lib/supabase/activity-log'
 import { normText } from '@/lib/utils/br-format'
 
 // Autorização às vezes vem com zero à esquerda num arquivo (célula texto) e
@@ -340,6 +341,7 @@ export async function POST(request: NextRequest) {
     const s = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
 
     await logToolUsage(supabase, user.id, 'conciliacao-recibos', 2)
+    await logActivity(user.id, 'tool_run', 'Processou a Conciliação de Recibos')
 
     return NextResponse.json({
       matched: ok,

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
+import { logActivity } from '@/lib/supabase/activity-log'
 import { normText } from '@/lib/utils/br-format'
 
 const LABEL_WORDS = new Set(['TOTAL','VALOR','QTD','SEGURADO','DATA','NOME','CPF','CARGO','EMPRESA','FILIAL','GRUPO','APOLICE','NUMERO','CONTRATO','PRODUTO','COBERTURA','CLASSE','EXPRESS','RELATORIO','MOVIMENTACAO','ESTIPULANTE','PAGADOR','DESCONTO'])
@@ -153,6 +154,7 @@ export async function POST(request: NextRequest) {
     const ativosXlsx = Array.from(xlsxSet).sort((a, b) => a.localeCompare(b, 'pt-BR'))
 
     await logToolUsage(supabase, user.id, 'seguro-vida', 2)
+    await logActivity(user.id, 'tool_run', 'Processou Seguro de Vida')
 
     return NextResponse.json({
       results,

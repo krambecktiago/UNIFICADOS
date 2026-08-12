@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { fetchJjwDuplicatasAberto } from '@/lib/jjw/client'
 import { getRedeEstablishments } from '@/lib/rede/client'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
+import { logActivity } from '@/lib/supabase/activity-log'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
   try {
     const duplicatas = await fetchJjwDuplicatasAberto(startDate, endDate, companyNumbers)
     await logToolUsage(supabase, user.id, 'rede-extrato', 0)
+    await logActivity(user.id, 'tool_run', 'Consultou Duplicatas no Extrato Rede')
     return NextResponse.json({ duplicatas, establishments }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (err) {
     console.error(err)

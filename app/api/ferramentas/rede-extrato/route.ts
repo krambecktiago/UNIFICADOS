@@ -5,6 +5,7 @@ export const fetchCache = 'force-no-store'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
+import { logActivity } from '@/lib/supabase/activity-log'
 import { fetchRedeSales, getRedeEstablishments } from '@/lib/rede/client'
 
 export async function GET(request: NextRequest) {
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest) {
   try {
     const transactions = await fetchRedeSales(startDate, endDate, companyNumbers)
     await logToolUsage(supabase, user.id, 'rede-extrato', 0)
+    await logActivity(user.id, 'tool_run', 'Consultou Vendas no Extrato Rede')
     return NextResponse.json({ transactions, establishments }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (err) {
     console.error(err)

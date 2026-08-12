@@ -329,3 +329,29 @@ alter table public.profiles
 -- ============================================================
 alter table public.profiles
   add column if not exists last_seen_at timestamptz;
+
+-- ============================================================
+-- MIGRAÇÃO: Log de Atividades (activity_logs)
+-- Execute no SQL Editor do Supabase após o schema inicial
+--
+-- Diferente do tool_usage_logs (contagens agregadas pros KPIs do
+-- Dashboard), esta tabela guarda uma descrição em português pronta pra
+-- leitura humana de cada ação principal: execuções de ferramenta,
+-- exportações e mudanças administrativas. Só admin visualiza — escrita
+-- sempre via service role (createAdminClient), nunca pelo client do usuário.
+-- ============================================================
+create table public.activity_logs (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid references auth.users(id) on delete set null,
+  action      text not null,
+  description text not null,
+  created_at  timestamptz not null default now()
+);
+
+alter table public.activity_logs enable row level security;
+
+create policy "Admin le log de atividades"
+  on public.activity_logs for select
+  using (public.is_admin());
+
+create index activity_logs_created_at_idx on public.activity_logs(created_at desc);

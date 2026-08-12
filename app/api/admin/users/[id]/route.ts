@@ -3,6 +3,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logActivity } from '@/lib/supabase/activity-log'
 
 export async function PATCH(
   request: NextRequest,
@@ -26,6 +27,12 @@ export async function PATCH(
   const body = await request.json() as { role?: string; tools?: string[]; full_name?: string; company_number?: string | null }
   const adminClient = createAdminClient()
 
+  // Nome de exibição no log — sempre o que já estava salvo antes desta
+  // edição, mesmo que o próprio full_name esteja sendo alterado agora.
+  const { data: targetProfile } = await adminClient.from('profiles').select('full_name').eq('id', id).maybeSingle()
+  const targetLabel = targetProfile?.full_name || id
+  const changes: string[] = []
+
   if (body.role !== undefined) {
     const { error } = await adminClient
       .from('profiles')
@@ -33,6 +40,7 @@ export async function PATCH(
       .eq('id', id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    changes.push(`papel alterado para ${body.role}`)
   }
 
   if (body.full_name !== undefined) {
@@ -47,6 +55,7 @@ export async function PATCH(
       .eq('id', id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    changes.push(`nome alterado para ${fullName}`)
   }
 
   if (body.company_number !== undefined) {
@@ -56,6 +65,7 @@ export async function PATCH(
       .eq('id', id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    changes.push(`empresa alterada para ${body.company_number ?? '—'}`)
   }
 
   if (body.tools !== undefined) {
@@ -76,6 +86,11 @@ export async function PATCH(
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       }
     }
+    changes.push('acesso a ferramentas atualizado')
+  }
+
+  if (changes.length > 0) {
+    await logActivity(user.id, 'admin_user_update', `Editou o usuário ${targetLabel}: ${changes.join(', ')}`)
   }
 
   return NextResponse.json({ ok: true })

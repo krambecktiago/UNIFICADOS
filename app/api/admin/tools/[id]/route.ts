@@ -3,6 +3,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logActivity } from '@/lib/supabase/activity-log'
 
 export async function PATCH(
   request: NextRequest,
@@ -29,11 +30,16 @@ export async function PATCH(
   }
 
   const adminClient = createAdminClient()
-  const { error } = await adminClient
+  const { data: tool, error } = await adminClient
     .from('tools')
     .update({ active: body.active })
     .eq('id', id)
+    .select('name')
+    .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await logActivity(user.id, 'admin_tool_toggle', `${body.active ? 'Ativou' : 'Desativou'} a ferramenta ${tool?.name ?? id}`)
+
   return NextResponse.json({ ok: true })
 }

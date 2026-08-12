@@ -3,6 +3,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import ExcelJS from 'exceljs'
 import { createClient } from '@/lib/supabase/server'
+import { logActivity } from '@/lib/supabase/activity-log'
 
 interface BrandTotal {
   code: number
@@ -135,6 +136,7 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = await wb.xlsx.writeBuffer()
+    await logActivity(user.id, 'tool_export', 'Exportou Excel do Relatório de Vendas')
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,

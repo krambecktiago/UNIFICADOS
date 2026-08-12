@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
+import { logActivity } from '@/lib/supabase/activity-log'
 import { formatBRL } from '@/lib/utils/br-format'
 
 type Lojas = 'L01' | 'L02' | 'L03' | 'L04' | 'L05'
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     await logToolUsage(supabase, user.id, 'contas-pagar', 0)
+    await logActivity(user.id, 'tool_run', 'Enviou o resumo de Contas a Pagar para o Discord')
 
     return NextResponse.json({ success: true, chunks: chunks.length })
   } catch (err) {
