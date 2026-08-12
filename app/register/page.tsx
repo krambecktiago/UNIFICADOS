@@ -69,15 +69,6 @@ export default function RegisterPage() {
                 unoptimized
                 priority
               />
-              <div className="w-px h-10 bg-white/20" />
-              <Image
-                src="/logo-ancora.png"
-                alt="Rede Ancora"
-                width={40}
-                height={40}
-                className="object-contain"
-                unoptimized
-              />
             </div>
 
             {/* Separador vermelho */}

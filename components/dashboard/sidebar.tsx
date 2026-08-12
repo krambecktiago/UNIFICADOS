@@ -114,18 +114,6 @@ export function Sidebar({
         />
       </div>
 
-      {/* ── Badge Rede Ancora ────────────────────────────────────────────── */}
-      <div className="relative h-16 flex items-center justify-center bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-800">
-        <Image
-          src="/logo-ancora.png"
-          alt="Rede Ancora"
-          width={59}
-          height={45}
-          className="object-contain shrink-0"
-          unoptimized
-        />
-      </div>
-
       {/* ── Saudação — visível para todo mundo, mesmo sem acesso à tela Dashboard ── */}
       <div className="relative px-5 pt-5">
         <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
