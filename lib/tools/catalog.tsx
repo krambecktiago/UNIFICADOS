@@ -81,6 +81,19 @@ export const ALL_TOOLS = [
     ),
     accent: '#dc2626',
   },
+  {
+    href: '/dashboard/ferramentas/desconto-motoboys',
+    slug: 'desconto-motoboys',
+    title: 'Desconto Motoboys',
+    description: 'Controla descontos a aplicar no pagamento semanal dos motoboys, por loja',
+    inputs: 'Formulário',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    accent: '#b45309',
+  },
 ]
 
 export type ToolCatalogEntry = (typeof ALL_TOOLS)[number]

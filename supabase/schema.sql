@@ -355,3 +355,44 @@ create policy "Admin le log de atividades"
   using (public.is_admin());
 
 create index activity_logs_created_at_idx on public.activity_logs(created_at desc);
+
+-- ============================================================
+-- MIGRAÇÃO: Desconto Motoboys (motoboy_descontos)
+-- Execute no SQL Editor do Supabase após o schema inicial
+--
+-- Controla os pedidos de desconto no pagamento semanal dos motoboys, por
+-- loja (L01..L05) — separa o que já foi descontado do que ainda falta.
+-- Visibilidade compartilhada pela empresa toda (mesmo padrão de
+-- tool_usage_logs/activity_logs); escrita sempre via service role
+-- (createAdminClient) — só a exclusão é restrita a admin, verificado no
+-- código da rota (RLS não distingue "tem acesso à ferramenta" de "é admin").
+-- ============================================================
+create table public.motoboy_descontos (
+  id                   uuid primary key default gen_random_uuid(),
+  loja                 text not null check (loja in ('L01','L02','L03','L04','L05')),
+  cod_fornecedor       text not null,
+  nome_motoboy         text not null,
+  duplicata            text not null,
+  motivo               text not null,
+  valor                numeric(12,2) not null check (valor > 0),
+  data_para_descontar  date not null,
+  status               text not null default 'pendente' check (status in ('pendente', 'descontado')),
+  descontado_em        date,
+  criado_por           uuid references auth.users(id) on delete set null,
+  atualizado_por       uuid references auth.users(id) on delete set null,
+  criado_em            timestamptz not null default now(),
+  atualizado_em        timestamptz not null default now()
+);
+
+alter table public.motoboy_descontos enable row level security;
+
+create policy "Usuário autenticado lê descontos de motoboys"
+  on public.motoboy_descontos for select
+  using (auth.role() = 'authenticated');
+
+create index motoboy_descontos_loja_idx on public.motoboy_descontos(loja);
+create index motoboy_descontos_status_idx on public.motoboy_descontos(status);
+
+insert into public.tools (name, slug, description) values
+  ('Desconto Motoboys', 'desconto-motoboys', 'Controla descontos a aplicar no pagamento semanal dos motoboys, por loja')
+on conflict (slug) do nothing;
