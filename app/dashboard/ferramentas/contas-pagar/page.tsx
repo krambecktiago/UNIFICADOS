@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button'
 
 const LOJAS = ['L01', 'L02', 'L03', 'L04', 'L05'] as const
 const LOJAS_LABELS: Record<string, string> = {
-  L01: 'Loja 01',
-  L02: 'Loja 02',
-  L03: 'Loja 03',
-  L04: 'Loja 04',
-  L05: 'Loja 05',
+  L01: 'LOJA01 - MATRIZ',
+  L02: 'LOJA02 - INDAIAL',
+  L03: 'LOJA03 - DIESEL',
+  L04: 'LOJA04 - BLUMENAU',
+  L05: 'LOJA05 - GASPAR',
 }
 const BANCOS = ['VIACREDI', 'BRADESCO', 'SANTANDER', 'ITAU'] as const
 
