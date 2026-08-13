@@ -317,7 +317,7 @@ export default function DescontoMotoboysPage() {
             <Tabs tabs={tabs} activeTab={statusTab} onChange={setStatusTab} />
             <div className="overflow-x-auto">
               <TabPanel tabKey={statusTab}>
-                <table className="w-full text-sm min-w-[900px]">
+                <table className="w-full text-sm min-w-[720px]">
                   <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-800">
                     <tr>
                       <th className={thClass}>Loja</th>
@@ -349,13 +349,13 @@ export default function DescontoMotoboysPage() {
                         <td className={tdClass}>{fmtDataBR(d.data_para_descontar)}</td>
                         {statusTab === 'descontado' && <td className={tdClass}>{fmtDataBR(d.descontado_em)}</td>}
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
                             {d.status === 'pendente' ? (
-                              <Button variant="secondary" className="text-xs px-2.5 py-1" loading={actionId === d.id} onClick={() => runAction(d.id, 'mark_done')}>
-                                Marcar como descontado
+                              <Button variant="secondary" className="text-xs px-2 py-1" loading={actionId === d.id} onClick={() => runAction(d.id, 'mark_done')}>
+                                Descontar
                               </Button>
                             ) : (
-                              <Button variant="secondary" className="text-xs px-2.5 py-1" loading={actionId === d.id} onClick={() => runAction(d.id, 'reopen')}>
+                              <Button variant="secondary" className="text-xs px-2 py-1" loading={actionId === d.id} onClick={() => runAction(d.id, 'reopen')}>
                                 Reabrir
                               </Button>
                             )}
