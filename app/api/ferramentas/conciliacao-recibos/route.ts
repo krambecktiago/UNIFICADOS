@@ -240,7 +240,10 @@ function reconcile(vendas: Venda[], recibos: Recibo[]) {
     const rec = candidates.reduce((a, b) => (Math.abs(a.valor - v.valor) <= Math.abs(b.valor - v.valor) ? a : b))
     rec._used = true
     const diferenca = rec.valor - v.valor
-    const parcelasDivergentes = v.parcelas !== rec.parcelas
+    // Recibo com parcelas em branco (parseado como 0) nunca é válido — todo
+    // pagamento no cartão tem ao menos 1 parcela — então sinaliza mesmo que a
+    // venda também esteja com parcelas zeradas por algum outro motivo.
+    const parcelasDivergentes = v.parcelas !== rec.parcelas || rec.parcelas === 0
     matched.push({
       venda: v,
       recibo: rec,
@@ -304,7 +307,7 @@ function reconcile(vendas: Venda[], recibos: Recibo[]) {
         divergente: true,
         diferenca: r.valor - v.valor,
         motivo: 'identificador',
-        parcelasDivergentes: v.parcelas !== r.parcelas,
+        parcelasDivergentes: v.parcelas !== r.parcelas || r.parcelas === 0,
       })
     }
     for (const v of vs) if (!usedVendas.has(v)) missing.push(v)
