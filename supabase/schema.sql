@@ -398,14 +398,37 @@ insert into public.tools (name, slug, description) values
 on conflict (slug) do nothing;
 
 -- ============================================================
--- Ferramenta "Checklist Equipe de Caixas" — checklist semanal/mensal do
--- gestor para embasar decisões de desempenho e reajuste salarial da
--- equipe. Sem tabela própria: reaproveita user_tool_settings (já existe
--- desde o schema inicial), guardando em settings.weekly/monthly o estado
--- de cada item por período (chave = início da semana ou "aaaa-mm").
--- Estado é pessoal do gestor logado (RLS de user_tool_settings já isola
--- por user_id), lido/gravado via GET/POST /api/ferramentas/settings.
+-- Ferramenta "Checklist Equipe de Caixas" — avaliação individual (não da
+-- equipe como um todo): o gestor abre uma avaliação nova informando o
+-- nome da pessoa e o tipo (semanal/mensal), marca os itens da checklist
+-- e pode comentar em cada um. "itens" guarda um objeto por item:
+-- {"item-0-0": {"checked": true, "comentario": "..."}}. Cada avaliação
+-- vira uma linha própria (histórico consultável e reexportável depois),
+-- exportada em PDF direto no navegador (sem depender de geração de PDF
+-- no servidor). Dados de avaliação de desempenho são sensíveis — visível
+-- só para quem avaliou (RLS por avaliador_id), diferente das tabelas
+-- "company-wide" como motoboy_descontos/tool_usage_logs.
 -- ============================================================
+create table public.caixa_avaliacoes (
+  id            uuid primary key default gen_random_uuid(),
+  avaliador_id  uuid not null references auth.users(id) on delete cascade,
+  nome_avaliado text not null,
+  tipo          text not null check (tipo in ('weekly', 'monthly')),
+  itens         jsonb not null default '{}',
+  finalizada    boolean not null default false,
+  criado_em     timestamptz not null default now(),
+  atualizado_em timestamptz not null default now()
+);
+
+alter table public.caixa_avaliacoes enable row level security;
+
+create policy "Usuário gerencia suas avaliações de caixas"
+  on public.caixa_avaliacoes for all
+  using (auth.uid() = avaliador_id)
+  with check (auth.uid() = avaliador_id);
+
+create index caixa_avaliacoes_avaliador_idx on public.caixa_avaliacoes(avaliador_id);
+
 insert into public.tools (name, slug, description) values
-  ('Checklist Equipe de Caixas', 'checklist-caixas', 'Acompanhamento semanal e mensal para embasar decisões de desempenho e reajuste salarial')
-on conflict (slug) do nothing;
+  ('Checklist Equipe de Caixas', 'checklist-caixas', 'Avalia cada pessoa da equipe de caixas (semanal ou mensal), com comentários e exportação em PDF')
+on conflict (slug) do update set description = excluded.description;
