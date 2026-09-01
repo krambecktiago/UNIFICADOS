@@ -61,6 +61,8 @@ const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julh
 
 const inputBase = 'w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
 
+const COMPANY_NAME = 'Krambeck Autopeças e Tintas'
+
 function todayISO(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -84,6 +86,7 @@ const EMPTY_FORM = { data: todayISO(), categoria: 'automacao' as Categoria, titu
 export default function RegistroEntregasPage() {
   const [view, setView] = useState<View>('add')
   const [isAdmin, setIsAdmin] = useState(false)
+  const [myName, setMyName] = useState<string | null>(null)
 
   const [myEntries, setMyEntries] = useState<Entry[]>([])
   const [loadingMy, setLoadingMy] = useState(true)
@@ -134,7 +137,10 @@ export default function RegistroEntregasPage() {
 
   useEffect(() => {
     loadMine()
-    fetch('/api/profile/me').then(r => r.json()).then(data => setIsAdmin(data.role === 'admin')).catch(() => {})
+    fetch('/api/profile/me').then(r => r.json()).then(data => {
+      setIsAdmin(data.role === 'admin')
+      setMyName(data.fullName ?? null)
+    }).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -201,6 +207,10 @@ export default function RegistroEntregasPage() {
     melhoria: filteredReport.filter(e => e.categoria === 'melhoria').length,
     problema: filteredReport.filter(e => e.categoria === 'problema').length,
   }
+
+  const reportPersonName = selectedUserId
+    ? (adminUsers.find(u => u.id === selectedUserId)?.full_name ?? adminUsers.find(u => u.id === selectedUserId)?.email ?? '—')
+    : (myName ?? '—')
 
   const tabs: TabDef<View>[] = [
     { key: 'add', label: 'Registrar', count: myEntries.length, border: 'border-brand-navy dark:border-blue-400', text: 'text-brand-navy dark:text-blue-400' },
@@ -327,37 +337,73 @@ export default function RegistroEntregasPage() {
               </div>
             )}
 
-            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
-              Relatório de Entregas — {monthLabelText(viewMonth)}
-            </h2>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 mb-4">Atividades realizadas além da rotina padrão</p>
+            <div className="print:hidden">
+              <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                Relatório de Entregas — {monthLabelText(viewMonth)}
+              </h2>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 mb-4">Atividades realizadas além da rotina padrão</p>
 
-            <div className="print:hidden flex items-center justify-between mb-5">
-              <Button variant="ghost" onClick={() => setViewMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>← Mês anterior</Button>
-              <Button variant="ghost" onClick={() => setViewMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>Próximo mês →</Button>
-            </div>
-
-            <Button variant="secondary" onClick={() => window.print()} className="print:hidden w-full mb-6">
-              Imprimir / salvar como PDF
-            </Button>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-              <KpiCard label="Total" value={filteredReport.length} accent="#4a7c59" />
-              <KpiCard label="Automações" value={counts.automacao} accent="#0369a1" />
-              <KpiCard label="Melhorias" value={counts.melhoria} accent="#22c55e" />
-              <KpiCard label="Problemas resolvidos" value={counts.problema} accent="#d97706" />
-            </div>
-
-            {loadingReport ? (
-              <div className="flex items-center justify-center gap-3 py-12">
-                <Spinner size="lg" className="text-blue-600" />
-                <span className="text-sm text-gray-500 dark:text-gray-400">Carregando…</span>
+              <div className="flex items-center justify-between mb-5">
+                <Button variant="ghost" onClick={() => setViewMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>← Mês anterior</Button>
+                <Button variant="ghost" onClick={() => setViewMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>Próximo mês →</Button>
               </div>
-            ) : filteredReport.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-10">Nenhum registro neste mês.</p>
-            ) : (
-              filteredReport.map(e => renderEntryCard(e, selectedUserId === null))
-            )}
+
+              <Button variant="secondary" onClick={() => window.print()} className="w-full mb-6">
+                Imprimir / salvar como PDF
+              </Button>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                <KpiCard label="Total" value={filteredReport.length} accent="#4a7c59" />
+                <KpiCard label="Automações" value={counts.automacao} accent="#0369a1" />
+                <KpiCard label="Melhorias" value={counts.melhoria} accent="#22c55e" />
+                <KpiCard label="Problemas resolvidos" value={counts.problema} accent="#d97706" />
+              </div>
+
+              {loadingReport ? (
+                <div className="flex items-center justify-center gap-3 py-12">
+                  <Spinner size="lg" className="text-blue-600" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Carregando…</span>
+                </div>
+              ) : filteredReport.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-10">Nenhum registro neste mês.</p>
+              ) : (
+                filteredReport.map(e => renderEntryCard(e, selectedUserId === null))
+              )}
+            </div>
+
+            {/* Documento formal — só existe no PDF/impressão (hidden na tela). Layout
+                próprio em vez de reaproveitar os cards acima: aqui é texto corrido com
+                cabeçalho de identidade (empresa/pessoa/período) e cada entrega separada
+                por um filete fino, sem bordas/sombra "de tela" e sem quebrar no meio de
+                uma página (break-inside-avoid). */}
+            <div className="hidden print:block text-black">
+              <div className="border-b-2 border-black pb-3 mb-5">
+                <p className="text-[10px] uppercase tracking-widest text-gray-600">{COMPANY_NAME}</p>
+                <h1 className="text-lg font-bold mt-0.5">Registro de Entregas</h1>
+                <p className="text-sm text-gray-700 mt-0.5">{reportPersonName} · {monthLabelText(viewMonth)}</p>
+              </div>
+
+              <p className="text-xs text-gray-700 mb-5">
+                {filteredReport.length} {filteredReport.length === 1 ? 'entrega' : 'entregas'} · {counts.automacao} automações · {counts.melhoria} melhorias · {counts.problema} problemas resolvidos
+              </p>
+
+              {filteredReport.length === 0 ? (
+                <p className="text-sm text-gray-600">Nenhum registro neste mês.</p>
+              ) : (
+                filteredReport.map(e => (
+                  <div key={e.id} className="py-3 border-t border-gray-300 break-inside-avoid">
+                    <p className="text-[10px] text-gray-500">{fmtDataBR(e.data)} · {CATEGORIA_BADGE_LABELS[e.categoria]}</p>
+                    <p className="text-sm font-semibold mt-0.5">{e.titulo}</p>
+                    {e.detalhe && <p className="text-xs text-gray-700 mt-1 leading-snug">{e.detalhe}</p>}
+                    {e.impacto && <p className="text-xs text-gray-700 mt-1">Impacto: {e.impacto}</p>}
+                  </div>
+                ))
+              )}
+
+              <p className="text-[9px] text-gray-400 mt-6 pt-2 border-t border-gray-200">
+                Gerado em {new Date().toLocaleString('pt-BR')}
+              </p>
+            </div>
           </TabPanel>
         )}
       </div>
