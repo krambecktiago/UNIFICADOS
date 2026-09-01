@@ -248,6 +248,13 @@ $$;
 -- delete from public.user_tool_access where tool_id in (select id from public.tools where slug in ('pix', 'comparador-dda', 'conciliacao-cartao'));
 -- delete from public.tools where slug in ('pix', 'comparador-dda', 'conciliacao-cartao');
 
+-- A ferramenta "Checklist Equipe de Caixas" (slug 'checklist-caixas') foi
+-- removida do produto antes de ir pra produção de verdade. Se você chegou a
+-- rodar a migração que criava public.caixa_avaliacoes, limpe o resíduo com:
+-- drop table if exists public.caixa_avaliacoes;
+-- delete from public.user_tool_access where tool_id in (select id from public.tools where slug = 'checklist-caixas');
+-- delete from public.tools where slug = 'checklist-caixas';
+
 -- ============================================================
 -- MIGRAÇÃO: Integrações (conexões de API/webhook centralizadas)
 -- Execute no SQL Editor do Supabase após o schema inicial
