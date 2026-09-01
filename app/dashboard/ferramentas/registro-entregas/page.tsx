@@ -57,6 +57,20 @@ const CATEGORIA_TONE: Record<Categoria, BadgeProps['tone']> = {
   outro: 'gray',
 }
 
+// Cores fixas (hex) pro documento impresso — as mesmas classes bg-*/text-*
+// dos Badges na tela não dá pra usar aqui porque variam por categoria em
+// runtime, e o Tailwind só gera classe que aparece literal no código-fonte.
+// Tons batem com os das badges (sky/green/amber/purple/blue/gray) pra manter
+// a mesma identidade visual entre tela e PDF.
+const CATEGORIA_PRINT_STYLE: Record<Categoria, { bg: string; text: string }> = {
+  automacao: { bg: '#e0f2fe', text: '#0369a1' },
+  melhoria: { bg: '#dcfce7', text: '#166534' },
+  problema: { bg: '#fef3c7', text: '#92400e' },
+  projeto: { bg: '#f3e8ff', text: '#7e22ce' },
+  treinamento: { bg: '#dbeafe', text: '#1e40af' },
+  outro: { bg: '#f3f4f6', text: '#4b5563' },
+}
+
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 
 const inputBase = 'w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
@@ -372,36 +386,65 @@ export default function RegistroEntregasPage() {
             </div>
 
             {/* Documento formal — só existe no PDF/impressão (hidden na tela). Layout
-                próprio em vez de reaproveitar os cards acima: aqui é texto corrido com
-                cabeçalho de identidade (empresa/pessoa/período) e cada entrega separada
-                por um filete fino, sem bordas/sombra "de tela" e sem quebrar no meio de
-                uma página (break-inside-avoid). */}
-            <div className="hidden print:block text-black">
-              <div className="border-b-2 border-black pb-3 mb-5">
-                <p className="text-[10px] uppercase tracking-widest text-gray-600">{COMPANY_NAME}</p>
-                <h1 className="text-lg font-bold mt-0.5">Registro de Entregas</h1>
-                <p className="text-sm text-gray-700 mt-0.5">{reportPersonName} · {monthLabelText(viewMonth)}</p>
+                próprio em vez de reaproveitar os cards acima: cabeçalho com faixa de
+                cor, cartões de estatística e cada entrega com chip de categoria colorido,
+                sem quebrar no meio de uma página (break-inside-avoid). Cor de fundo some
+                da impressão por padrão no Chrome (economia de tinta) — o <style> abaixo
+                força manter (print-color-adjust: exact), senão os chips e a faixa saem
+                todos brancos no PDF.
+            */}
+            <div className="hidden print:block print-doc text-black">
+              <style>{`.print-doc, .print-doc * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }`}</style>
+
+              <div className="rounded-xl px-7 py-6 mb-6" style={{ background: '#0d1e45' }}>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em]" style={{ color: '#93c5fd' }}>{COMPANY_NAME}</p>
+                <h1 className="text-2xl font-bold text-white mt-1.5">Registro de Entregas</h1>
+                <p className="text-sm mt-2" style={{ color: '#bfdbfe' }}>
+                  <span className="text-white font-semibold">{reportPersonName}</span> · {monthLabelText(viewMonth)}
+                </p>
               </div>
 
-              <p className="text-xs text-gray-700 mb-5">
-                {filteredReport.length} {filteredReport.length === 1 ? 'entrega' : 'entregas'} · {counts.automacao} automações · {counts.melhoria} melhorias · {counts.problema} problemas resolvidos
-              </p>
+              <div className="grid grid-cols-4 gap-3 mb-7">
+                {[
+                  { label: 'Total', value: filteredReport.length, color: '#0d1e45' },
+                  { label: 'Automações', value: counts.automacao, color: '#0369a1' },
+                  { label: 'Melhorias', value: counts.melhoria, color: '#16a34a' },
+                  { label: 'Problemas', value: counts.problema, color: '#d97706' },
+                ].map(s => (
+                  <div key={s.label} className="rounded-lg border border-gray-200 border-t-[3px] px-3 py-3 text-center" style={{ borderTopColor: s.color }}>
+                    <p className="text-xl font-bold" style={{ color: s.color }}>{s.value}</p>
+                    <p className="text-[9px] uppercase tracking-wide text-gray-500 mt-0.5">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">Entregas do período</p>
 
               {filteredReport.length === 0 ? (
                 <p className="text-sm text-gray-600">Nenhum registro neste mês.</p>
               ) : (
-                filteredReport.map(e => (
-                  <div key={e.id} className="py-3 border-t border-gray-300 break-inside-avoid">
-                    <p className="text-[10px] text-gray-500">{fmtDataBR(e.data)} · {CATEGORIA_BADGE_LABELS[e.categoria]}</p>
-                    <p className="text-sm font-semibold mt-0.5">{e.titulo}</p>
-                    {e.detalhe && <p className="text-xs text-gray-700 mt-1 leading-snug">{e.detalhe}</p>}
-                    {e.impacto && <p className="text-xs text-gray-700 mt-1">Impacto: {e.impacto}</p>}
-                  </div>
-                ))
+                filteredReport.map(e => {
+                  const style = CATEGORIA_PRINT_STYLE[e.categoria]
+                  return (
+                    <div key={e.id} className="rounded-lg border border-gray-200 mb-3 break-inside-avoid overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-2" style={{ background: style.bg }}>
+                        <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: style.text }}>
+                          {CATEGORIA_BADGE_LABELS[e.categoria]}
+                        </span>
+                        <span className="text-[9px] text-gray-500">{fmtDataBR(e.data)}</span>
+                      </div>
+                      <div className="px-4 py-3">
+                        <p className="text-sm font-semibold text-gray-900">{e.titulo}</p>
+                        {e.detalhe && <p className="text-xs text-gray-600 mt-1 leading-relaxed">{e.detalhe}</p>}
+                        {e.impacto && <p className="text-xs font-medium mt-1.5" style={{ color: '#16a34a' }}>✓ {e.impacto}</p>}
+                      </div>
+                    </div>
+                  )
+                })
               )}
 
-              <p className="text-[9px] text-gray-400 mt-6 pt-2 border-t border-gray-200">
-                Gerado em {new Date().toLocaleString('pt-BR')}
+              <p className="text-[9px] text-gray-400 mt-6 pt-3 border-t border-gray-200 text-center">
+                {COMPANY_NAME} · Gerado em {new Date().toLocaleString('pt-BR')}
               </p>
             </div>
           </TabPanel>
