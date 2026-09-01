@@ -49,11 +49,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-950">
-      <Sidebar isAdmin={isAdmin} accessibleScreens={accessibleScreens} greeting={getGreeting()} userFirstName={firstName} />
+      <div className="print:hidden">
+        <Sidebar isAdmin={isAdmin} accessibleScreens={accessibleScreens} greeting={getGreeting()} userFirstName={firstName} />
+      </div>
       <main className="flex-1 overflow-auto">
         {children}
       </main>
-      <AssistantWidget />
+      <div className="print:hidden">
+        <AssistantWidget />
+      </div>
       <PresenceHeartbeat />
     </div>
   )

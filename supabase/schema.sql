@@ -403,3 +403,41 @@ create index motoboy_descontos_status_idx on public.motoboy_descontos(status);
 insert into public.tools (name, slug, description) values
   ('Desconto Motoboys', 'desconto-motoboys', 'Controla descontos a aplicar no pagamento semanal dos motoboys, por loja')
 on conflict (slug) do nothing;
+
+-- ============================================================
+-- Ferramenta "Registro de Entregas" — autoavaliação: cada usuário
+-- registra o que fez além da rotina (automação, melhoria de processo,
+-- problema resolvido, projeto especial, treinamento), pra embasar o
+-- relatório mensal ao gestor. Histórico pessoal — RLS restringe
+-- leitura/escrita a auth.uid() = user_id, com uma policy extra de
+-- SELECT liberando admin ver os registros de todo mundo (reaproveita
+-- is_admin(), já criada na migração de Admin + Controle de Acesso).
+-- ============================================================
+create table public.registro_entregas (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  data       date not null,
+  categoria  text not null check (categoria in ('automacao', 'melhoria', 'problema', 'projeto', 'treinamento', 'outro')),
+  titulo     text not null,
+  detalhe    text,
+  impacto    text,
+  criado_em  timestamptz not null default now()
+);
+
+alter table public.registro_entregas enable row level security;
+
+create policy "Usuário gerencia seus próprios registros de entrega"
+  on public.registro_entregas for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "Admin lê todos os registros de entrega"
+  on public.registro_entregas for select
+  using (public.is_admin());
+
+create index registro_entregas_user_id_idx on public.registro_entregas(user_id);
+create index registro_entregas_data_idx on public.registro_entregas(data);
+
+insert into public.tools (name, slug, description) values
+  ('Registro de Entregas', 'registro-entregas', 'Autoavaliação mensal: registra entregas além da rotina, com relatório por mês')
+on conflict (slug) do nothing;
