@@ -14,7 +14,7 @@ const TONE_CLASS = {
   navy: 'bg-brand-navy/10 text-brand-navy dark:bg-brand-navy/30 dark:text-blue-300',
 } as const
 
-interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: keyof typeof TONE_CLASS
 }
 

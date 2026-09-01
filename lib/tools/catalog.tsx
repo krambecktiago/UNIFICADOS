@@ -94,6 +94,19 @@ export const ALL_TOOLS = [
     ),
     accent: '#b45309',
   },
+  {
+    href: '/dashboard/ferramentas/registro-entregas',
+    slug: 'registro-entregas',
+    title: 'Registro de Entregas',
+    description: 'Autoavaliação mensal: registra entregas além da rotina, com relatório por mês',
+    inputs: 'Formulário',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3-14.25H8.25A2.25 2.25 0 006 5.25v13.5A2.25 2.25 0 008.25 21h7.5A2.25 2.25 0 0018 18.75V8.25L14.25 4.5zM14.25 4.5v3.75a1.5 1.5 0 001.5 1.5H18" />
+      </svg>
+    ),
+    accent: '#2f5d62',
+  },
 ]
 
 export type ToolCatalogEntry = (typeof ALL_TOOLS)[number]
