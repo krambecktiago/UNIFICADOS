@@ -396,3 +396,16 @@ create index motoboy_descontos_status_idx on public.motoboy_descontos(status);
 insert into public.tools (name, slug, description) values
   ('Desconto Motoboys', 'desconto-motoboys', 'Controla descontos a aplicar no pagamento semanal dos motoboys, por loja')
 on conflict (slug) do nothing;
+
+-- ============================================================
+-- Ferramenta "Checklist Equipe de Caixas" — checklist semanal/mensal do
+-- gestor para embasar decisões de desempenho e reajuste salarial da
+-- equipe. Sem tabela própria: reaproveita user_tool_settings (já existe
+-- desde o schema inicial), guardando em settings.weekly/monthly o estado
+-- de cada item por período (chave = início da semana ou "aaaa-mm").
+-- Estado é pessoal do gestor logado (RLS de user_tool_settings já isola
+-- por user_id), lido/gravado via GET/POST /api/ferramentas/settings.
+-- ============================================================
+insert into public.tools (name, slug, description) values
+  ('Checklist Equipe de Caixas', 'checklist-caixas', 'Acompanhamento semanal e mensal para embasar decisões de desempenho e reajuste salarial')
+on conflict (slug) do nothing;

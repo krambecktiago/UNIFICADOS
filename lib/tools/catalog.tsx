@@ -94,6 +94,19 @@ export const ALL_TOOLS = [
     ),
     accent: '#b45309',
   },
+  {
+    href: '/dashboard/ferramentas/checklist-caixas',
+    slug: 'checklist-caixas',
+    title: 'Checklist Equipe de Caixas',
+    description: 'Acompanhamento semanal e mensal para embasar decisões de desempenho e reajuste salarial',
+    inputs: 'Formulário',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    accent: '#4a7c59',
+  },
 ]
 
 export type ToolCatalogEntry = (typeof ALL_TOOLS)[number]
