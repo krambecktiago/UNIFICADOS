@@ -50,6 +50,8 @@ export function exportEvaluationPdf({ nomeAvaliado, tipo, sections, itens, criad
   y += 10
   doc.setTextColor(0)
 
+  const naoRespondidos: { secao: string; texto: string }[] = []
+
   sections.forEach((section, sIdx) => {
     ensureSpace(2, 6.5)
     doc.setFont('helvetica', 'bold')
@@ -60,6 +62,7 @@ export function exportEvaluationPdf({ nomeAvaliado, tipo, sections, itens, criad
     section.items.forEach((text, iIdx) => {
       const state = itens[itemId(sIdx, iIdx)] ?? {}
       const mark = state.checked ? '[x]' : '[ ]'
+      if (!state.checked) naoRespondidos.push({ secao: section.title, texto: text })
 
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(10)
@@ -83,6 +86,31 @@ export function exportEvaluationPdf({ nomeAvaliado, tipo, sections, itens, criad
     })
     y += 3
   })
+
+  y += 2
+  ensureSpace(2, 7)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(12)
+  doc.text('Quesitos nao respondidos', marginX, y)
+  y += 7
+
+  if (naoRespondidos.length === 0) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.setTextColor(110)
+    doc.text('Todos os itens foram conferidos.', marginX, y)
+    y += 5
+    doc.setTextColor(0)
+  } else {
+    naoRespondidos.forEach(({ secao, texto }) => {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      const lines = doc.splitTextToSize(sanitizeForPdf(`- [${secao}] ${texto}`), maxWidth - 4)
+      ensureSpace(lines.length, 5)
+      doc.text(lines, marginX + 4, y)
+      y += lines.length * 5 + 1
+    })
+  }
 
   doc.setFontSize(8)
   doc.setTextColor(150)
