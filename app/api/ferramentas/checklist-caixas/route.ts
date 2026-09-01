@@ -5,8 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { logActivity } from '@/lib/supabase/activity-log'
 
-const SELECT_FIELDS = 'id, nome_avaliado, tipo, itens, finalizada, criado_em, atualizado_em'
+const SELECT_FIELDS = 'id, nome_avaliado, loja, tipo, itens, finalizada, criado_em, atualizado_em'
 const TIPOS = ['weekly', 'monthly'] as const
+const LOJAS = ['L01', 'L02', 'L03', 'L04', 'L05'] as const
 
 export async function GET() {
   const supabase = await createClient()
@@ -29,18 +30,22 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const body = await request.json().catch(() => null) as { nomeAvaliado?: string; tipo?: string } | null
+  const body = await request.json().catch(() => null) as { nomeAvaliado?: string; loja?: string; tipo?: string } | null
   const nomeAvaliado = body?.nomeAvaliado?.trim()
+  const loja = body?.loja
   const tipo = body?.tipo
 
   if (!nomeAvaliado) return NextResponse.json({ error: 'Informe o nome da pessoa avaliada.' }, { status: 400 })
+  if (!loja || !LOJAS.includes(loja as typeof LOJAS[number])) {
+    return NextResponse.json({ error: 'Loja inválida.' }, { status: 400 })
+  }
   if (!tipo || !TIPOS.includes(tipo as typeof TIPOS[number])) {
     return NextResponse.json({ error: 'Tipo de checklist inválido.' }, { status: 400 })
   }
 
   const { data, error } = await supabase
     .from('caixa_avaliacoes')
-    .insert({ avaliador_id: user.id, nome_avaliado: nomeAvaliado, tipo })
+    .insert({ avaliador_id: user.id, nome_avaliado: nomeAvaliado, loja, tipo })
     .select(SELECT_FIELDS)
     .single()
 

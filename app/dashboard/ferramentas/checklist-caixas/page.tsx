@@ -15,11 +15,22 @@ import { exportEvaluationPdf } from './pdf'
 interface Evaluation {
   id: string
   nome_avaliado: string
+  loja: Loja
   tipo: PeriodTab
   itens: Record<string, ItemState>
   finalizada: boolean
   criado_em: string
   atualizado_em: string
+}
+
+const LOJAS = ['L01', 'L02', 'L03', 'L04', 'L05'] as const
+type Loja = typeof LOJAS[number]
+const LOJAS_LABELS: Record<Loja, string> = {
+  L01: 'LOJA01 - MATRIZ',
+  L02: 'LOJA02 - INDAIAL',
+  L03: 'LOJA03 - DIESEL',
+  L04: 'LOJA04 - BLUMENAU',
+  L05: 'LOJA05 - GASPAR',
 }
 
 const inputBase = 'w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
@@ -36,6 +47,7 @@ export default function ChecklistCaixasPage() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [nomeAvaliado, setNomeAvaliado] = useState('')
+  const [loja, setLoja] = useState<Loja>('L01')
   const [tipo, setTipo] = useState<PeriodTab>('weekly')
   const [creating, setCreating] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -71,7 +83,7 @@ export default function ChecklistCaixasPage() {
       const res = await fetch('/api/ferramentas/checklist-caixas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nomeAvaliado: nomeAvaliado.trim(), tipo }),
+        body: JSON.stringify({ nomeAvaliado: nomeAvaliado.trim(), loja, tipo }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error ?? 'Erro ao iniciar avaliação.')
@@ -128,6 +140,7 @@ export default function ChecklistCaixasPage() {
     await persistItens(current.itens, true)
     exportEvaluationPdf({
       nomeAvaliado: current.nome_avaliado,
+      loja: LOJAS_LABELS[current.loja],
       tipo: current.tipo,
       sections: CHECKLIST[current.tipo],
       itens: current.itens,
@@ -175,7 +188,7 @@ export default function ChecklistCaixasPage() {
               </div>
 
               {formOpen && (
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 sm:items-end animate-fade-in-up">
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-3 sm:items-end animate-fade-in-up">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Nome da pessoa</label>
                     <input
@@ -186,6 +199,12 @@ export default function ChecklistCaixasPage() {
                       placeholder="Ex: Maria Silva"
                       autoFocus
                     />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Loja</label>
+                    <select value={loja} onChange={e => setLoja(e.target.value as Loja)} className={inputBase + ' sm:w-auto'}>
+                      {LOJAS.map(l => <option key={l} value={l}>{LOJAS_LABELS[l]}</option>)}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Tipo</label>
@@ -224,6 +243,7 @@ export default function ChecklistCaixasPage() {
                     <thead>
                       <tr className="border-b border-gray-100 dark:border-gray-800">
                         <th className={TH_CLASS}>Pessoa</th>
+                        <th className={TH_CLASS}>Loja</th>
                         <th className={TH_CLASS}>Tipo</th>
                         <th className={TH_CLASS}>Data</th>
                         <th className={TH_CLASS}>Progresso</th>
@@ -234,7 +254,7 @@ export default function ChecklistCaixasPage() {
                     <tbody>
                       {evaluations.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
+                          <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
                             Nenhuma avaliação registrada ainda.
                           </td>
                         </tr>
@@ -244,6 +264,7 @@ export default function ChecklistCaixasPage() {
                         return (
                           <tr key={ev.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                             <td className={TD_CLASS + ' font-medium'}>{ev.nome_avaliado}</td>
+                            <td className={TD_CLASS}><Badge tone="navy">{LOJAS_LABELS[ev.loja]}</Badge></td>
                             <td className={TD_CLASS}><Badge tone="gray">{TAB_LABELS[ev.tipo]}</Badge></td>
                             <td className={TD_CLASS + ' tabular-nums'}>{fmtData(ev.criado_em)}</td>
                             <td className={TD_CLASS + ' tabular-nums'}>{evChecked}/{evTotal}</td>
@@ -260,6 +281,7 @@ export default function ChecklistCaixasPage() {
                                   className="text-xs px-2 py-1"
                                   onClick={() => exportEvaluationPdf({
                                     nomeAvaliado: ev.nome_avaliado,
+                                    loja: LOJAS_LABELS[ev.loja],
                                     tipo: ev.tipo,
                                     sections: CHECKLIST[ev.tipo],
                                     itens: ev.itens,
@@ -295,7 +317,7 @@ export default function ChecklistCaixasPage() {
               <div>
                 <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">{current.nome_avaliado}</h2>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                  {TAB_LABELS[current.tipo]} · iniciada em {fmtData(current.criado_em)}
+                  {LOJAS_LABELS[current.loja]} · {TAB_LABELS[current.tipo]} · iniciada em {fmtData(current.criado_em)}
                 </p>
               </div>
               <Button variant="ghost" onClick={backToList}>← Voltar</Button>

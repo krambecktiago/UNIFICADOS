@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { logActivity } from '@/lib/supabase/activity-log'
 
-const SELECT_FIELDS = 'id, nome_avaliado, tipo, itens, finalizada, criado_em, atualizado_em'
+const SELECT_FIELDS = 'id, nome_avaliado, loja, tipo, itens, finalizada, criado_em, atualizado_em'
 
 export async function PATCH(
   request: NextRequest,

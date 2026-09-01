@@ -14,6 +14,7 @@ function sanitizeForPdf(s: string): string {
 
 interface ExportParams {
   nomeAvaliado: string
+  loja: string
   tipo: PeriodTab
   sections: Section[]
   itens: Record<string, ItemState>
@@ -21,7 +22,7 @@ interface ExportParams {
   avaliadorNome?: string
 }
 
-export function exportEvaluationPdf({ nomeAvaliado, tipo, sections, itens, criadoEm, avaliadorNome }: ExportParams) {
+export function exportEvaluationPdf({ nomeAvaliado, loja, tipo, sections, itens, criadoEm, avaliadorNome }: ExportParams) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const marginX = 18
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -44,9 +45,9 @@ export function exportEvaluationPdf({ nomeAvaliado, tipo, sections, itens, criad
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   doc.setTextColor(110)
-  const meta = [`Tipo: ${TAB_LABELS[tipo]}`, `Data: ${new Date(criadoEm).toLocaleString('pt-BR')}`]
+  const meta = [`Loja: ${loja}`, `Tipo: ${TAB_LABELS[tipo]}`, `Data: ${new Date(criadoEm).toLocaleString('pt-BR')}`]
   if (avaliadorNome) meta.push(`Avaliador: ${avaliadorNome}`)
-  doc.text(meta.join('   |   '), marginX, y)
+  doc.text(sanitizeForPdf(meta.join('   |   ')), marginX, y)
   y += 10
   doc.setTextColor(0)
 

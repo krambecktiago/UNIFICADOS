@@ -413,6 +413,7 @@ create table public.caixa_avaliacoes (
   id            uuid primary key default gen_random_uuid(),
   avaliador_id  uuid not null references auth.users(id) on delete cascade,
   nome_avaliado text not null,
+  loja          text not null default 'L01' check (loja in ('L01','L02','L03','L04','L05')),
   tipo          text not null check (tipo in ('weekly', 'monthly')),
   itens         jsonb not null default '{}',
   finalizada    boolean not null default false,
@@ -432,3 +433,14 @@ create index caixa_avaliacoes_avaliador_idx on public.caixa_avaliacoes(avaliador
 insert into public.tools (name, slug, description) values
   ('Checklist Equipe de Caixas', 'checklist-caixas', 'Avalia cada pessoa da equipe de caixas (semanal ou mensal), com comentários e exportação em PDF')
 on conflict (slug) do update set description = excluded.description;
+
+-- ============================================================
+-- MIGRAÇÃO: Empresa/loja na avaliação (caixa_avaliacoes.loja)
+-- Execute no SQL Editor do Supabase após o schema inicial
+-- Necessária só se a tabela caixa_avaliacoes acima já tinha sido criada
+-- antes desta coluna existir — "if not exists" faz o comando não fazer
+-- nada se você estiver rodando o schema pela primeira vez (create table
+-- já vem com a coluna).
+-- ============================================================
+alter table public.caixa_avaliacoes
+  add column if not exists loja text not null default 'L01' check (loja in ('L01','L02','L03','L04','L05'));
