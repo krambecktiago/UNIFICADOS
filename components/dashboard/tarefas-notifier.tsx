@@ -93,6 +93,9 @@ export function TarefasNotifier() {
         seenRef.current = new Set([...seen].filter(k => current.has(k)))
         saveSeen(seenRef.current)
         window.dispatchEvent(new Event('tarefas:atualizadas'))
+        // Re-renderiza os server components da página atual — atualiza o card
+        // "Tarefas pendentes" do Dashboard sem F5 (estado client é mantido).
+        router.refresh()
       } catch {}
     }
 

@@ -94,6 +94,38 @@ export async function withNames(rows: TarefaRow[]) {
   }))
 }
 
+// Resumo do card "Tarefas pendentes" do Dashboard. Filtra por usuário
+// explicitamente mesmo com RLS — pra admin a policy libera todas as
+// tarefas, e aí "para mim" viraria "da empresa toda".
+export async function getPendingTasksSummary(userId: string, isAdmin: boolean) {
+  const supabase = await createClient()
+  const [{ data: rows }, totalEmpresa] = await Promise.all([
+    supabase
+      .from('tarefas')
+      .select('id, titulo, criado_por, atribuido_para, criado_em')
+      .eq('status', 'pendente')
+      .or(`atribuido_para.eq.${userId},criado_por.eq.${userId}`)
+      .order('criado_em', { ascending: true }),
+    isAdmin
+      ? supabase.from('tarefas').select('id', { count: 'exact', head: true }).eq('status', 'pendente').then(r => r.count ?? 0)
+      : Promise.resolve(null),
+  ])
+
+  const tarefas = rows ?? []
+  const names = await getUserNames(tarefas.flatMap(t => [t.criado_por ?? '', t.atribuido_para]))
+  const nome = (id: string | null) => (id && names.get(id)) || 'Usuário removido'
+
+  return {
+    paraMim: tarefas
+      .filter(t => t.atribuido_para === userId)
+      .map(t => ({ id: t.id, titulo: t.titulo, nome: t.criado_por === userId ? 'você' : nome(t.criado_por), criadoEm: t.criado_em })),
+    aguardandoOutros: tarefas
+      .filter(t => t.criado_por === userId && t.atribuido_para !== userId)
+      .map(t => ({ id: t.id, titulo: t.titulo, nome: nome(t.atribuido_para), criadoEm: t.criado_em })),
+    totalEmpresa,
+  }
+}
+
 // Falha silenciosamente, igual ao logActivity — o log nunca deve impedir
 // a resposta ao usuário.
 export async function logTarefa(tarefaId: string, tarefaTitulo: string, userId: string, acao: TarefaAcao, detalhe: string | null = null) {

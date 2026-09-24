@@ -7,7 +7,8 @@ import { formatDateTime, formatDayLabel, toDateKey } from '@/lib/utils'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card } from '@/components/ui/card'
 import { KpiCard } from '@/components/ui/kpi-card'
-import { AboutCompanyCard } from '@/components/dashboard/about-company-card'
+import { PendingTasksCard } from '@/components/dashboard/pending-tasks-card'
+import { getPendingTasksSummary } from '@/lib/tarefas/server'
 import { DailyUsageChart, ToolDistributionChart } from '@/components/dashboard/usage-charts'
 import { UserToolUsageList, type UserToolBreakdown } from '@/components/dashboard/user-tool-usage'
 import { getAccessibleTools } from '@/lib/tools/catalog'
@@ -83,6 +84,11 @@ export default async function DashboardPage() {
       ? createAdminClient().from('profiles').select('id, full_name, last_seen_at').then(r => r.data)
       : Promise.resolve(null),
   ])
+
+  // Depende de accessibleTools, então fica fora do Promise.all acima.
+  const pendingTasks = accessibleTools.some(t => t.slug === 'tarefas')
+    ? await getPendingTasksSummary(user!.id, isAdmin)
+    : null
 
   const totalFiles = (usageLogs ?? []).reduce((sum, log) => sum + log.files_count, 0)
   const totalExecutions = (usageLogs ?? []).length
@@ -360,7 +366,7 @@ export default async function DashboardPage() {
       </div>
 
       <aside className="space-y-4 lg:sticky lg:top-8">
-        <AboutCompanyCard />
+        {pendingTasks && <PendingTasksCard {...pendingTasks} />}
 
         {isAdmin && (
           <Card padding="6">
