@@ -9,6 +9,7 @@ const STORAGE_KEY = 'tarefas-notificacoes-vistas'
 const TAREFAS_HREF = '/dashboard/ferramentas/tarefas'
 
 interface NotificacoesResponse {
+  assinatura: string
   novas: { id: string; titulo: string; nome: string }[]
   concluidas: { id: string; titulo: string; nome: string; concluidoEm: string }[]
 }
@@ -51,6 +52,7 @@ export function TarefasNotifier() {
   const router = useRouter()
   const [toasts, setToasts] = useState<Toast[]>([])
   const seenRef = useRef<Set<string> | null>(null)
+  const assinaturaRef = useRef<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -73,6 +75,11 @@ export function TarefasNotifier() {
           ...data.concluidas.map(t => ({ key: `concluida:${t.id}:${t.concluidoEm}`, title: 'Tarefa concluída', body: `${t.nome} concluiu: ${t.titulo}` })),
         ]
 
+        // Na primeira consulta só guarda a assinatura — a página acabou de
+        // carregar com os dados atuais, não há o que atualizar.
+        const mudou = assinaturaRef.current !== null && assinaturaRef.current !== data.assinatura
+        assinaturaRef.current = data.assinatura
+
         if (seenRef.current === null) {
           const stored = loadSeen()
           if (stored === null) {
@@ -85,17 +92,21 @@ export function TarefasNotifier() {
 
         const seen = seenRef.current
         const fresh = events.filter(e => !seen.has(e.key))
-        if (fresh.length === 0) return
 
-        fresh.forEach(e => { seen.add(e.key); pushToast(e) })
-        // Só guarda chaves que ainda vêm da API — sem isso a lista cresceria pra sempre.
-        const current = new Set(events.map(e => e.key))
-        seenRef.current = new Set([...seen].filter(k => current.has(k)))
-        saveSeen(seenRef.current)
-        window.dispatchEvent(new Event('tarefas:atualizadas'))
-        // Re-renderiza os server components da página atual — atualiza o card
-        // "Tarefas pendentes" do Dashboard sem F5 (estado client é mantido).
-        router.refresh()
+        if (fresh.length > 0) {
+          fresh.forEach(e => { seen.add(e.key); pushToast(e) })
+          // Só guarda chaves que ainda vêm da API — sem isso a lista cresceria pra sempre.
+          const current = new Set(events.map(e => e.key))
+          seenRef.current = new Set([...seen].filter(k => current.has(k)))
+          saveSeen(seenRef.current)
+        }
+
+        if (fresh.length > 0 || mudou) {
+          window.dispatchEvent(new Event('tarefas:atualizadas'))
+          // Re-renderiza os server components da página atual — atualiza o card
+          // "Tarefas pendentes" do Dashboard sem F5 (estado client é mantido).
+          router.refresh()
+        }
       } catch {}
     }
 
