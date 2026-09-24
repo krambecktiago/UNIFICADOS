@@ -441,3 +441,64 @@ create index registro_entregas_data_idx on public.registro_entregas(data);
 insert into public.tools (name, slug, description) values
   ('Registro de Entregas', 'registro-entregas', 'Autoavaliação mensal: registra entregas além da rotina, com relatório por mês')
 on conflict (slug) do nothing;
+
+-- ============================================================
+-- Ferramenta "Tarefas" — lista de tarefas atribuídas entre usuários.
+-- Quem tem a ferramenta liberada cria tarefa pra outro usuário (que
+-- também tenha a ferramenta); ela fica pendente até o responsável
+-- marcar como concluída, com uma explicação de como resolveu.
+-- Visibilidade: só quem criou e quem foi atribuído enxergam a tarefa;
+-- admin vê todas. Escrita sempre via service role (createAdminClient),
+-- com as regras de quem pode concluir/editar/excluir checadas na rota.
+-- tarefas_log guarda o histórico de cada ação (só admin lê) e não tem
+-- FK pra tarefas — o registro sobrevive à exclusão da tarefa.
+-- ============================================================
+create table public.tarefas (
+  id                   uuid primary key default gen_random_uuid(),
+  titulo               text not null,
+  observacao           text,
+  status               text not null default 'pendente' check (status in ('pendente', 'concluida')),
+  explicacao_conclusao text,
+  criado_por           uuid references auth.users(id) on delete set null,
+  atribuido_para       uuid not null references auth.users(id) on delete cascade,
+  concluido_em         timestamptz,
+  criado_em            timestamptz not null default now(),
+  atualizado_em        timestamptz not null default now()
+);
+
+alter table public.tarefas enable row level security;
+
+create policy "Criador e responsável leem a tarefa"
+  on public.tarefas for select
+  using (auth.uid() = criado_por or auth.uid() = atribuido_para);
+
+create policy "Admin lê todas as tarefas"
+  on public.tarefas for select
+  using (public.is_admin());
+
+create index tarefas_criado_por_idx on public.tarefas(criado_por);
+create index tarefas_atribuido_para_idx on public.tarefas(atribuido_para);
+create index tarefas_status_idx on public.tarefas(status);
+
+create table public.tarefas_log (
+  id           uuid primary key default gen_random_uuid(),
+  tarefa_id    uuid not null,
+  tarefa_titulo text not null,
+  user_id      uuid references auth.users(id) on delete set null,
+  acao         text not null check (acao in ('criada', 'editada', 'concluida', 'reaberta', 'excluida')),
+  detalhe      text,
+  criado_em    timestamptz not null default now()
+);
+
+alter table public.tarefas_log enable row level security;
+
+create policy "Admin lê o log de tarefas"
+  on public.tarefas_log for select
+  using (public.is_admin());
+
+create index tarefas_log_tarefa_id_idx on public.tarefas_log(tarefa_id);
+create index tarefas_log_criado_em_idx on public.tarefas_log(criado_em desc);
+
+insert into public.tools (name, slug, description) values
+  ('Tarefas', 'tarefas', 'Atribui tarefas a outros usuários e acompanha até a conclusão')
+on conflict (slug) do nothing;

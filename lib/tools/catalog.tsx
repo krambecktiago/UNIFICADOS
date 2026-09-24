@@ -107,6 +107,19 @@ export const ALL_TOOLS = [
     ),
     accent: '#2f5d62',
   },
+  {
+    href: '/dashboard/ferramentas/tarefas',
+    slug: 'tarefas',
+    title: 'Tarefas',
+    description: 'Atribui tarefas a outros usuários e acompanha até a conclusão',
+    inputs: 'Formulário',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    accent: '#4f46e5',
+  },
 ]
 
 export type ToolCatalogEntry = (typeof ALL_TOOLS)[number]
