@@ -4,9 +4,13 @@ import { getSessionUser, getSessionProfile } from '@/lib/supabase/session'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { AssistantWidget } from '@/components/ai-assistant-widget'
 import { PresenceHeartbeat } from '@/components/dashboard/presence-heartbeat'
+import { TarefasNotifier } from '@/components/dashboard/tarefas-notifier'
 import { getGreeting } from '@/lib/utils'
 
 const GATED_SCREEN_SLUGS = ['dashboard', 'configuracoes']
+// Ferramenta com notificação global (TarefasNotifier) — a checagem de acesso
+// pega carona nas mesmas consultas de tools/user_tool_access das telas acima.
+const TAREFAS_SLUG = 'tarefas'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser()
@@ -26,12 +30,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = profile?.role === 'admin'
 
   let accessibleScreens: string[] = GATED_SCREEN_SLUGS
+  let hasTarefas = isAdmin
 
   if (!isAdmin) {
     const { data: toolRows } = await supabase
       .from('tools')
       .select('id, slug')
-      .in('slug', GATED_SCREEN_SLUGS)
+      .in('slug', [...GATED_SCREEN_SLUGS, TAREFAS_SLUG])
       .eq('active', true)
 
     const { data: accessRows } = await supabase
@@ -40,9 +45,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .eq('user_id', user.id)
 
     const accessibleToolIds = new Set((accessRows ?? []).map(a => a.tool_id))
-    accessibleScreens = (toolRows ?? [])
+    const accessibleSlugs = (toolRows ?? [])
       .filter(t => accessibleToolIds.has(t.id))
       .map(t => t.slug)
+    accessibleScreens = accessibleSlugs.filter(slug => GATED_SCREEN_SLUGS.includes(slug))
+    hasTarefas = accessibleSlugs.includes(TAREFAS_SLUG)
   }
 
   const firstName = (profile?.full_name ?? user.email ?? 'Usuário').split(' ')[0]
@@ -59,6 +66,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <AssistantWidget />
       </div>
       <PresenceHeartbeat />
+      {hasTarefas && <TarefasNotifier />}
     </div>
   )
 }

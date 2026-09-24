@@ -70,6 +70,8 @@ const labelBase = 'block text-xs font-medium text-gray-600 dark:text-gray-400 up
 
 const EMPTY_FORM = { titulo: '', observacao: '', atribuidoPara: '' }
 
+const REFRESH_INTERVAL_MS = 10 * 1000
+
 function fmtDataHora(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
@@ -98,30 +100,32 @@ export default function TarefasPage() {
 
   const [log, setLog] = useState<LogEntry[]>([])
   const [loadingLog, setLoadingLog] = useState(false)
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>('unsupported')
 
-  async function loadTarefas() {
+  async function loadTarefas(silent = false) {
     try {
-      const res = await fetch('/api/ferramentas/tarefas')
+      const res = await fetch('/api/ferramentas/tarefas', { cache: 'no-store' })
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error ?? 'Erro ao carregar tarefas.')
       setTarefas(json.data ?? [])
       setMe(json.me ?? null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro inesperado.')
+      // Falha numa atualização automática não vira erro na tela — a próxima tenta de novo.
+      if (!silent) setError(e instanceof Error ? e.message : 'Erro inesperado.')
     } finally {
       setLoading(false)
     }
   }
 
-  async function loadLog() {
-    setLoadingLog(true)
+  async function loadLog(silent = false) {
+    if (!silent) setLoadingLog(true)
     try {
       const res = await fetch('/api/ferramentas/tarefas/log')
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error ?? 'Erro ao carregar log.')
       setLog(json.data ?? [])
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro inesperado.')
+      if (!silent) setError(e instanceof Error ? e.message : 'Erro inesperado.')
     } finally {
       setLoadingLog(false)
     }
@@ -130,11 +134,31 @@ export default function TarefasPage() {
   useEffect(() => {
     loadTarefas()
     fetch('/api/ferramentas/tarefas/usuarios').then(r => r.json()).then(json => setUsuarios(json.data ?? [])).catch(() => {})
+
+    // Atualização automática: a cada 10s, e na hora quando o TarefasNotifier
+    // (layout) detecta tarefa nova/concluída. Só troca a lista — modo
+    // concluir/editar de um cartão continua aberto, já que é guardado por id.
+    const refresh = () => loadTarefas(true)
+    const id = setInterval(refresh, REFRESH_INTERVAL_MS)
+    window.addEventListener('tarefas:atualizadas', refresh)
+    try {
+      if (typeof Notification !== 'undefined') setNotifPermission(Notification.permission)
+    } catch {}
+    return () => { clearInterval(id); window.removeEventListener('tarefas:atualizadas', refresh) }
   }, [])
 
   useEffect(() => {
-    if (view === 'log') loadLog()
+    if (view !== 'log') return
+    loadLog()
+    const id = setInterval(() => loadLog(true), REFRESH_INTERVAL_MS)
+    return () => clearInterval(id)
   }, [view])
+
+  async function ativarNotificacoes() {
+    try {
+      setNotifPermission(await Notification.requestPermission())
+    } catch {}
+  }
 
   function resetCardState() {
     setConcluindoId(null)
@@ -341,6 +365,13 @@ export default function TarefasPage() {
       <PageHeader title="Tarefas" subtitle="Atribua tarefas a outros usuários e acompanhe até a conclusão" />
 
       <div className="px-8 py-8 max-w-3xl mx-auto">
+        {notifPermission === 'default' && (
+          <div className="mb-4 p-3 flex items-center justify-between gap-3 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900 rounded-xl">
+            <p className="text-sm text-indigo-900 dark:text-indigo-200">Receba um aviso do navegador quando chegar tarefa nova, mesmo com a aba em segundo plano.</p>
+            <Button variant="secondary" onClick={ativarNotificacoes} className="shrink-0">Ativar notificações</Button>
+          </div>
+        )}
+
         <Card padding="6" className="mb-6">
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Nova tarefa</p>
           <div>

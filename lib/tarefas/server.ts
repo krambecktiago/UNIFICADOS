@@ -67,16 +67,20 @@ export async function getUserNames(ids: string[]): Promise<Map<string, string>> 
   if (unique.length === 0) return new Map()
 
   const adminClient = createAdminClient()
-  const [{ data: profiles }, { data: authData }] = await Promise.all([
-    adminClient.from('profiles').select('id, full_name').in('id', unique),
-    adminClient.auth.admin.listUsers({ perPage: 1000 }),
-  ])
+  const { data: profiles } = await adminClient.from('profiles').select('id, full_name').in('id', unique)
 
-  const emailMap = new Map((authData?.users ?? []).map(u => [u.id, u.email ?? '']))
   const names = new Map<string, string>()
-  for (const id of unique) {
-    const fullName = profiles?.find(p => p.id === id)?.full_name
-    names.set(id, fullName || emailMap.get(id) || 'Usuário removido')
+  for (const p of profiles ?? []) {
+    if (p.full_name) names.set(p.id, p.full_name)
+  }
+
+  // listUsers do Auth é pesado e a tela de Tarefas atualiza a cada 10s —
+  // só consulta quando algum perfil está sem nome (raro, o onboarding exige).
+  const missing = unique.filter(id => !names.has(id))
+  if (missing.length > 0) {
+    const { data: authData } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
+    const emailMap = new Map((authData?.users ?? []).map(u => [u.id, u.email ?? '']))
+    missing.forEach(id => names.set(id, emailMap.get(id) || 'Usuário removido'))
   }
   return names
 }
