@@ -2,16 +2,13 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { logToolUsage } from '@/lib/supabase/tool-usage'
-import { logActivity } from '@/lib/supabase/activity-log'
 import {
-  TOOL_SLUG,
   SELECT_FIELDS,
   getTarefasSession,
   getEligibleUserIds,
   getUserNames,
   withNames,
-  logTarefa,
+  logTarefaAcao,
   type TarefaRow,
 } from '@/lib/tarefas/server'
 
@@ -63,9 +60,11 @@ export async function PATCH(
       .single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    await logTarefa(id, tarefa.titulo, user.id, 'concluida', explicacao)
-    await logToolUsage(supabase, user.id, TOOL_SLUG, 0)
-    await logActivity(user.id, 'tool_run', `Concluiu a tarefa "${tarefa.titulo}"`)
+    await logTarefaAcao(
+      supabase, user.id,
+      { tarefaId: id, titulo: tarefa.titulo, acao: 'concluida', detalhe: explicacao },
+      { action: 'tool_run', description: `Concluiu a tarefa "${tarefa.titulo}"` },
+    )
 
     const [withName] = await withNames([data as TarefaRow])
     return NextResponse.json({ data: withName })
@@ -85,9 +84,11 @@ export async function PATCH(
       .single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    await logTarefa(id, tarefa.titulo, user.id, 'reaberta')
-    await logToolUsage(supabase, user.id, TOOL_SLUG, 0)
-    await logActivity(user.id, 'tool_run', `Reabriu a tarefa "${tarefa.titulo}"`)
+    await logTarefaAcao(
+      supabase, user.id,
+      { tarefaId: id, titulo: tarefa.titulo, acao: 'reaberta' },
+      { action: 'tool_run', description: `Reabriu a tarefa "${tarefa.titulo}"` },
+    )
 
     const [withName] = await withNames([data as TarefaRow])
     return NextResponse.json({ data: withName })
@@ -127,9 +128,11 @@ export async function PATCH(
       mudancas.push(`responsável: ${names.get(tarefa.atribuido_para)} → ${names.get(atribuidoPara)}`)
     }
 
-    await logTarefa(id, titulo, user.id, 'editada', mudancas.join('; ') || null)
-    await logToolUsage(supabase, user.id, TOOL_SLUG, 0)
-    await logActivity(user.id, 'tool_run', `Editou a tarefa "${titulo}"`)
+    await logTarefaAcao(
+      supabase, user.id,
+      { tarefaId: id, titulo, acao: 'editada', detalhe: mudancas.join('; ') || null },
+      { action: 'tool_run', description: `Editou a tarefa "${titulo}"` },
+    )
 
     const [withName] = await withNames([data as TarefaRow])
     return NextResponse.json({ data: withName })
@@ -159,9 +162,11 @@ export async function DELETE(
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const names = await getUserNames([existing.atribuido_para])
-  await logTarefa(id, existing.titulo, user.id, 'excluida', `Era de ${names.get(existing.atribuido_para)}`)
-  await logToolUsage(supabase, user.id, TOOL_SLUG, 0)
-  await logActivity(user.id, isAdmin && existing.criado_por !== user.id ? 'admin_delete' : 'tool_run', `Excluiu a tarefa "${existing.titulo}"`)
+  await logTarefaAcao(
+    supabase, user.id,
+    { tarefaId: id, titulo: existing.titulo, acao: 'excluida', detalhe: `Era de ${names.get(existing.atribuido_para)}` },
+    { action: isAdmin && existing.criado_por !== user.id ? 'admin_delete' : 'tool_run', description: `Excluiu a tarefa "${existing.titulo}"` },
+  )
 
   return NextResponse.json({ ok: true })
 }

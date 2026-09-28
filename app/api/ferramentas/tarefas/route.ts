@@ -2,16 +2,12 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { logToolUsage } from '@/lib/supabase/tool-usage'
-import { logActivity } from '@/lib/supabase/activity-log'
 import {
-  TOOL_SLUG,
   SELECT_FIELDS,
   getTarefasSession,
   getEligibleUserIds,
-  getUserNames,
   withNames,
-  logTarefa,
+  logTarefaAcao,
   type TarefaRow,
 } from '@/lib/tarefas/server'
 
@@ -69,13 +65,14 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const names = await getUserNames([atribuidoPara])
-  const responsavel = names.get(atribuidoPara) ?? '—'
-
-  await logTarefa(data.id, titulo, user.id, 'criada', `Atribuída para ${responsavel}`)
-  await logToolUsage(supabase, user.id, TOOL_SLUG, 0)
-  await logActivity(user.id, 'tool_run', `Criou a tarefa "${titulo}" para ${responsavel}`)
-
   const [withName] = await withNames([data as TarefaRow])
+  const responsavel = withName.atribuido_para_nome
+
+  await logTarefaAcao(
+    supabase, user.id,
+    { tarefaId: data.id, titulo, acao: 'criada', detalhe: `Atribuída para ${responsavel}` },
+    { action: 'tool_run', description: `Criou a tarefa "${titulo}" para ${responsavel}` },
+  )
+
   return NextResponse.json({ data: withName })
 }

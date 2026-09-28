@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
 const POLL_INTERVAL_MS = 10 * 1000
 const TOAST_DURATION_MS = 15 * 1000
@@ -50,6 +50,10 @@ function showBrowserNotification(title: string, body: string, onClick: () => voi
 // registra o estado atual, sem disparar uma avalanche de avisos antigos.
 export function TarefasNotifier() {
   const router = useRouter()
+  const pathname = usePathname()
+  // Ref pra não reiniciar o polling a cada navegação.
+  const pathnameRef = useRef(pathname)
+  useEffect(() => { pathnameRef.current = pathname }, [pathname])
   const [toasts, setToasts] = useState<Toast[]>([])
   const seenRef = useRef<Set<string> | null>(null)
   const assinaturaRef = useRef<string | null>(null)
@@ -105,7 +109,9 @@ export function TarefasNotifier() {
           window.dispatchEvent(new Event('tarefas:atualizadas'))
           // Re-renderiza os server components da página atual — atualiza o card
           // "Tarefas pendentes" do Dashboard sem F5 (estado client é mantido).
-          router.refresh()
+          // Na própria tela de Tarefas o evento acima já basta; o refresh ali
+          // só re-executaria os layouts (e o logToolVisit contaria visita a mais).
+          if (!pathnameRef.current.startsWith(TAREFAS_HREF)) router.refresh()
         }
       } catch {}
     }

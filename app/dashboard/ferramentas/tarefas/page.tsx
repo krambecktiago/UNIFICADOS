@@ -71,6 +71,9 @@ const labelBase = 'block text-xs font-medium text-gray-600 dark:text-gray-400 up
 const EMPTY_FORM = { titulo: '', observacao: '', atribuidoPara: '' }
 
 const REFRESH_INTERVAL_MS = 10 * 1000
+// Rede de segurança — mudanças nas tarefas do próprio usuário já chegam na
+// hora pelo evento do TarefasNotifier (layout).
+const FALLBACK_INTERVAL_MS = 60 * 1000
 
 function fmtDataHora(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -135,23 +138,31 @@ export default function TarefasPage() {
     loadTarefas()
     fetch('/api/ferramentas/tarefas/usuarios').then(r => r.json()).then(json => setUsuarios(json.data ?? [])).catch(() => {})
 
-    // Atualização automática: a cada 10s, e na hora quando o TarefasNotifier
-    // (layout) detecta tarefa nova/concluída. Só troca a lista — modo
-    // concluir/editar de um cartão continua aberto, já que é guardado por id.
+    // Atualização automática na hora em que o TarefasNotifier detecta
+    // mudança. Só troca a lista — modo concluir/editar de um cartão continua
+    // aberto, já que é guardado por id.
     const refresh = () => loadTarefas(true)
-    const id = setInterval(refresh, REFRESH_INTERVAL_MS)
     window.addEventListener('tarefas:atualizadas', refresh)
     try {
       if (typeof Notification !== 'undefined') setNotifPermission(Notification.permission)
     } catch {}
-    return () => { clearInterval(id); window.removeEventListener('tarefas:atualizadas', refresh) }
+    return () => window.removeEventListener('tarefas:atualizadas', refresh)
   }, [])
 
   useEffect(() => {
-    if (view !== 'log') return
-    loadLog()
-    const id = setInterval(() => loadLog(true), REFRESH_INTERVAL_MS)
-    return () => clearInterval(id)
+    if (view === 'log') loadLog()
+
+    // "Todas" (admin) e "Log" mostram ações entre outros usuários, que o
+    // notificador não acompanha — ali mantém 10s. Com a aba do navegador em
+    // segundo plano não consulta; ao voltar, atualiza na hora.
+    const tick = () => {
+      if (document.hidden) return
+      if (view === 'log') loadLog(true)
+      else loadTarefas(true)
+    }
+    const id = setInterval(tick, view === 'todas' || view === 'log' ? REFRESH_INTERVAL_MS : FALLBACK_INTERVAL_MS)
+    document.addEventListener('visibilitychange', tick)
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', tick) }
   }, [view])
 
   async function ativarNotificacoes() {
@@ -181,7 +192,8 @@ export default function TarefasPage() {
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error ?? 'Erro ao criar tarefa.')
       setForm(EMPTY_FORM)
-      await loadTarefas()
+      // A API já devolve a tarefa com os nomes — não precisa recarregar a lista.
+      setTarefas(prev => [json.data, ...prev])
     } catch (e) {
       setFormError(e instanceof Error ? e.message : 'Erro inesperado.')
     } finally {
@@ -201,7 +213,7 @@ export default function TarefasPage() {
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error ?? 'Erro ao atualizar tarefa.')
       resetCardState()
-      await loadTarefas()
+      setTarefas(prev => prev.map(t => (t.id === id ? json.data : t)))
     } catch (e) {
       setCardError(e instanceof Error ? e.message : 'Erro inesperado.')
     } finally {
@@ -215,7 +227,7 @@ export default function TarefasPage() {
     try {
       const res = await fetch(`/api/ferramentas/tarefas/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error()
-      await loadTarefas()
+      setTarefas(prev => prev.filter(t => t.id !== id))
     } catch {
       setError('Não foi possível excluir agora.')
     } finally {
@@ -235,7 +247,7 @@ export default function TarefasPage() {
     { key: 'criadas', label: 'Criadas por mim', count: pendentes(criadas), border: 'border-brand-navy dark:border-blue-400', text: 'text-brand-navy dark:text-blue-400' },
     ...(me?.isAdmin ? [
       { key: 'todas' as const, label: 'Todas (admin)', count: pendentes(tarefas), border: 'border-brand-navy dark:border-blue-400', text: 'text-brand-navy dark:text-blue-400' },
-      { key: 'log' as const, label: 'Log', count: log.length, border: 'border-brand-navy dark:border-blue-400', text: 'text-brand-navy dark:text-blue-400' },
+      { key: 'log' as const, label: 'Log', border: 'border-brand-navy dark:border-blue-400', text: 'text-brand-navy dark:text-blue-400' },
     ] : []),
   ]
 

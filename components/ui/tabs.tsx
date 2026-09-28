@@ -6,7 +6,8 @@ import { cn } from '@/lib/utils'
 export interface TabDef<T extends string> {
   key: T
   label: string
-  count: number
+  // Omitido = aba sem contador.
+  count?: number
   border: string
   text: string
 }
@@ -30,14 +31,14 @@ export function Tabs<T extends string>({ tabs, activeTab, onChange }: TabsProps<
           )}
         >
           {tab.label}
-          <span
+          {tab.count !== undefined && <span
             className={cn(
               'text-xs font-semibold px-1.5 py-0.5 rounded-full',
               activeTab === tab.key ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
             )}
           >
             {tab.count}
-          </span>
+          </span>}
         </button>
       ))}
     </div>

@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logToolUsage } from '@/lib/supabase/tool-usage'
+import { logActivity } from '@/lib/supabase/activity-log'
 
 export const TOOL_SLUG = 'tarefas'
 
@@ -34,12 +36,31 @@ export async function getTarefasSession() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { supabase, user: null, isAdmin: false, hasAccess: false }
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+  // Só os acessos do próprio usuário, tudo em paralelo — a tela chama isso a
+  // cada atualização, então não carrega a lista de elegíveis inteira.
+  const [{ data: profile }, { data: tool }, { data: access }] = await Promise.all([
+    supabase.from('profiles').select('role').eq('id', user.id).maybeSingle(),
+    supabase.from('tools').select('id').eq('slug', TOOL_SLUG).eq('active', true).maybeSingle(),
+    supabase.from('user_tool_access').select('tool_id').eq('user_id', user.id),
+  ])
   const isAdmin = profile?.role === 'admin'
-  if (isAdmin) return { supabase, user, isAdmin, hasAccess: true }
+  const hasAccess = isAdmin || (!!tool && (access ?? []).some(a => a.tool_id === tool.id))
+  return { supabase, user, isAdmin, hasAccess }
+}
 
-  const eligible = await getEligibleUserIds()
-  return { supabase, user, isAdmin, hasAccess: eligible.has(user.id) }
+// Registros de uma ação (log da tarefa, uso da ferramenta e atividade) em
+// paralelo — nenhum depende do outro e todos falham em silêncio.
+export async function logTarefaAcao(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  log: { tarefaId: string; titulo: string; acao: TarefaAcao; detalhe?: string | null },
+  activity: { action: string; description: string },
+) {
+  await Promise.all([
+    logTarefa(log.tarefaId, log.titulo, userId, log.acao, log.detalhe ?? null),
+    logToolUsage(supabase, userId, TOOL_SLUG, 0),
+    logActivity(userId, activity.action, activity.description),
+  ])
 }
 
 // Quem pode receber tarefa: usuários com a ferramenta liberada (ativa) +
