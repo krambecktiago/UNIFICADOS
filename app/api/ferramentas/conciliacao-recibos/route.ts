@@ -5,7 +5,7 @@ import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { logActivity } from '@/lib/supabase/activity-log'
-import { normText } from '@/lib/utils/br-format'
+import { normText, parseBRL } from '@/lib/utils/br-format'
 
 // Autorização às vezes vem com zero à esquerda num arquivo (célula texto) e
 // sem no outro (célula número, o Excel descarta o zero) — normaliza os dois
@@ -73,7 +73,13 @@ function cellText(v: unknown): string {
     const mm = String(v.getUTCMonth() + 1).padStart(2, '0')
     return `${dd}/${mm}/${v.getUTCFullYear()}`
   }
-  return String(v ?? '')
+  const s = String(v ?? '').trim()
+  const brMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/)
+  if (brMatch) {
+    const [, dd, mm, yyyy] = brMatch
+    return `${dd.padStart(2, '0')}/${mm.padStart(2, '0')}/${yyyy}`
+  }
+  return s
 }
 
 // "dd/mm/yyyy" -> "yyyy-mm-dd", para ordenar cronologicamente (comparar a
@@ -84,7 +90,7 @@ function dateSortKey(dataBR: string): string {
 }
 
 function findHeaderRow(rows: unknown[][], mustInclude: string[]): number {
-  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+  for (let i = 0; i < Math.min(rows.length, 25); i++) {
     const normed = (rows[i] ?? []).map(c => normText(c))
     if (mustInclude.every(k => normed.some(h => h.includes(k)))) return i
   }
@@ -98,7 +104,7 @@ function findHeaderRow(rows: unknown[][], mustInclude: string[]): number {
 // preciso procurar a aba cujo cabeçalho contém as colunas esperadas.
 function findDataSheet(wb: XLSX.WorkBook, mustInclude: string[]): { rows: unknown[][]; headerIdx: number } {
   for (const name of wb.SheetNames) {
-    const rows = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[name], { header: 1 })
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[name], { header: 1, defval: '' })
     const headerIdx = findHeaderRow(rows, mustInclude)
     if (headerIdx !== -1) return { rows, headerIdx }
   }
@@ -109,11 +115,30 @@ function colIndex(headers: string[], keywords: string[], exclude: string[] = [])
   return headers.findIndex(h => keywords.every(k => h.includes(k)) && !exclude.some(k => h.includes(k)))
 }
 
+// Lê arquivos XLSX ou CSV/TXT.
+// Se for CSV/TXT, lê com raw: true para impedir que o SheetJS aplique fuzzynum
+// (que confunde vírgula decimal brasileira com separador de milhar americano e multiplica o valor por 100).
+function readWorkbook(buffer: Buffer): XLSX.WorkBook {
+  const isZip = buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4b
+  if (isZip) {
+    return XLSX.read(buffer, { type: 'buffer', cellDates: true })
+  }
+  let text = ''
+  try {
+    const utf8Decoder = new TextDecoder('utf-8', { fatal: true })
+    text = utf8Decoder.decode(buffer)
+  } catch {
+    const latin1Decoder = new TextDecoder('latin1')
+    text = latin1Decoder.decode(buffer)
+  }
+  return XLSX.read(text, { type: 'string', raw: true })
+}
+
 // Relatório "Vendas" da Rede (por maquininha). Máquinas com código iniciando em
 // "PV" são PDVs de balcão que não emitem o recibo conferido aqui — só entram na
 // conciliação as vendas aprovadas em outras maquininhas (SN/SV/LG...).
 function parseVendasXLSX(buffer: Buffer): Venda[] {
-  const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+  const wb = readWorkbook(buffer)
   const { rows, headerIdx } = findDataSheet(wb, ['NSU', 'AUTORIZ'])
   if (headerIdx === -1) return []
   const headers = (rows[headerIdx] ?? []).map(h => normText(h))
@@ -146,7 +171,7 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
 
     results.push({
       data: cellText(row[idxData]),
-      valor: Number(row[idxValor]) || 0,
+      valor: parseBRL(row[idxValor]),
       modalidade: String(row[idxModalidade] ?? ''),
       bandeira: String(row[idxBandeira] ?? ''),
       nsu,
@@ -154,7 +179,7 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
       maquininha,
       loja: String(row[idxLoja] ?? ''),
       lojaNumero: String(row[idxLojaNumero] ?? ''),
-      parcelas: Number(row[idxParcelas]) || 0,
+      parcelas: parseInt(String(row[idxParcelas] ?? '').replace(/\D/g, ''), 10) || 0,
     })
   }
   return results
@@ -162,7 +187,7 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
 
 // Relatório interno "Clientes x Recibos" — um recibo emitido por linha.
 function parseRecibosXLSX(buffer: Buffer): Recibo[] {
-  const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+  const wb = readWorkbook(buffer)
   const { rows, headerIdx } = findDataSheet(wb, ['NSU', 'AUTORIZ'])
   if (headerIdx === -1) return []
   const headers = (rows[headerIdx] ?? []).map(h => normText(h))
@@ -205,9 +230,9 @@ function parseRecibosXLSX(buffer: Buffer): Recibo[] {
       autorizacao,
       dataMvto: cellText(row[idxDataMvto]),
       dataEmissao: cellText(row[idxDataEmissao]),
-      valor: Number(row[idxValor]) || 0,
+      valor: parseBRL(row[idxValor]),
       loja: LOJA_MAP[prefixo] ?? prefixo ?? '',
-      parcelas: Number(row[idxParcelas]) || 0,
+      parcelas: parseInt(String(row[idxParcelas] ?? '').replace(/\D/g, ''), 10) || 0,
     })
   }
   return results

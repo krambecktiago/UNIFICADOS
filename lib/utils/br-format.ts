@@ -1,6 +1,35 @@
-export function parseBRL(str: unknown): number {
-  if (!str) return 0
-  return parseFloat(String(str).replace(/[R$\s.]/g, '').replace(',', '.')) || 0
+export function parseBRL(val: unknown): number {
+  if (typeof val === 'number') {
+    return isFinite(val) ? val : 0
+  }
+  if (!val) return 0
+
+  let s = String(val).trim().replace(/^R\$\s*/i, '').replace(/\s+/g, '')
+  if (!s) return 0
+
+  const hasComma = s.includes(',')
+  const hasDot = s.includes('.')
+
+  if (hasComma && hasDot) {
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+      // Formato brasileiro: 1.234,56
+      s = s.replace(/\./g, '').replace(',', '.')
+    } else {
+      // Formato internacional: 1,234.56
+      s = s.replace(/,/g, '')
+    }
+  } else if (hasComma) {
+    // Apenas vírgula decimal: 208,49
+    s = s.replace(',', '.')
+  } else if (hasDot) {
+    // Se for formato de milhar inteiro (ex: 1.000 ou 20.000)
+    if (/^\d{1,3}(\.\d{3})+$/.test(s)) {
+      s = s.replace(/\./g, '')
+    }
+  }
+
+  const num = parseFloat(s)
+  return isNaN(num) ? 0 : num
 }
 
 // APIs externas (ex: Rede) às vezes omitem campos de valor em transações

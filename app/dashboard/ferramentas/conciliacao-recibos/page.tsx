@@ -219,8 +219,8 @@ export default function ConciliacaoRecibosPage() {
         <Card padding="5" className="space-y-4">
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Arquivos</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FileInput ref={vendasRef} label="Vendas Rede (.xlsx)" accept=".xlsx" file={vendasFile} onChange={setVendasFile} />
-            <FileInput ref={recibosRef} label="Recibos Emitidos (.xlsx)" accept=".xlsx" file={recibosFile} onChange={setRecibosFile} />
+            <FileInput ref={vendasRef} label="Vendas Rede (.xlsx, .csv)" accept=".xlsx,.xls,.csv" file={vendasFile} onChange={setVendasFile} />
+            <FileInput ref={recibosRef} label="Recibos Emitidos (.xlsx, .csv)" accept=".xlsx,.xls,.csv" file={recibosFile} onChange={setRecibosFile} />
           </div>
           <div className="flex items-center gap-4">
             <Button onClick={handleProcess} disabled={!canProcess} loading={loading}>
