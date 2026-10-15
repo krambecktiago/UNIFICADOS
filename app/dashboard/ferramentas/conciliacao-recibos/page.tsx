@@ -9,6 +9,7 @@ import { KpiCard } from '@/components/ui/kpi-card'
 import { FileInput } from '@/components/ui/file-input'
 import { Tabs, TabPanel, type TabDef } from '@/components/ui/tabs'
 import { TH_CLASS as thClass, TH_RIGHT_CLASS as thRight, TD_CLASS as tdClass, TD_RIGHT_CLASS as tdRight } from '@/components/ui/table'
+import { EstablishmentPicker, type RedeEstablishment } from '@/components/rede/establishment-picker'
 
 interface Venda {
   data: string
@@ -123,7 +124,21 @@ function TopScrollbar({ targetRef, watch }: { targetRef: React.RefObject<HTMLDiv
   )
 }
 
+const inputBase =
+  'w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-navy/30'
+
+function todayISO(offsetDays = 0): string {
+  const d = new Date()
+  d.setDate(d.getDate() + offsetDays)
+  return d.toISOString().slice(0, 10)
+}
+
 export default function ConciliacaoRecibosPage() {
+  const [source, setSource] = useState<'api' | 'file'>('api')
+  const [startDate, setStartDate] = useState(todayISO(-1))
+  const [endDate, setEndDate] = useState(todayISO(-1))
+  const [establishments, setEstablishments] = useState<RedeEstablishment[]>([])
+  const [selectedPvs, setSelectedPvs] = useState<string[]>([])
   const [vendasFile, setVendasFile] = useState<File | null>(null)
   const [recibosFile, setRecibosFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
@@ -136,18 +151,48 @@ export default function ConciliacaoRecibosPage() {
   const recibosRef = useRef<HTMLInputElement>(null)
   const tableScrollRef = useRef<HTMLDivElement>(null)
 
-  const canProcess = !!vendasFile && !!recibosFile && !loading
+  useEffect(() => {
+    fetch('/api/ferramentas/conciliacao-recibos')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data.establishments)) setEstablishments(data.establishments)
+      })
+      .catch(() => {})
+  }, [])
+
+  function togglePv(companyNumber: string) {
+    setSelectedPvs(prev =>
+      prev.includes(companyNumber) ? prev.filter(c => c !== companyNumber) : [...prev, companyNumber]
+    )
+  }
+
+  const canProcess =
+    source === 'api'
+      ? !!recibosFile && !!startDate && !!endDate && !loading
+      : !!vendasFile && !!recibosFile && !loading
 
   async function handleProcess() {
-    if (!vendasFile || !recibosFile) return
+    if (source === 'api') {
+      if (!recibosFile || !startDate || !endDate) return
+    } else {
+      if (!vendasFile || !recibosFile) return
+    }
     setLoading(true)
     setError(null)
     setData(null)
     setActiveTab('missing')
     try {
       const formData = new FormData()
-      formData.append('vendasFile', vendasFile)
-      formData.append('recibosFile', recibosFile)
+      formData.append('source', source)
+      formData.append('recibosFile', recibosFile!)
+      if (source === 'api') {
+        formData.append('startDate', startDate)
+        formData.append('endDate', endDate)
+        selectedPvs.forEach(pv => formData.append('companyNumber', pv))
+      } else if (vendasFile) {
+        formData.append('vendasFile', vendasFile)
+      }
+
       const res = await fetch('/api/ferramentas/conciliacao-recibos', { method: 'POST', body: formData })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
@@ -191,6 +236,7 @@ export default function ConciliacaoRecibosPage() {
   function handleReset() {
     setVendasFile(null)
     setRecibosFile(null)
+    setSelectedPvs([])
     setData(null)
     setError(null)
     setActiveTab('missing')
@@ -217,16 +263,136 @@ export default function ConciliacaoRecibosPage() {
       <div className="max-w-6xl mx-auto px-8 py-8 space-y-6">
 
         <Card padding="5" className="space-y-4">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Arquivos</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FileInput ref={vendasRef} label="Vendas Rede (.xlsx, .csv)" accept=".xlsx,.xls,.csv" file={vendasFile} onChange={setVendasFile} />
-            <FileInput ref={recibosRef} label="Recibos Emitidos (.xlsx, .csv)" accept=".xlsx,.xls,.csv" file={recibosFile} onChange={setRecibosFile} />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 dark:border-gray-800 pb-3">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Origem dos Dados
+            </h2>
+            <div className="inline-flex rounded-lg p-0.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => setSource('api')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  source === 'api'
+                    ? 'bg-white dark:bg-gray-900 text-brand-navy dark:text-blue-300 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                Conexão Direta (API Rede)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSource('file')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  source === 'file'
+                    ? 'bg-white dark:bg-gray-900 text-brand-navy dark:text-blue-300 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                Arquivo Manual (.xlsx, .csv)
+              </button>
+            </div>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {source === 'api' ? (
+              <div className="flex flex-col justify-between p-4 border border-dashed border-blue-200 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/20 rounded-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wide text-brand-navy dark:text-blue-300">
+                    Vendas no Cartão (Rede)
+                  </span>
+                  <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/60 px-2 py-0.5 rounded-full">
+                    Apenas Modalidade POS
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Data Inicial
+                    </label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={e => setStartDate(e.target.value)}
+                      className={inputBase}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Data Final
+                    </label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={e => setEndDate(e.target.value)}
+                      className={inputBase}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const y = todayISO(-1)
+                        setStartDate(y)
+                        setEndDate(y)
+                      }}
+                      className="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50"
+                    >
+                      Ontem
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const t = todayISO(0)
+                        setStartDate(t)
+                        setEndDate(t)
+                      }}
+                      className="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50"
+                    >
+                      Hoje
+                    </button>
+                  </div>
+                  <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                    Filiais / Estabelecimentos
+                  </span>
+                </div>
+
+                <div className="pt-2 border-t border-blue-100 dark:border-blue-900/40">
+                  <EstablishmentPicker
+                    establishments={establishments}
+                    selected={selectedPvs}
+                    onToggle={togglePv}
+                    onClear={() => setSelectedPvs([])}
+                  />
+                </div>
+              </div>
+            ) : (
+              <FileInput
+                ref={vendasRef}
+                label="Vendas Rede (.xlsx, .csv)"
+                accept=".xlsx,.xls,.csv"
+                file={vendasFile}
+                onChange={setVendasFile}
+              />
+            )}
+
+            <FileInput
+              ref={recibosRef}
+              label="Recibos Emitidos (.xlsx, .csv)"
+              accept=".xlsx,.xls,.csv"
+              file={recibosFile}
+              onChange={setRecibosFile}
+            />
+          </div>
+
           <div className="flex items-center gap-4">
             <Button onClick={handleProcess} disabled={!canProcess} loading={loading}>
-              {loading ? 'Processando…' : 'Processar Conciliação'}
+              {loading ? 'Consultando e Conciliando…' : 'Processar Conciliação'}
             </Button>
-            {(vendasFile || recibosFile || data || error) && !loading && (
+            {(vendasFile || recibosFile || selectedPvs.length > 0 || data || error) && !loading && (
               <Button variant="ghost" onClick={handleReset}>Limpar</Button>
             )}
           </div>

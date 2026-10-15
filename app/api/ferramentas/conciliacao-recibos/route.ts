@@ -6,6 +6,19 @@ import { createClient } from '@/lib/supabase/server'
 import { logToolUsage } from '@/lib/supabase/tool-usage'
 import { logActivity } from '@/lib/supabase/activity-log'
 import { normText, parseBRL } from '@/lib/utils/br-format'
+import { fetchRedeSales, getRedeEstablishments } from '@/lib/rede/client'
+import { getRedeBrandName } from '@/lib/rede/brands'
+
+function formatToBRDate(dateStr?: string): string {
+  if (!dateStr) return ''
+  const str = String(dateStr).trim()
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return str
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (match) {
+    return `${match[3]}/${match[2]}/${match[1]}`
+  }
+  return str
+}
 
 // Autorização às vezes vem com zero à esquerda num arquivo (célula texto) e
 // sem no outro (célula número, o Excel descarta o zero) — normaliza os dois
@@ -347,6 +360,20 @@ function reconcile(vendas: Venda[], recibos: Recibo[]) {
   return { matched, missing, pending }
 }
 
+export async function GET() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  try {
+    const establishments = await getRedeEstablishments()
+    return NextResponse.json({ establishments }, { headers: { 'Cache-Control': 'no-store' } })
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ establishments: [] }, { status: 200 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -354,13 +381,74 @@ export async function POST(request: NextRequest) {
 
   try {
     const formData = await request.formData()
-    const vendasFile = formData.get('vendasFile') as File
+    const source = (formData.get('source') as string) || (formData.has('vendasFile') ? 'file' : 'api')
     const recibosFile = formData.get('recibosFile') as File
-    if (!vendasFile || !recibosFile) {
-      return NextResponse.json({ error: 'Ambos os arquivos são obrigatórios.' }, { status: 400 })
+    if (!recibosFile) {
+      return NextResponse.json({ error: 'O arquivo de recibos emitidos é obrigatório.' }, { status: 400 })
     }
 
-    const vendas = parseVendasXLSX(Buffer.from(await vendasFile.arrayBuffer()))
+    let vendas: Venda[] = []
+
+    if (source === 'api') {
+      const startDate = formData.get('startDate') as string
+      const endDate = (formData.get('endDate') as string) || startDate
+      if (!startDate) {
+        return NextResponse.json({ error: 'Informe a data para consulta das vendas na API da Rede.' }, { status: 400 })
+      }
+      const companyNumbers = formData.getAll('companyNumber').map(String).filter(Boolean)
+
+      let redeTransactions
+      try {
+        redeTransactions = await fetchRedeSales(
+          startDate,
+          endDate,
+          companyNumbers.length > 0 ? companyNumbers : undefined
+        )
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Falha ao consultar vendas na API da Rede.'
+        return NextResponse.json({ error: message }, { status: 502 })
+      }
+
+      const establishments = await getRedeEstablishments().catch(() => [])
+      const estMap = new Map(establishments.map(e => [e.companyNumber, e.name]))
+
+      // Filtrar estritamente: apenas vendas de cartão na modalidade POS (maquininhas),
+      // descartando balcão/PDV (código iniciando em PV ou captureType PDV) e link (ECOMMERCE)
+      const posTransactions = redeTransactions.filter(t => {
+        const isPos = String(t.captureType ?? '').trim().toUpperCase() === 'POS'
+        const isApproved = String(t.status ?? '').trim().toUpperCase() === 'APPROVED'
+        const isNotPv = !String(t.device ?? '').trim().toUpperCase().startsWith('PV')
+        return isPos && isApproved && isNotPv
+      })
+
+      vendas = posTransactions.map(t => {
+        const estName = estMap.get(t.merchant?.companyNumber ?? '') || t.merchant?.companyName || t.merchant?.tradeName || ''
+        const rawMod = t.modality?.type?.toUpperCase() ?? ''
+        const modalidade = rawMod === 'CREDITO' ? 'Crédito' :
+                           rawMod === 'DEBITO' ? 'Débito' :
+                           (t.modality?.type || 'Cartão')
+
+        return {
+          data: formatToBRDate(t.saleDate || t.movementDate),
+          valor: t.amount,
+          modalidade,
+          bandeira: getRedeBrandName(t.brandCode),
+          nsu: normText(t.nsu),
+          autorizacao: normAutorizacao(t.authorizationCode),
+          maquininha: t.device || t.deviceType || 'POS',
+          loja: estName,
+          lojaNumero: t.merchant?.companyNumber || '',
+          parcelas: t.installmentQuantity || 1,
+        }
+      })
+    } else {
+      const vendasFile = formData.get('vendasFile') as File
+      if (!vendasFile) {
+        return NextResponse.json({ error: 'O arquivo de vendas da Rede é obrigatório.' }, { status: 400 })
+      }
+      vendas = parseVendasXLSX(Buffer.from(await vendasFile.arrayBuffer()))
+    }
+
     const recibos = parseRecibosXLSX(Buffer.from(await recibosFile.arrayBuffer()))
     const { matched, missing, pending } = reconcile(vendas, recibos)
 
@@ -368,8 +456,14 @@ export async function POST(request: NextRequest) {
     const divergent = matched.filter(m => m.divergente)
     const s = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
 
-    await logToolUsage(supabase, user.id, 'conciliacao-recibos', 2)
-    await logActivity(user.id, 'tool_run', 'Processou a Conciliação de Recibos')
+    await logToolUsage(supabase, user.id, 'conciliacao-recibos', source === 'api' ? 1 : 2)
+    await logActivity(
+      user.id,
+      'tool_run',
+      source === 'api'
+        ? 'Processou a Conciliação de Recibos via API da Rede (apenas POS)'
+        : 'Processou a Conciliação de Recibos via arquivo manual'
+    )
 
     return NextResponse.json({
       matched: ok,
@@ -390,6 +484,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (err) {
     console.error(err)
-    return NextResponse.json({ error: 'Erro ao processar arquivos.' }, { status: 500 })
+    return NextResponse.json({ error: 'Erro ao processar conciliação.' }, { status: 500 })
   }
 }
