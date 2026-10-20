@@ -17,7 +17,7 @@ interface ParConfirmado {
   duplicataNumero: string
   cliente: string
   nsu: number
-  autorizacao: number
+  autorizacao: number | string
   parcelas: number
   modalidade: string
   valor: number
@@ -269,7 +269,7 @@ export function DuplicatasTab() {
         duplicataNumero: duplicata.numero,
         cliente: duplicata.cliente,
         nsu: venda.nsu,
-        autorizacao: venda.authorizationCode,
+        autorizacao: venda.strAuthorizationCode?.trim() || venda.authorizationCode,
         parcelas: venda.installmentQuantity,
         modalidade: modalidadeLabel(venda.modality?.type),
         valor: duplicata.valor,
@@ -340,7 +340,7 @@ export function DuplicatasTab() {
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">Autorização</p>
-                  <p className="text-sm font-semibold text-sky-900 dark:text-sky-200 font-mono">{vendaSelecionada.authorizationCode}</p>
+                  <p className="text-sm font-semibold text-sky-900 dark:text-sky-200 font-mono">{vendaSelecionada.strAuthorizationCode?.trim() || vendaSelecionada.authorizationCode}</p>
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">Parcelas</p>

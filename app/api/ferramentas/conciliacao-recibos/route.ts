@@ -424,9 +424,11 @@ export async function POST(request: NextRequest) {
       vendas = posTransactions.map(t => {
         const estName = estMap.get(t.merchant?.companyNumber ?? '') || t.merchant?.companyName || t.merchant?.tradeName || ''
         const rawMod = t.modality?.type?.toUpperCase() ?? ''
-        const modalidade = rawMod === 'CREDITO' ? 'Crédito' :
-                           rawMod === 'DEBITO' ? 'Débito' :
+        const modalidade = rawMod === 'CREDITO' || rawMod === 'CREDIT' ? 'Crédito' :
+                           rawMod === 'DEBITO' || rawMod === 'DEBIT' ? 'Débito' :
                            (t.modality?.type || 'Cartão')
+
+        const authRaw = (t.strAuthorizationCode && String(t.strAuthorizationCode).trim()) || t.authorizationCode
 
         return {
           data: formatToBRDate(t.saleDate || t.movementDate),
@@ -434,7 +436,7 @@ export async function POST(request: NextRequest) {
           modalidade,
           bandeira: getRedeBrandName(t.brandCode),
           nsu: normText(t.nsu),
-          autorizacao: normAutorizacao(t.authorizationCode),
+          autorizacao: normAutorizacao(authRaw),
           maquininha: t.device || t.deviceType || 'POS',
           loja: estName,
           lojaNumero: t.merchant?.companyNumber || '',

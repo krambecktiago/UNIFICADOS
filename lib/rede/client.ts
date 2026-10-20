@@ -22,6 +22,7 @@ export interface RedeTransaction {
   status: string
   nsu: number
   authorizationCode: number
+  strAuthorizationCode?: string
   tid?: string
   amount: number
   netAmount: number

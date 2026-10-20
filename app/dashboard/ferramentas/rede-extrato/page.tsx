@@ -19,6 +19,7 @@ interface RedeTransaction {
   status: string
   nsu: number
   authorizationCode: number
+  strAuthorizationCode?: string
   amount: number
   netAmount: number
   feeTotal: number
@@ -344,8 +345,10 @@ export default function RedeExtratoPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredTransactions.map((t, i) => (
-                        <tr key={`${t.nsu}-${t.authorizationCode}-${i}`} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                      {filteredTransactions.map((t, i) => {
+                        const authDisplay = t.strAuthorizationCode?.trim() || t.authorizationCode
+                        return (
+                        <tr key={`${t.nsu}-${authDisplay}-${i}`} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
                           {selectedPvs.length !== 1 && (
                             <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">
                               {t.merchant?.companyName ?? t.merchant?.companyNumber ?? '—'}
@@ -359,13 +362,13 @@ export default function RedeExtratoPage() {
                           <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{getRedeBrandName(t.brandCode)}</td>
                           <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{t.cardNumber}</td>
                           <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{t.nsu}</td>
-                          <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{t.authorizationCode}</td>
+                          <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-mono">{authDisplay}</td>
                           <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{t.installmentQuantity}x</td>
                           <td className="px-4 py-2.5 text-right text-gray-900 dark:text-gray-100">{formatBRL(t.amount)}</td>
                           <td className="px-4 py-2.5 text-right text-gray-500 dark:text-gray-400">{formatBRL((t.amount ?? 0) - (t.netAmount ?? 0))}</td>
                           <td className="px-4 py-2.5 text-right font-semibold text-gray-900 dark:text-gray-100">{formatBRL(t.netAmount)}</td>
                         </tr>
-                      ))}
+                      )})}
                     </tbody>
                   </table>
                 </div>
