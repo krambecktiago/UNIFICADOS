@@ -6,14 +6,10 @@ import { TableCard } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
-import { TabPanel } from '@/components/ui/tabs'
 import { CurrencyInput } from '@/components/ui/currency-input'
-import { cn } from '@/lib/utils'
 import { formatBRL } from '@/lib/utils/br-format'
 import { getRedeBrandName } from '@/lib/rede/brands'
 import { EstablishmentPicker, type RedeEstablishment } from '@/components/rede/establishment-picker'
-import { DuplicatasTab } from './duplicatas-tab'
-import { RelatorioTab } from './relatorio-tab'
 
 interface RedeTransaction {
   status: string
@@ -56,16 +52,7 @@ function statusTone(status: string): 'green' | 'red' | 'gray' {
   return 'gray'
 }
 
-type Tab = 'extrato' | 'duplicatas' | 'relatorio'
-
-const TAB_DEFS: { key: Tab; label: string }[] = [
-  { key: 'extrato', label: 'Extrato' },
-  { key: 'duplicatas', label: 'Conciliação de Duplicatas' },
-  { key: 'relatorio', label: 'Relatório' },
-]
-
 export default function RedeExtratoPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('extrato')
   const [startDate, setStartDate] = useState(todayISO(-1))
   const [endDate, setEndDate] = useState(todayISO(-1))
   const [selectedPvs, setSelectedPvs] = useState<string[]>([]) // [] = todos os estabelecimentos
@@ -191,28 +178,7 @@ export default function RedeExtratoPage() {
         subtitle="Consulta direta na API da Rede — sem upload de planilha"
       />
 
-      <div className="px-8 pt-4">
-        <div className="flex border-b border-gray-200 dark:border-gray-800">
-          {TAB_DEFS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'px-5 py-3 text-sm font-medium border-b-2 transition-colors',
-                activeTab === tab.key
-                  ? 'border-brand-navy text-brand-navy dark:text-blue-300'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {activeTab === 'extrato' && (
       <div className="px-8 py-8">
-        <TabPanel tabKey="extrato">
         <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 text-sm px-4 py-3 rounded-lg mb-6">
           Esse extrato cobre vendas em cartão — PDV, POS e Link de Pagamento (identificado pela Rede como
           "ECOMMERCE"). Vendas via Pix não aparecem aqui: a API de gestão de vendas da Rede usada nessa
@@ -376,25 +342,7 @@ export default function RedeExtratoPage() {
             )}
           </>
         )}
-        </TabPanel>
       </div>
-      )}
-
-      {activeTab === 'duplicatas' && (
-        <div className="px-8 py-8">
-          <TabPanel tabKey="duplicatas">
-            <DuplicatasTab />
-          </TabPanel>
-        </div>
-      )}
-
-      {activeTab === 'relatorio' && (
-        <div className="px-8 py-8">
-          <TabPanel tabKey="relatorio">
-            <RelatorioTab />
-          </TabPanel>
-        </div>
-      )}
     </div>
   )
 }
