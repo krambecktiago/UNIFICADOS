@@ -12,7 +12,7 @@ interface AdminUser {
   id: string
   email: string
   full_name: string | null
-  role: 'admin' | 'user'
+  role: 'admin' | 'user' | 'inactive'
   tools: string[]
   company_number: string | null
   created_at: string
@@ -274,15 +274,16 @@ export default function AdminPage() {
     }
   }
 
-  async function toggleRole(user: AdminUser) {
-    const newRole = user.role === 'admin' ? 'user' : 'admin'
+  async function changeRole(user: AdminUser, newRole: 'admin' | 'user' | 'inactive') {
+    if (user.role === newRole) return
 
+    const previousRole = user.role
     // optimistic update
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u))
 
     const ok = await patchUser(user.id, { role: newRole })
     if (!ok) {
-      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: user.role } : u))
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: previousRole } : u))
     }
   }
 
@@ -453,7 +454,14 @@ export default function AdminPage() {
                   {/* Avatar */}
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                    style={{ backgroundColor: user.role === 'admin' ? 'var(--color-brand-navy)' : '#6b7280' }}
+                    style={{
+                      backgroundColor:
+                        user.role === 'admin'
+                          ? 'var(--color-brand-navy)'
+                          : user.role === 'inactive'
+                          ? '#ef4444'
+                          : '#6b7280',
+                    }}
                   >
                     {initials(user)}
                   </div>
@@ -494,29 +502,88 @@ export default function AdminPage() {
                         className="group flex items-center gap-1.5 text-left"
                         title="Editar nome"
                       >
-                        <p className="text-sm font-semibold text-gray-900 truncate dark:text-gray-100">{displayName(user)}</p>
+                        <p className={`text-sm font-semibold truncate ${user.role === 'inactive' ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-gray-100'}`}>
+                          {displayName(user)}
+                        </p>
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 dark:text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-9.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 8.5-8.5z" /></svg>
                       </button>
                     )}
                     <p className="text-xs text-gray-400 truncate dark:text-gray-500">{user.email}</p>
+                    {user.role === 'inactive' && (
+                      <p className="text-[11px] text-rose-500 font-medium mt-0.5">
+                        Conta inativa (acesso bloqueado e oculto no Dashboard)
+                      </p>
+                    )}
                   </div>
 
-                  {/* Badge role + botão */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge tone={user.role === 'admin' ? 'navy' : 'gray'}>
-                      {user.role === 'admin' ? 'Admin' : 'Usuário'}
+                  {/* Badge role + ações */}
+                  <div className="flex flex-wrap items-center justify-end gap-1.5 shrink-0">
+                    <Badge tone={user.role === 'admin' ? 'navy' : user.role === 'inactive' ? 'red' : 'gray'}>
+                      {user.role === 'admin' ? 'Admin' : user.role === 'inactive' ? 'Inativo' : 'Usuário'}
                     </Badge>
-                    <button
-                      onClick={() => toggleRole(user)}
-                      disabled={isSaving}
-                      className={`text-xs font-medium px-3 py-1 rounded-lg border transition-colors disabled:opacity-40 ${
-                        user.role === 'admin'
-                          ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40'
-                          : 'border-brand-navy/20 text-brand-navy hover:bg-brand-navy/5 dark:border-blue-300/30 dark:text-blue-300 dark:hover:bg-blue-300/10'
-                      }`}
-                    >
-                      {user.role === 'admin' ? 'Rebaixar' : 'Promover'}
-                    </button>
+
+                    {user.role === 'admin' && (
+                      <>
+                        <button
+                          onClick={() => changeRole(user, 'user')}
+                          disabled={isSaving}
+                          className="text-xs font-medium px-2.5 py-1 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                          title="Rebaixar para Usuário comum"
+                        >
+                          Rebaixar
+                        </button>
+                        <button
+                          onClick={() => changeRole(user, 'inactive')}
+                          disabled={isSaving}
+                          className="text-xs font-medium px-2.5 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40 transition-colors disabled:opacity-40"
+                          title="Desativar usuário"
+                        >
+                          Inativar
+                        </button>
+                      </>
+                    )}
+
+                    {user.role === 'user' && (
+                      <>
+                        <button
+                          onClick={() => changeRole(user, 'admin')}
+                          disabled={isSaving}
+                          className="text-xs font-medium px-2.5 py-1 rounded-lg border border-brand-navy/20 text-brand-navy hover:bg-brand-navy/5 dark:border-blue-300/30 dark:text-blue-300 dark:hover:bg-blue-300/10 transition-colors disabled:opacity-40"
+                          title="Promover a Administrador"
+                        >
+                          Promover
+                        </button>
+                        <button
+                          onClick={() => changeRole(user, 'inactive')}
+                          disabled={isSaving}
+                          className="text-xs font-medium px-2.5 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40 transition-colors disabled:opacity-40"
+                          title="Desativar usuário (bloqueia acesso e oculta do Dashboard)"
+                        >
+                          Inativar
+                        </button>
+                      </>
+                    )}
+
+                    {user.role === 'inactive' && (
+                      <>
+                        <button
+                          onClick={() => changeRole(user, 'user')}
+                          disabled={isSaving}
+                          className="text-xs font-medium px-2.5 py-1 rounded-lg border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 transition-colors disabled:opacity-40"
+                          title="Reativar usuário como Usuário padrão"
+                        >
+                          Ativar
+                        </button>
+                        <button
+                          onClick={() => changeRole(user, 'admin')}
+                          disabled={isSaving}
+                          className="text-xs font-medium px-2.5 py-1 rounded-lg border border-brand-navy/20 text-brand-navy hover:bg-brand-navy/5 dark:border-blue-300/30 dark:text-blue-300 dark:hover:bg-blue-300/10 transition-colors disabled:opacity-40"
+                          title="Reativar e promover a Administrador"
+                        >
+                          Tornar Admin
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 

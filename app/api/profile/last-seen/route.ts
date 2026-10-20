@@ -9,6 +9,9 @@ export async function POST() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
+  const isInactive = user.app_metadata?.role === 'inactive' || !!(user as any).banned_until
+  if (isInactive) return NextResponse.json({ error: 'Conta inativa' }, { status: 403 })
+
   const { error } = await supabase
     .from('profiles')
     .update({ last_seen_at: new Date().toISOString() })

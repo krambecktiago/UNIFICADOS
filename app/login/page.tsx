@@ -29,6 +29,12 @@ export default function LoginPage() {
   const [frase, setFrase] = useState(frases[0])
   useEffect(() => {
     setFrase(frases[Math.floor(Math.random() * frases.length)])
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('error') === 'inactive') {
+        setError('Este usuário está inativo. Entre em contato com a administração para reativar o acesso.')
+      }
+    }
   }, [])
 
   async function handleLogin(e: React.FormEvent) {
@@ -37,10 +43,21 @@ export default function LoginPage() {
     setError('')
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError('Email ou senha inválidos.')
+      if (error.message.toLowerCase().includes('banned') || error.message.toLowerCase().includes('inactive')) {
+        setError('Este usuário está inativo. Entre em contato com a administração para reativar o acesso.')
+      } else {
+        setError('Email ou senha inválidos.')
+      }
+      setLoading(false)
+      return
+    }
+
+    if (data.user?.app_metadata?.role === 'inactive' || (data.user as any)?.banned_until) {
+      await supabase.auth.signOut()
+      setError('Este usuário está inativo. Entre em contato com a administração para reativar o acesso.')
       setLoading(false)
       return
     }

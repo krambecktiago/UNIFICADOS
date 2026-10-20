@@ -34,13 +34,31 @@ export async function PATCH(
   const changes: string[] = []
 
   if (body.role !== undefined) {
-    const { error } = await adminClient
-      .from('profiles')
-      .update({ role: body.role, updated_at: new Date().toISOString() })
-      .eq('id', id)
+    if (body.role === 'inactive') {
+      const { error: banError } = await adminClient.auth.admin.updateUserById(id, {
+        ban_duration: '876000h',
+        app_metadata: { role: 'inactive' },
+        user_metadata: { role: 'inactive' },
+      })
+      if (banError) return NextResponse.json({ error: banError.message }, { status: 500 })
+      changes.push('usuário desativado (papel: inativo)')
+    } else {
+      // Reativa o usuário em Auth caso estivesse banido/inativo
+      const { error: unbanError } = await adminClient.auth.admin.updateUserById(id, {
+        ban_duration: 'none',
+        app_metadata: { role: body.role },
+        user_metadata: { role: body.role },
+      })
+      if (unbanError) return NextResponse.json({ error: unbanError.message }, { status: 500 })
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    changes.push(`papel alterado para ${body.role}`)
+      const { error } = await adminClient
+        .from('profiles')
+        .update({ role: body.role, updated_at: new Date().toISOString() })
+        .eq('id', id)
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      changes.push(`papel alterado para ${body.role === 'admin' ? 'administrador' : 'usuário'}`)
+    }
   }
 
   if (body.full_name !== undefined) {

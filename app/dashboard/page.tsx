@@ -70,6 +70,7 @@ export default async function DashboardPage() {
     accessibleTools,
     integrationRows,
     allProfilesForAdmin,
+    authUsersForAdmin,
   ] = await Promise.all([
     fetchAllUsageLogs(supabase),
     supabase.from('tools').select('slug, name').eq('active', true),
@@ -83,20 +84,34 @@ export default async function DashboardPage() {
     isAdmin
       ? createAdminClient().from('profiles').select('id, full_name, last_seen_at').then(r => r.data)
       : Promise.resolve(null),
+    // Busca usuários de auth para identificar inativos (banidos ou com role inactive)
+    isAdmin
+      ? createAdminClient().auth.admin.listUsers({ perPage: 1000 }).then(r => r.data?.users ?? [])
+      : Promise.resolve([]),
   ])
+
+  // Identifica IDs de usuários inativos para não exibir seus dados no Dashboard
+  const inactiveUserIds = new Set(
+    (authUsersForAdmin ?? [])
+      .filter(u => !!u.banned_until || u.app_metadata?.role === 'inactive' || u.user_metadata?.role === 'inactive')
+      .map(u => u.id)
+  )
+
+  // Filtra logs de uso ignorando contas inativas
+  const activeUsageLogs = (usageLogs ?? []).filter(log => !inactiveUserIds.has(log.user_id))
 
   // Depende de accessibleTools, então fica fora do Promise.all acima.
   const pendingTasks = accessibleTools.some(t => t.slug === 'tarefas')
     ? await getPendingTasksSummary(user!.id, isAdmin)
     : null
 
-  const totalFiles = (usageLogs ?? []).reduce((sum, log) => sum + log.files_count, 0)
-  const totalExecutions = (usageLogs ?? []).length
+  const totalFiles = activeUsageLogs.reduce((sum, log) => sum + log.files_count, 0)
+  const totalExecutions = activeUsageLogs.length
 
   const usageByTool = new Map<string, number>()
   const usageByUser = new Map<string, number>()
   const usageByDay = new Map<string, number>()
-  for (const log of usageLogs ?? []) {
+  for (const log of activeUsageLogs) {
     usageByTool.set(log.tool_slug, (usageByTool.get(log.tool_slug) ?? 0) + 1)
     usageByUser.set(log.user_id, (usageByUser.get(log.user_id) ?? 0) + 1)
     const dayKey = toDateKey(log.created_at)
@@ -119,11 +134,13 @@ export default async function DashboardPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
 
+  const activeProfilesForAdmin = (allProfilesForAdmin ?? []).filter(p => !inactiveUserIds.has(p.id))
+
   let topUsers: { id: string; name: string; count: number }[] = []
   if (topUserEntries.length > 0) {
     let nameMap: Map<string, string | null>
-    if (isAdmin && allProfilesForAdmin) {
-      nameMap = new Map(allProfilesForAdmin.map(p => [p.id, p.full_name]))
+    if (isAdmin && activeProfilesForAdmin.length > 0) {
+      nameMap = new Map(activeProfilesForAdmin.map(p => [p.id, p.full_name]))
     } else {
       const adminClient = createAdminClient()
       const { data: rankedProfiles } = await adminClient
@@ -167,18 +184,18 @@ export default async function DashboardPage() {
   const myLastLog = [...myLogs].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))[0]
   const myLastToolLabel = myLastLog ? (toolNameBySlug.get(myLastLog.tool_slug) ?? myLastLog.tool_slug) : null
 
-  // Uso por usuário e ferramenta (só admin) — todos os usuários cadastrados,
-  // mesmo quem nunca usou nada, com o detalhamento por ferramenta.
+  // Uso por usuário e ferramenta (só admin) — apenas usuários ativos cadastrados,
+  // excluindo contas inativas, com o detalhamento por ferramenta.
   let userToolBreakdown: UserToolBreakdown[] = []
-  if (isAdmin && allProfilesForAdmin) {
+  if (isAdmin && activeProfilesForAdmin) {
     const usageByUserTool = new Map<string, Map<string, number>>()
-    for (const log of usageLogs ?? []) {
+    for (const log of activeUsageLogs) {
       if (!usageByUserTool.has(log.user_id)) usageByUserTool.set(log.user_id, new Map())
       const toolMap = usageByUserTool.get(log.user_id)!
       toolMap.set(log.tool_slug, (toolMap.get(log.tool_slug) ?? 0) + 1)
     }
 
-    userToolBreakdown = allProfilesForAdmin
+    userToolBreakdown = activeProfilesForAdmin
       .map(p => {
         const toolMap = usageByUserTool.get(p.id) ?? new Map<string, number>()
         const tools = toolDistribution

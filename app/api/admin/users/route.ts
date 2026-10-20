@@ -89,15 +89,21 @@ export async function GET() {
     if (slug) accessMap[a.user_id].push(slug)
   }
 
-  const users = (authResult.data?.users ?? []).map(u => ({
-    id: u.id,
-    email: u.email ?? '',
-    full_name: profileMap.get(u.id)?.full_name ?? null,
-    role: (profileMap.get(u.id)?.role ?? 'user') as 'admin' | 'user',
-    tools: accessMap[u.id] ?? [],
-    company_number: profileMap.get(u.id)?.company_number ?? null,
-    created_at: u.created_at,
-  }))
+  const users = (authResult.data?.users ?? []).map(u => {
+    const isInactive = !!u.banned_until || u.app_metadata?.role === 'inactive' || u.user_metadata?.role === 'inactive'
+    const dbRole = profileMap.get(u.id)?.role ?? 'user'
+    const role: 'admin' | 'user' | 'inactive' = isInactive ? 'inactive' : (dbRole as 'admin' | 'user')
+
+    return {
+      id: u.id,
+      email: u.email ?? '',
+      full_name: profileMap.get(u.id)?.full_name ?? null,
+      role,
+      tools: accessMap[u.id] ?? [],
+      company_number: profileMap.get(u.id)?.company_number ?? null,
+      created_at: u.created_at,
+    }
+  })
 
   users.sort((a, b) => a.email.localeCompare(b.email))
 

@@ -33,13 +33,22 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register')
   const isPublicRoute = pathname === '/' || isAuthRoute || pathname.startsWith('/auth')
 
+  const isInactive = !!user && (user.app_metadata?.role === 'inactive' || !!(user as any).banned_until)
+
+  if (isInactive && !isAuthRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    url.searchParams.set('error', 'inactive')
+    return NextResponse.redirect(url)
+  }
+
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  if (user && isAuthRoute) {
+  if (user && isAuthRoute && !isInactive) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)

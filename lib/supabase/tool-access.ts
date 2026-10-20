@@ -6,7 +6,11 @@ export async function requireToolAccess(slug: string) {
   const user = await getSessionUser()
   if (!user) redirect('/login')
 
+  const isInactive = user.app_metadata?.role === 'inactive' || !!(user as any).banned_until
+  if (isInactive) redirect('/login?error=inactive')
+
   const profile = await getSessionProfile()
+  if (profile?.role === 'inactive') redirect('/login?error=inactive')
   if (profile?.role === 'admin') return
 
   const supabase = await createClient()

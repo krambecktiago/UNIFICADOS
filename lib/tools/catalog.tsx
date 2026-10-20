@@ -81,6 +81,7 @@ export const ALL_TOOLS = [
     ),
     accent: '#dc2626',
   },
+
   {
     href: '/dashboard/ferramentas/desconto-motoboys',
     slug: 'desconto-motoboys',
