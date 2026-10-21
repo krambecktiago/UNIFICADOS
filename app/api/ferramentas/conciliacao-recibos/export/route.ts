@@ -28,6 +28,7 @@ interface Recibo {
   valor: number
   loja: string
   parcelas: number
+  situacao?: string
 }
 
 interface MatchedEntry {
@@ -49,6 +50,8 @@ interface Summary {
   missingValor: number
   pendingCount: number
   pendingValor: number
+  canceledCount?: number
+  canceledValor?: number
 }
 
 interface ExportBody {
@@ -56,6 +59,7 @@ interface ExportBody {
   divergent: MatchedEntry[]
   missing: Venda[]
   pending: Recibo[]
+  canceled?: Recibo[]
   summary: Summary
 }
 
@@ -160,6 +164,13 @@ function buildResumoSheet(wb: ExcelJS.Workbook, body: ExportBody) {
   pendingRow.getCell(3).value = summary.pendingCount
   pendingRow.getCell(4).value = summary.pendingValor
   pendingRow.getCell(4).numFmt = CURRENCY_FMT
+
+  const canceledRow = ws.getRow(13)
+  canceledRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEF4444' } }
+  canceledRow.getCell(2).value = 'Recibos cancelados'
+  canceledRow.getCell(3).value = summary.canceledCount ?? (body.canceled?.length || 0)
+  canceledRow.getCell(4).value = summary.canceledValor ?? (body.canceled?.reduce((a, r) => a + r.valor, 0) || 0)
+  canceledRow.getCell(4).numFmt = CURRENCY_FMT
 
   return ws
 }
@@ -267,6 +278,28 @@ function buildPendingSheet(wb: ExcelJS.Workbook, pending: Recibo[]) {
   return ws
 }
 
+function buildCanceledSheet(wb: ExcelJS.Workbook, canceled: Recibo[]) {
+  const ws = wb.addWorksheet('Recibos cancelados')
+  ws.columns = [
+    { header: 'Mvto Adquirente', key: 'dataMvto', width: 14 },
+    { header: 'Loja', key: 'loja', width: 14 },
+    { header: 'Valor', key: 'valor', width: 14, style: { numFmt: CURRENCY_FMT } },
+    { header: 'Parcelas', key: 'parcelas', width: 10 },
+    { header: 'NSU', key: 'nsu', width: 14 },
+    { header: 'Autorização', key: 'autorizacao', width: 14 },
+    { header: 'Cliente', key: 'cliente', width: 32 },
+    { header: 'Recibo', key: 'recibo', width: 14 },
+    { header: 'Situação', key: 'situacao', width: 16 },
+  ]
+  ws.addRows(canceled.map(r => ({
+    dataMvto: r.dataMvto, loja: r.loja, valor: r.valor, parcelas: r.parcelas,
+    nsu: r.nsu, autorizacao: r.autorizacao, cliente: r.cliente, recibo: r.recibo,
+    situacao: r.situacao || 'Cancelado',
+  })))
+  styleHeaderRow(ws)
+  return ws
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -287,6 +320,7 @@ export async function POST(request: NextRequest) {
     buildOkSheet(wb, body.matched ?? [])
     buildDivergentSheet(wb, body.divergent ?? [])
     buildPendingSheet(wb, body.pending ?? [])
+    buildCanceledSheet(wb, body.canceled ?? [])
 
     const buffer = await wb.xlsx.writeBuffer()
     await logActivity(user.id, 'tool_export', 'Exportou Excel da Conciliação de Recibos')

@@ -34,6 +34,7 @@ interface Recibo {
   valor: number
   loja: string
   parcelas: number
+  situacao?: string
 }
 
 interface MatchedEntry {
@@ -55,6 +56,8 @@ interface Summary {
   missingValor: number
   pendingCount: number
   pendingValor: number
+  canceledCount?: number
+  canceledValor?: number
 }
 
 interface ApiResponse {
@@ -62,10 +65,11 @@ interface ApiResponse {
   divergent: MatchedEntry[]
   missing: Venda[]
   pending: Recibo[]
+  canceled?: Recibo[]
   summary: Summary
 }
 
-type Tab = 'missing' | 'ok' | 'divergent' | 'pending'
+type Tab = 'missing' | 'ok' | 'divergent' | 'pending' | 'canceled'
 
 function fmtBRL(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -250,6 +254,7 @@ export default function ConciliacaoRecibosPage() {
         { key: 'ok',         label: 'Conciliados',          count: data.summary.okCount,        border: 'border-green-500',  text: 'text-green-600'  },
         { key: 'divergent',  label: 'Divergências',         count: data.summary.divergentCount, border: 'border-amber-500',  text: 'text-amber-600'  },
         { key: 'pending',    label: 'Recibos sem venda',    count: data.summary.pendingCount,   border: 'border-gray-400',   text: 'text-gray-600'   },
+        { key: 'canceled',   label: 'Recibos cancelados',   count: data.summary.canceledCount ?? (data.canceled?.length || 0), border: 'border-red-500', text: 'text-red-600' },
       ]
     : []
 
@@ -426,17 +431,18 @@ export default function ConciliacaoRecibosPage() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               <KpiCard label="Vendas no Período" value={data.summary.vendasValor} format={fmtBRL} sub={`${data.summary.vendasTotal} venda(s)`} accent="#0369a1" />
               <KpiCard label="Conciliado" value={data.summary.okValor} format={fmtBRL} sub={`${data.summary.okCount} venda(s)`} accent="#22c55e" />
               <KpiCard label="Sem Recibo" value={data.summary.missingValor} format={fmtBRL} sub={`${data.summary.missingCount} venda(s)`} accent="#f97316" />
               <KpiCard label="Recibos sem Venda" value={data.summary.pendingValor} format={fmtBRL} sub={`${data.summary.pendingCount} recibo(s)`} accent="#9ca3af" />
+              <KpiCard label="Recibos Cancelados" value={data.summary.canceledValor ?? (data.canceled?.reduce((a, r) => a + r.valor, 0) || 0)} format={fmtBRL} sub={`${data.summary.canceledCount ?? (data.canceled?.length || 0)} recibo(s)`} accent="#ef4444" />
             </div>
 
             <TableCard>
               <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-              <TopScrollbar targetRef={tableScrollRef} watch={`${activeTab}-${data.matched.length}-${data.divergent.length}-${data.missing.length}-${data.pending.length}`} />
+              <TopScrollbar targetRef={tableScrollRef} watch={`${activeTab}-${data.matched.length}-${data.divergent.length}-${data.missing.length}-${data.pending.length}-${data.canceled?.length ?? 0}`} />
 
               <div ref={tableScrollRef} className="overflow-auto max-h-[65vh]">
                 <TabPanel tabKey={activeTab}>
@@ -588,6 +594,41 @@ export default function ConciliacaoRecibosPage() {
                           <td className={tdClass + ' font-mono text-xs'}>{r.autorizacao}</td>
                           <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 max-w-xs truncate">{r.cliente}</td>
                           <td className={tdClass + ' font-mono text-xs'}>{r.recibo}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {activeTab === 'canceled' && (
+                  <table className="w-full text-sm min-w-[760px]">
+                    <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-10">
+                      <tr>
+                        <th className={thClass} style={{ width: 100 }}>Mvto Adquirente</th>
+                        <th className={thClass}>Loja</th>
+                        <th className={thRight} style={{ width: 110 }}>Valor</th>
+                        <th className={thClass}>NSU</th>
+                        <th className={thClass}>Autorização</th>
+                        <th className={thClass}>Cliente</th>
+                        <th className={thClass}>Recibo</th>
+                        <th className={thClass} style={{ width: 110 }}>Situação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                      {(data.canceled ?? []).length === 0 ? (
+                        <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">Nenhum recibo cancelado encontrado.</td></tr>
+                      ) : (data.canceled ?? []).map((r, i) => (
+                        <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <td className={tdClass}>{r.dataMvto}</td>
+                          <td className={tdClass + ' font-medium'}>{r.loja}</td>
+                          <td className={tdRight + ' text-red-600 dark:text-red-400'}>{fmtBRL(r.valor)}</td>
+                          <td className={tdClass + ' font-mono text-xs'}>{r.nsu}</td>
+                          <td className={tdClass + ' font-mono text-xs'}>{r.autorizacao}</td>
+                          <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 max-w-xs truncate">{r.cliente}</td>
+                          <td className={tdClass + ' font-mono text-xs'}>{r.recibo}</td>
+                          <td className={tdClass}>
+                            <Badge tone="red">{r.situacao || 'Cancelado'}</Badge>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

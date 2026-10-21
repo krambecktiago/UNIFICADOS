@@ -51,6 +51,7 @@ interface Recibo {
   valor: number
   loja: string
   parcelas: number
+  situacao?: string
 }
 
 interface MatchedEntry {
@@ -199,10 +200,10 @@ function parseVendasXLSX(buffer: Buffer): Venda[] {
 }
 
 // Relatório interno "Clientes x Recibos" — um recibo emitido por linha.
-function parseRecibosXLSX(buffer: Buffer): Recibo[] {
+function parseRecibosXLSX(buffer: Buffer): { validRecibos: Recibo[]; canceledRecibos: Recibo[] } {
   const wb = readWorkbook(buffer)
   const { rows, headerIdx } = findDataSheet(wb, ['NSU', 'AUTORIZ'])
-  if (headerIdx === -1) return []
+  if (headerIdx === -1) return { validRecibos: [], canceledRecibos: [] }
   const headers = (rows[headerIdx] ?? []).map(h => normText(h))
 
   const idxCliente = colIndex(headers, ['CLIENTE'])
@@ -213,6 +214,10 @@ function parseRecibosXLSX(buffer: Buffer): Recibo[] {
   const idxDataEmissao = colIndex(headers, ['DATA', 'EMISS'])
   const idxValor = colIndex(headers, ['VALOR', 'PAGO'])
   const idxParcelas = colIndex(headers, ['PARCELA'])
+  let idxSituacao = colIndex(headers, ['SITUAC'])
+  if (idxSituacao === -1) {
+    idxSituacao = colIndex(headers, ['STATUS'])
+  }
 
   const dataRows = rows.slice(headerIdx + 1).filter(row => row && row.length)
 
@@ -226,29 +231,46 @@ function parseRecibosXLSX(buffer: Buffer): Recibo[] {
   // correspondente sumir para "sem recibo" mesmo com o recibo existindo.
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-  const results: Recibo[] = []
+  const validRecibos: Recibo[] = []
+  const canceledRecibos: Recibo[] = []
+
   for (const row of dataRows) {
+    const rawSituacao = idxSituacao !== -1 ? String(row[idxSituacao] ?? '').trim() : ''
+    const normSit = normText(rawSituacao)
+    const isCanceled = normSit.includes('CANCELAD')
+
     const nsu = normText(row[idxNsu])
     const autorizacao = normAutorizacao(row[idxAutorizacao])
-    if (!nsu || !autorizacao) continue
-    if (UUID_RE.test(String(row[idxNsu] ?? '').trim())) continue
-
     const recibo = String(row[idxRecibo] ?? '')
     const prefixo = recibo.split('/')[0]?.trim()
+    const valor = parseBRL(row[idxValor])
 
-    results.push({
+    const item: Recibo = {
       cliente: String(row[idxCliente] ?? ''),
       recibo,
       nsu,
       autorizacao,
       dataMvto: cellText(row[idxDataMvto]),
       dataEmissao: cellText(row[idxDataEmissao]),
-      valor: parseBRL(row[idxValor]),
+      valor,
       loja: LOJA_MAP[prefixo] ?? prefixo ?? '',
       parcelas: parseInt(String(row[idxParcelas] ?? '').replace(/\D/g, ''), 10) || 0,
-    })
+      situacao: rawSituacao || (isCanceled ? 'Cancelado' : ''),
+    }
+
+    if (isCanceled) {
+      if (UUID_RE.test(String(row[idxNsu] ?? '').trim())) continue
+      if (!recibo && valor === 0) continue
+      canceledRecibos.push(item)
+      continue
+    }
+
+    if (!nsu || !autorizacao) continue
+    if (UUID_RE.test(String(row[idxNsu] ?? '').trim())) continue
+
+    validRecibos.push(item)
   }
-  return results
+  return { validRecibos, canceledRecibos }
 }
 
 function reconcile(vendas: Venda[], recibos: Recibo[]) {
@@ -451,12 +473,14 @@ export async function POST(request: NextRequest) {
       vendas = parseVendasXLSX(Buffer.from(await vendasFile.arrayBuffer()))
     }
 
-    const recibos = parseRecibosXLSX(Buffer.from(await recibosFile.arrayBuffer()))
-    const { matched, missing, pending } = reconcile(vendas, recibos)
+    const { validRecibos, canceledRecibos } = parseRecibosXLSX(Buffer.from(await recibosFile.arrayBuffer()))
+    const { matched, missing, pending } = reconcile(vendas, validRecibos)
 
     const ok = matched.filter(m => !m.divergente)
     const divergent = matched.filter(m => m.divergente)
     const s = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
+
+    canceledRecibos.sort((a, b) => dateSortKey(a.dataMvto || a.dataEmissao).localeCompare(dateSortKey(b.dataMvto || b.dataEmissao)))
 
     await logToolUsage(supabase, user.id, 'conciliacao-recibos', source === 'api' ? 1 : 2)
     await logActivity(
@@ -472,6 +496,7 @@ export async function POST(request: NextRequest) {
       divergent,
       missing,
       pending,
+      canceled: canceledRecibos,
       summary: {
         vendasTotal: vendas.length,
         vendasValor: s(vendas.map(v => v.valor)),
@@ -482,6 +507,8 @@ export async function POST(request: NextRequest) {
         missingValor: s(missing.map(v => v.valor)),
         pendingCount: pending.length,
         pendingValor: s(pending.map(r => r.valor)),
+        canceledCount: canceledRecibos.length,
+        canceledValor: s(canceledRecibos.map(r => r.valor)),
       },
     })
   } catch (err) {
