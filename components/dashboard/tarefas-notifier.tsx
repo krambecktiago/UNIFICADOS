@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 
-const POLL_INTERVAL_MS = 10 * 1000
+const POLL_INTERVAL_MS = 45 * 1000
 const TOAST_DURATION_MS = 15 * 1000
 const STORAGE_KEY = 'tarefas-notificacoes-vistas'
 const TAREFAS_HREF = '/dashboard/ferramentas/tarefas'
@@ -107,11 +107,12 @@ export function TarefasNotifier() {
 
         if (fresh.length > 0 || mudou) {
           window.dispatchEvent(new Event('tarefas:atualizadas'))
-          // Re-renderiza os server components da página atual — atualiza o card
-          // "Tarefas pendentes" do Dashboard sem F5 (estado client é mantido).
-          // Na própria tela de Tarefas o evento acima já basta; o refresh ali
-          // só re-executaria os layouts (e o logToolVisit contaria visita a mais).
-          if (!pathnameRef.current.startsWith(TAREFAS_HREF)) router.refresh()
+          // Re-renderiza os server components da página apenas se estiver no Dashboard
+          // (onde fica o card de tarefas pendentes). Em telas de ferramentas, não dispara
+          // refresh para evitar travamentos ou interrupções no preenchimento de formulários.
+          if (pathnameRef.current === '/dashboard') {
+            router.refresh()
+          }
         }
       } catch {}
     }

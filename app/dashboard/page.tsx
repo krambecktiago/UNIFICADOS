@@ -26,18 +26,19 @@ type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 type UsageLog = { tool_slug: string; files_count: number; user_id: string; created_at: string }
 
 const USAGE_LOGS_PAGE_SIZE = 1000
+const MAX_USAGE_PAGES = 5
 
-// O Supabase limita cada select a 1000 linhas por padrão — sem paginar, a
-// tabela já passou desse total e os KPIs do Dashboard (Arquivos analisados,
-// Execuções, Distribuição por ferramenta etc.) vinham truncados de forma
-// não-determinística, variando conforme novas linhas entravam.
+// Busca os registros de uso mais recentes ordenados por data.
+// O limite de páginas evita congelamentos ou loops infinitos de rede caso a tabela cresça.
 async function fetchAllUsageLogs(supabase: SupabaseServerClient): Promise<UsageLog[]> {
   const rows: UsageLog[] = []
   let from = 0
-  while (true) {
+  let page = 0
+  while (page < MAX_USAGE_PAGES) {
     const { data, error } = await supabase
       .from('tool_usage_logs')
       .select('tool_slug, files_count, user_id, created_at')
+      .order('created_at', { ascending: false })
       .range(from, from + USAGE_LOGS_PAGE_SIZE - 1)
     if (error) {
       console.error('Erro ao buscar registros de uso:', error)
@@ -46,6 +47,7 @@ async function fetchAllUsageLogs(supabase: SupabaseServerClient): Promise<UsageL
     rows.push(...(data ?? []))
     if (!data || data.length < USAGE_LOGS_PAGE_SIZE) break
     from += USAGE_LOGS_PAGE_SIZE
+    page++
   }
   return rows
 }

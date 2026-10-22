@@ -33,16 +33,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let hasTarefas = isAdmin
 
   if (!isAdmin) {
-    const { data: toolRows } = await supabase
-      .from('tools')
-      .select('id, slug')
-      .in('slug', [...GATED_SCREEN_SLUGS, TAREFAS_SLUG])
-      .eq('active', true)
-
-    const { data: accessRows } = await supabase
-      .from('user_tool_access')
-      .select('tool_id')
-      .eq('user_id', user.id)
+    const [{ data: toolRows }, { data: accessRows }] = await Promise.all([
+      supabase
+        .from('tools')
+        .select('id, slug')
+        .in('slug', [...GATED_SCREEN_SLUGS, TAREFAS_SLUG])
+        .eq('active', true),
+      supabase
+        .from('user_tool_access')
+        .select('tool_id')
+        .eq('user_id', user.id),
+    ])
 
     const accessibleToolIds = new Set((accessRows ?? []).map(a => a.tool_id))
     const accessibleSlugs = (toolRows ?? [])

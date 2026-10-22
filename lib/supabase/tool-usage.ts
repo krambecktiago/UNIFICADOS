@@ -1,4 +1,6 @@
+import { after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser } from '@/lib/supabase/session'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
@@ -21,12 +23,22 @@ export async function logToolUsage(
 
 // Registra a simples entrada na ferramenta (padrão de contagem usado por
 // "Distribuição por ferramenta" e "Usuários mais ativos" do Dashboard).
-// Chamar no layout.tsx de cada ferramenta, ao lado de requireToolAccess —
-// assim toda ferramenta nova já entra na contagem sem precisar de código
-// extra em cada rota de processamento.
+// Usa after() do Next.js para processar em background após a resposta ser enviada,
+// eliminando o atraso de rede e renderizando a ferramenta imediatamente para o usuário.
 export async function logToolVisit(toolSlug: string) {
   const user = await getSessionUser()
   if (!user) return
-  const supabase = await createClient()
-  await logToolUsage(supabase, user.id, toolSlug, 0)
+  const userId = user.id
+
+  after(async () => {
+    try {
+      const admin = createAdminClient()
+      const { error } = await admin
+        .from('tool_usage_logs')
+        .insert({ user_id: userId, tool_slug: toolSlug, files_count: 0 })
+      if (error) console.error('Erro ao registrar visita à ferramenta em background:', error)
+    } catch (err) {
+      console.error('Erro ao registrar visita à ferramenta em background:', err)
+    }
+  })
 }

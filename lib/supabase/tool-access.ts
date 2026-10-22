@@ -1,6 +1,29 @@
+import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { getSessionUser, getSessionProfile } from '@/lib/supabase/session'
 import { redirect } from 'next/navigation'
+
+const checkAccess = cache(async (userId: string, slug: string): Promise<boolean> => {
+  const supabase = await createClient()
+
+  const { data: tool } = await supabase
+    .from('tools')
+    .select('id')
+    .eq('slug', slug)
+    .eq('active', true)
+    .maybeSingle()
+
+  if (!tool) return false
+
+  const { data: access } = await supabase
+    .from('user_tool_access')
+    .select('user_id')
+    .eq('user_id', userId)
+    .eq('tool_id', tool.id)
+    .maybeSingle()
+
+  return !!access
+})
 
 export async function requireToolAccess(slug: string) {
   const user = await getSessionUser()
@@ -13,23 +36,6 @@ export async function requireToolAccess(slug: string) {
   if (profile?.role === 'inactive') redirect('/login?error=inactive')
   if (profile?.role === 'admin') return
 
-  const supabase = await createClient()
-
-  const { data: tool } = await supabase
-    .from('tools')
-    .select('id')
-    .eq('slug', slug)
-    .eq('active', true)
-    .maybeSingle()
-
-  if (!tool) redirect('/dashboard/ferramentas')
-
-  const { data: access } = await supabase
-    .from('user_tool_access')
-    .select('user_id')
-    .eq('user_id', user.id)
-    .eq('tool_id', tool.id)
-    .maybeSingle()
-
-  if (!access) redirect('/dashboard/ferramentas')
+  const hasAccess = await checkAccess(user.id, slug)
+  if (!hasAccess) redirect('/dashboard/ferramentas')
 }
