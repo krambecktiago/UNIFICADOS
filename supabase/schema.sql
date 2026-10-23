@@ -167,10 +167,7 @@ create policy "Admin gerencia acessos de ferramentas"
 -- Seed das 6 ferramentas da plataforma
 insert into public.tools (name, slug, description) values
   ('Conferir Duplicatas', 'duplicatas', 'Compara retorno bancário com fluxo de caixa do ERP'),
-  ('Seguro de Vida', 'seguro-vida', 'Cruza PDF do seguro com planilha de funcionários'),
   ('Contas a Pagar', 'contas-pagar', 'Envia resumo diário de pagamentos para o Discord'),
-  ('Comparador DDA', 'comparador-dda', 'Cruza boletos DDA com duplicatas de Contas a Pagar'),
-  ('Conciliação Cartão', 'conciliacao-cartao', 'Cruza vendas no cartão com duplicatas em aberto'),
   ('Conciliação Bancária', 'comparar-extrato', 'Cruza extrato ERP com extrato Viacredi e identifica divergências')
 on conflict (slug) do nothing;
 
@@ -254,6 +251,17 @@ $$;
 -- drop table if exists public.caixa_avaliacoes;
 -- delete from public.user_tool_access where tool_id in (select id from public.tools where slug = 'checklist-caixas');
 -- delete from public.tools where slug = 'checklist-caixas';
+
+-- As ferramentas "Seguro de Vida" ('seguro-vida'), "Registro de Entregas" ('registro-entregas')
+-- e "Tarefas" ('tarefas') foram removidas do produto a pedido do usuário.
+-- Para limpar os resíduos de tabelas, registros de uso e acessos no Supabase, execute:
+-- drop table if exists public.tarefas_log;
+-- drop table if exists public.tarefas;
+-- drop table if exists public.registro_entregas;
+-- delete from public.tool_usage_logs where tool_slug in ('seguro-vida', 'registro-entregas', 'tarefas');
+-- delete from public.user_tool_settings where tool_slug in ('seguro-vida', 'registro-entregas', 'tarefas');
+-- delete from public.user_tool_access where tool_id in (select id from public.tools where slug in ('seguro-vida', 'registro-entregas', 'tarefas'));
+-- delete from public.tools where slug in ('seguro-vida', 'registro-entregas', 'tarefas');
 
 -- ============================================================
 -- MIGRAÇÃO: Integrações (conexões de API/webhook centralizadas)
@@ -404,101 +412,4 @@ insert into public.tools (name, slug, description) values
   ('Desconto Motoboys', 'desconto-motoboys', 'Controla descontos a aplicar no pagamento semanal dos motoboys, por loja')
 on conflict (slug) do nothing;
 
--- ============================================================
--- Ferramenta "Registro de Entregas" — autoavaliação: cada usuário
--- registra o que fez além da rotina (automação, melhoria de processo,
--- problema resolvido, projeto especial, treinamento), pra embasar o
--- relatório mensal ao gestor. Histórico pessoal — RLS restringe
--- leitura/escrita a auth.uid() = user_id, com uma policy extra de
--- SELECT liberando admin ver os registros de todo mundo (reaproveita
--- is_admin(), já criada na migração de Admin + Controle de Acesso).
--- ============================================================
-create table public.registro_entregas (
-  id         uuid primary key default gen_random_uuid(),
-  user_id    uuid not null references auth.users(id) on delete cascade,
-  data       date not null,
-  categoria  text not null check (categoria in ('automacao', 'melhoria', 'problema', 'projeto', 'treinamento', 'outro')),
-  titulo     text not null,
-  detalhe    text,
-  impacto    text,
-  criado_em  timestamptz not null default now()
-);
 
-alter table public.registro_entregas enable row level security;
-
-create policy "Usuário gerencia seus próprios registros de entrega"
-  on public.registro_entregas for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
-
-create policy "Admin lê todos os registros de entrega"
-  on public.registro_entregas for select
-  using (public.is_admin());
-
-create index registro_entregas_user_id_idx on public.registro_entregas(user_id);
-create index registro_entregas_data_idx on public.registro_entregas(data);
-
-insert into public.tools (name, slug, description) values
-  ('Registro de Entregas', 'registro-entregas', 'Autoavaliação mensal: registra entregas além da rotina, com relatório por mês')
-on conflict (slug) do nothing;
-
--- ============================================================
--- Ferramenta "Tarefas" — lista de tarefas atribuídas entre usuários.
--- Quem tem a ferramenta liberada cria tarefa pra outro usuário (que
--- também tenha a ferramenta); ela fica pendente até o responsável
--- marcar como concluída, com uma explicação de como resolveu.
--- Visibilidade: só quem criou e quem foi atribuído enxergam a tarefa;
--- admin vê todas. Escrita sempre via service role (createAdminClient),
--- com as regras de quem pode concluir/editar/excluir checadas na rota.
--- tarefas_log guarda o histórico de cada ação (só admin lê) e não tem
--- FK pra tarefas — o registro sobrevive à exclusão da tarefa.
--- ============================================================
-create table public.tarefas (
-  id                   uuid primary key default gen_random_uuid(),
-  titulo               text not null,
-  observacao           text,
-  status               text not null default 'pendente' check (status in ('pendente', 'concluida')),
-  explicacao_conclusao text,
-  criado_por           uuid references auth.users(id) on delete set null,
-  atribuido_para       uuid not null references auth.users(id) on delete cascade,
-  concluido_em         timestamptz,
-  criado_em            timestamptz not null default now(),
-  atualizado_em        timestamptz not null default now()
-);
-
-alter table public.tarefas enable row level security;
-
-create policy "Criador e responsável leem a tarefa"
-  on public.tarefas for select
-  using (auth.uid() = criado_por or auth.uid() = atribuido_para);
-
-create policy "Admin lê todas as tarefas"
-  on public.tarefas for select
-  using (public.is_admin());
-
-create index tarefas_criado_por_idx on public.tarefas(criado_por);
-create index tarefas_atribuido_para_idx on public.tarefas(atribuido_para);
-create index tarefas_status_idx on public.tarefas(status);
-
-create table public.tarefas_log (
-  id           uuid primary key default gen_random_uuid(),
-  tarefa_id    uuid not null,
-  tarefa_titulo text not null,
-  user_id      uuid references auth.users(id) on delete set null,
-  acao         text not null check (acao in ('criada', 'editada', 'concluida', 'reaberta', 'excluida')),
-  detalhe      text,
-  criado_em    timestamptz not null default now()
-);
-
-alter table public.tarefas_log enable row level security;
-
-create policy "Admin lê o log de tarefas"
-  on public.tarefas_log for select
-  using (public.is_admin());
-
-create index tarefas_log_tarefa_id_idx on public.tarefas_log(tarefa_id);
-create index tarefas_log_criado_em_idx on public.tarefas_log(criado_em desc);
-
-insert into public.tools (name, slug, description) values
-  ('Tarefas', 'tarefas', 'Atribui tarefas a outros usuários e acompanha até a conclusão')
-on conflict (slug) do nothing;

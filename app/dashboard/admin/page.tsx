@@ -99,25 +99,16 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase
-      .from('tools')
-      .select('slug, name')
-      .eq('active', true)
-      .then(({ data }) => {
-        const tools = (data ?? [])
-          .filter(t => !SCREEN_SLUGS.includes(t.slug))
-          .map(t => ({ slug: t.slug, label: t.name }))
-        setAllTools(tools)
-      })
-  }, [])
-
-  useEffect(() => {
     fetch('/api/admin/tools')
       .then(r => r.json())
       .then(data => {
-        if (Array.isArray(data)) setManageTools(data.filter(t => !SCREEN_SLUGS.includes(t.slug)))
-        else setToolsError(data.error ?? 'Erro ao carregar ferramentas')
+        if (Array.isArray(data)) {
+          const filtered = data.filter(t => !SCREEN_SLUGS.includes(t.slug))
+          setManageTools(filtered)
+          setAllTools(filtered.filter(t => t.active).map(t => ({ slug: t.slug, label: t.name })))
+        } else {
+          setToolsError(data.error ?? 'Erro ao carregar ferramentas')
+        }
       })
       .catch(() => setToolsError('Erro de rede'))
   }, [])

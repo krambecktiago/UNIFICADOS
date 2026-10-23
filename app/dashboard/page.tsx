@@ -7,8 +7,6 @@ import { formatDateTime, formatDayLabel, toDateKey } from '@/lib/utils'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card } from '@/components/ui/card'
 import { KpiCard } from '@/components/ui/kpi-card'
-import { PendingTasksCard } from '@/components/dashboard/pending-tasks-card'
-import { getPendingTasksSummary } from '@/lib/tarefas/server'
 import { DailyUsageChart, ToolDistributionChart } from '@/components/dashboard/usage-charts'
 import { UserToolUsageList, type UserToolBreakdown } from '@/components/dashboard/user-tool-usage'
 import { getAccessibleTools } from '@/lib/tools/catalog'
@@ -102,10 +100,6 @@ export default async function DashboardPage() {
   // Filtra logs de uso ignorando contas inativas
   const activeUsageLogs = (usageLogs ?? []).filter(log => !inactiveUserIds.has(log.user_id))
 
-  // Depende de accessibleTools, então fica fora do Promise.all acima.
-  const pendingTasks = accessibleTools.some(t => t.slug === 'tarefas')
-    ? await getPendingTasksSummary(user!.id, isAdmin)
-    : null
 
   const totalFiles = activeUsageLogs.reduce((sum, log) => sum + log.files_count, 0)
   const totalExecutions = activeUsageLogs.length
@@ -385,8 +379,6 @@ export default async function DashboardPage() {
       </div>
 
       <aside className="space-y-4 lg:sticky lg:top-8">
-        {pendingTasks && <PendingTasksCard {...pendingTasks} />}
-
         {isAdmin && (
           <Card padding="6">
             <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-3">Saúde das integrações</p>

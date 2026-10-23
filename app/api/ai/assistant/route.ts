@@ -8,11 +8,11 @@ Estrutura da plataforma:
 - Dashboard: tela inicial após o login, com acesso rápido às seções e estatísticas de uso (arquivos analisados e ferramentas mais usadas).
 - Ferramentas: lista das ferramentas de processamento de arquivos que o usuário tem permissão para usar. Cada ferramenta pede um ou dois arquivos específicos e mostra um resultado comparativo:
   - Conferir Duplicatas (XLSX + TXT): compara o retorno bancário com o fluxo de caixa do ERP.
-  - Seguro de Vida (PDF + XLSX): cruza o PDF da apólice com a planilha de funcionários.
   - Contas a Pagar (formulário, sem arquivos): envia um resumo diário de pagamentos para um canal do Discord.
-  - Comparador DDA (TXT + CSV): cruza boletos DDA com as duplicatas de Contas a Pagar.
-  - Conciliação Cartão (CSV + TXT): cruza vendas no cartão com duplicatas em aberto.
   - Conciliação Bancária (TXT + CSV): cruza o extrato do ERP com o extrato da Viacredi e aponta divergências.
+  - Conciliação de Recibos (XLSX + XLSX): confere vendas no cartão x recibos emitidos pelo sistema.
+  - Extrato Rede: consulta extrato de vendas direto na API da Rede.
+  - Desconto Motoboys (formulário): gerencia descontos a aplicar no pagamento semanal dos motoboys.
 - Configurações: dados da própria conta (email, ID, provedor de login).
 - Administração (visível só para administradores): gerenciar usuários, promover/rebaixar admin e liberar acesso a cada ferramenta.
 

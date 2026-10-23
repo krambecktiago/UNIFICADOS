@@ -17,19 +17,6 @@ export const ALL_TOOLS = [
     accent: '#0d1e45',
   },
   {
-    href: '/dashboard/ferramentas/seguro-vida',
-    slug: 'seguro-vida',
-    title: 'Seguro de Vida',
-    description: 'Cruza PDF do seguro com planilha de funcionários',
-    inputs: 'PDF + XLSX',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-      </svg>
-    ),
-    accent: '#7c3aed',
-  },
-  {
     href: '/dashboard/ferramentas/contas-pagar',
     slug: 'contas-pagar',
     title: 'Contas a Pagar',
@@ -94,32 +81,6 @@ export const ALL_TOOLS = [
       </svg>
     ),
     accent: '#b45309',
-  },
-  {
-    href: '/dashboard/ferramentas/registro-entregas',
-    slug: 'registro-entregas',
-    title: 'Registro de Entregas',
-    description: 'Autoavaliação mensal: registra entregas além da rotina, com relatório por mês',
-    inputs: 'Formulário',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3-14.25H8.25A2.25 2.25 0 006 5.25v13.5A2.25 2.25 0 008.25 21h7.5A2.25 2.25 0 0018 18.75V8.25L14.25 4.5zM14.25 4.5v3.75a1.5 1.5 0 001.5 1.5H18" />
-      </svg>
-    ),
-    accent: '#2f5d62',
-  },
-  {
-    href: '/dashboard/ferramentas/tarefas',
-    slug: 'tarefas',
-    title: 'Tarefas',
-    description: 'Atribui tarefas a outros usuários e acompanha até a conclusão',
-    inputs: 'Formulário',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    accent: '#4f46e5',
   },
 ]
 
